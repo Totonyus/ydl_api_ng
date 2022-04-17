@@ -269,5 +269,4 @@ GET http://localhost:5011/active_downloads/terminate/{pid}
 
 # Contributing
 
-- Found a bug ? Need an imprivment ? Need help ? Open a ticket !
-- 
+- Found a bug ? Need an improvement ? Need help ? Open a ticket !
