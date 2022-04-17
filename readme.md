@@ -14,8 +14,8 @@ ydl_api was built to fulfill my needs, and it works really well for me. However,
 
 - A huge portion of the codebase has been rewritten
 - A new system of parameter file
-- More powerful : you can now add any youtube-dlp option to ehance your downloads
-- Better maintenability : no need new devs on this application if youtube-dlp adds new options
+- More powerful : you can now add any youtube-dlp option to enhance your downloads
+- Better maintainability : no need new devs on this application if youtube-dlp adds new options
 - Suitable for advanced youtube-dlp users
 - Not complicated for basic users
 - New features are planned
@@ -59,7 +59,7 @@ docker run -p 5011:80 totonyus/ydl_api # don't forget to map the folders
 
 ### UID and GID
 
-The default user used in the container is `1000:1000`. You can edit thoses by changing the environment vars `UID`
+The default user used in the container is `1000:1000`. You can edit those by changing the environment vars `UID`
 and `GID` in the `docker-compose.yml` or in the `docker run` command.
 
 The user must be root (`UID=0` ans `GID=0`) or match the owner of the download repository.
@@ -88,7 +88,7 @@ Download the latest release :
 wget https://github.com/Totonyus/ydl_api_ng/archive/master.zip
 ```
 
-Then unzip the file and rename the unziped folder : (note you can use `unzip -d %your_path%` to specify where you want
+Then unzip the file and rename the unzipped folder : (note you can use `unzip -d %your_path%` to specify where you want
 to unzip the file )
 
 ```shell
@@ -185,7 +185,7 @@ You can also add your own parameters fields if you need it.
 
 ### params.sample.ini
 
-This file is a complete working configation file who is fully documented to help you to understand how it works.
+This file is a complete working configuration file who is fully documented to help you to understand how it works.
 
 ## User management
 
@@ -194,7 +194,7 @@ override some parameters for a specific user.
 
 ## Site management
 
-You can define parameters for given websites. It's usefull to avoid long-running playlist download simulation.
+You can define parameters for given websites. It's useful to avoid long-running playlist download simulation.
 
 ```ini
 # Every host matching this site
@@ -205,11 +205,11 @@ _video_indicators = /watch?
 _playlist_indicators = ?list=,&list=,/user/,/playlists
 ```
 
-You can also add parameters tied to the site like login informations
+You can also add parameters tied to the site like login information
 
 # API
 
-## Application informations
+## Application information
 
 Return the application complete parameters
 
@@ -236,9 +236,9 @@ GET http://localhost:5011/download?url=https://www.youtube.com/watch?v=Kf1XttuuI
 GET http://localhost:5011/download?url=https://www.youtube.com/watch?v=wV4wepiucf4&token=dad_super_password
 ```
 
-## Video informations
+## Video information
 
-Returns the standart youtube-dlp extract info object.
+Returns the standard youtube-dlp extract info object.
 
 ```shell
 GET http://localhost:5011/extract_info?url=https://www.youtube.com/watch?v=9Lgc3TxqgHA
@@ -270,3 +270,4 @@ GET http://localhost:5011/active_downloads/terminate/{pid}
 # Contributing
 
 - Found a bug ? Need an improvement ? Need help ? Open a ticket !
+- Found a typo in documentation ? That's normal ! I'm French. Don't hesitate to contact me if you don't understand a sentence or if there are mistakes.
