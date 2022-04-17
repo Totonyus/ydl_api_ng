@@ -1,0 +1,16 @@
+version: "3.1"
+services:
+  ydl_api_ng:
+    container_name: ydl_api_ng
+    image: totonyus/ydl_api_ng
+    restart: unless-stopped
+    ports:
+      - 5011:80
+    volumes:
+      - ./downloads:/app/downloads
+      - ./params:/app/params
+      - ./logs:/app/logs
+      #- ./params/hooks_utils:/app/params/hooks_utils
+    environment:
+      - UID=1000
+      - GID=1000

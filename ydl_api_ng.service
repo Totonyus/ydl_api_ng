@@ -1,0 +1,20 @@
+# This file must be placed in /usr/lib/systemd/system/
+
+[Unit]
+Description=Simple Rest api for youtube-dl
+After=network.target
+
+[Service]
+type=simple
+RemainAfterExit=yes
+
+# (Optional, default='root') uncomment and enter here the user and group you want
+#User=---%--- REPLACE ---%---
+#Group=---%--- REPLACE ---%---
+
+# The directory where you downloaded this program
+WorkingDirectory=---%--- REPLACE ---%---
+ExecStart=python3 main.py
+
+[Install]
+WantedBy=multi-user.target

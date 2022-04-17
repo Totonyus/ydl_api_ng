@@ -1,0 +1,14 @@
+# syntax=docker/dockerfile:1
+
+FROM python:3.9-slim-buster
+WORKDIR /app
+
+ENV UID=1000 GID=1000
+
+COPY config_manager.py download_manager.py main.py process_utils.py entrypoint.sh pip_requirements ./
+COPY params/ydl_api_hooks.py params/postprocessor_hooks.py params/progress_hooks.py params/params.ini params/params_metadata.ini params/params.sample.ini params/userscript.js params/hooks_requirements ./setup/
+
+RUN pip3 install -r pip_requirements
+RUN apt update && apt install ffmpeg -y && apt-get autoremove && apt-get -y clean && rm -rf /var/lib/apt/lists/*
+
+CMD ["bash", "/app/entrypoint.sh"]
