@@ -67,7 +67,7 @@ The user must be root (`UID=0` ans `GID=0`) or match the owner of the download r
 To know your `UID` and `GID`, simple run this command with the right user or check your `/etc/passwd` file.
 
 ```shell
-echo $UID $GIG
+echo $UID $GID
 ```
 
 ## Without Docker
