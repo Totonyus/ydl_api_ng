@@ -136,6 +136,8 @@ of your server.
 
 You now should have access to download options on every site. You can also modify the match options to limit the usages.
 
+![Userscript in action](userscript.jpg)
+
 ## Files you'll probably want to consult or customize
 
 These files are generated in `params/`

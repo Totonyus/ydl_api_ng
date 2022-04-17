@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name        ydl_api
+// @name        ydl_api_ng
 // @match       http*://*/*
 // @grant       GM_registerMenuCommand
 // @grant       GM_xmlhttpRequest
@@ -56,15 +56,15 @@
                     notificationOptions.timeout = notificationTimeout;
                 } else if (response.status === 202) {
                     notificationOptions.title = `Download launched`;
-                    notificationOptions.text = `The download have not been checked. Some files may be not downloaded`;
+                    notificationOptions.text = `Download not checked. Some files may not be downloaded`;
                     notificationOptions.timeout = notificationTimeout;
                 } else if (response.status === 206) {
                     notificationOptions.title = `Download launched`;
-                    notificationOptions.text = `Some presets failed download test`;
+                    notificationOptions.text = `Some presets failed download check`;
                     notificationOptions.timeout = notificationTimeout;
                 } else if (response.status === 401) {
                     notificationOptions.title = `Authentication failed`;
-                    notificationOptions.text = `The server require a user token or the provided token is wrong`;
+                    notificationOptions.text = `The server requires an user token or the provided token is wrong`;
                 } else {
                     notificationOptions.title = `Download failed`;
                     notificationOptions.text = `The format may be wrong or not available or there is no video to download`;
