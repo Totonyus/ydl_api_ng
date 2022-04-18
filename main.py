@@ -14,9 +14,6 @@ __cm = config_manager.ConfigManager()
 app = FastAPI()
 
 
-
-
-
 ###
 # Application
 ###
@@ -24,7 +21,7 @@ app = FastAPI()
 @app.get(__cm.get_app_params().get('_api_route_info'))
 async def info_request(response: Response, token=None):
     param_token = unquote(token) if token is not None else None
-    user = is_user_permitted_by_token(param_token)
+    user = __cm.is_user_permitted_by_token(param_token)
 
     if user is False:
         response.status_code = 401
@@ -88,6 +85,7 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
 
     return {
         'url': param_url,
+        'url_hostname': dm.site_hostname,
         'no_preset_found': dm.no_preset_found,
         'presets_found': dm.presets_found,
         'presets_not_found': dm.presets_not_found,

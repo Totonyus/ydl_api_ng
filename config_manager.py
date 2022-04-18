@@ -148,16 +148,14 @@ class ConfigManager:
     # Done on premise directly with objects, override values
     @staticmethod
     def merge_configs_object(user_object, preset_object):
-        changed_preset = copy.deepcopy(preset_object)
-
         if user_object is not None:
             logging.getLogger('config_manager').debug(f'Merging preset {preset_object.get("_name")} in user {user_object.get("_name")}')
 
             for option in user_object.get_all():
                 if option != '_name':
-                    changed_preset.append(option, user_object.get(option))
+                    preset_object.append(option, user_object.get(option))
 
-        return changed_preset
+        return preset_object
 
     # Get parameters type from meta section of the parameters file
     def __load_metadata(self):
@@ -235,7 +233,7 @@ class ConfigManager:
         return self.__presets_config_object
 
     def get_preset_params(self, preset_name):
-        return self.__presets_config_object.get(preset_name)
+        return copy.deepcopy(self.__presets_config_object.get(preset_name))
 
     def get_all_sites_params(self):
         return self.__site_config_object

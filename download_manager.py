@@ -12,7 +12,7 @@ class DownloadManager:
     __cm = None
 
     def __init__(self, config_manager, url, presets, user_token):
-        logging.getLogger('download_manager').info(f'Init download - user_token: {user_token} - presets: {presets} - url :{url} ' )
+        logging.getLogger('download_manager').info(f'Init download - user_token: {user_token} - presets: {presets} - url :{url} ')
 
         self.presets = []
         self.presets_display = []
@@ -33,7 +33,8 @@ class DownloadManager:
 
         self.__cm = config_manager
         self.url = url
-        self.site = self.__cm.get_site_params(urlparse(url).hostname)
+        self.site_hostname = urlparse(url).hostname
+        self.site = self.__cm.get_site_params(self.site_hostname)
         self.user = self.__cm.get_user_param_by_token(user_token)
         self.get_presets_objects(presets)
         self.simulate_all_downloads()
@@ -101,7 +102,6 @@ class DownloadManager:
 
         return False
 
-
     def get_site_param_object(self):
         return self.site
 
@@ -141,11 +141,11 @@ class DownloadManager:
 
     # Extends preset with user informations
     def get_preset_for_user(self, preset):
-        new_preset = self.__cm.merge_configs_object(self.user, preset)
-        new_preset.delete('_token')
-        self.__cm.merge_configs_object(self.site, new_preset)
+        self.__cm.merge_configs_object(self.user, preset)
+        self.__cm.merge_configs_object(self.site, preset)
+        preset.delete('_token')
 
-        return new_preset
+        return preset
 
     def simulate_download(self, preset):
         if not self.can_url_be_checked(preset):
