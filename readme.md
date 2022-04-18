@@ -72,7 +72,7 @@ echo $UID $GID
 
 ## Without Docker
 
-## Requirements
+### Requirements
 
 * Installation with distribution package manager (`apt`, `yum`, ...) : `python3`, `python3-pip`, `ffmpeg`
 
