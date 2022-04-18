@@ -174,7 +174,8 @@ class DownloadManager:
         return simulation_result
 
     def progress_hooks_proxy(self, download):
-        if download.get('status') == 'finished':
+        download_status = download.get('status')
+        if download_status == 'finished' or download_status == 'error':
             self.downloaded_files.append(download)
 
     def process_download(self, preset):

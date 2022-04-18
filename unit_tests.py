@@ -1,3 +1,4 @@
+import copy
 import unittest
 
 import requests
@@ -183,19 +184,19 @@ class TestUtils(unittest.TestCase):
         default_preset = self.config_manager.get_preset_params('DEFAULT')
 
         dm = download_manager.DownloadManager(self.config_manager, 'https://www.youtube.com/watch?v=5UErWGjj95Y', None, 'totonyus_super_password')
-        self.assertEqual(['fr', 'en'], dm.get_preset_for_user(default_preset).get('subtitleslangs'))
+        self.assertEqual(['fr', 'en'], dm.get_preset_for_user(copy.deepcopy(default_preset)).get('subtitleslangs'))
 
         dm = download_manager.DownloadManager(self.config_manager, 'https://www.youtube.com/watch?v=5UErWGjj95Y', None, 'totonyus_super_password')
-        self.assertEqual('./downloads/', dm.get_preset_for_user(default_preset).get('paths').get('home'))
+        self.assertEqual('./downloads/', dm.get_preset_for_user(copy.deepcopy(default_preset)).get('paths').get('home'))
 
         dm = download_manager.DownloadManager(self.config_manager, 'https://www.youtube.com/watch?v=5UErWGjj95Y', None, 'totonyus_super_password')
-        self.assertEqual('DEFAULT', dm.get_preset_for_user(default_preset).get('_name'))
+        self.assertEqual('DEFAULT', dm.get_preset_for_user(copy.deepcopy(default_preset)).get('_name'))
 
         dm = download_manager.DownloadManager(self.config_manager, 'https://www.youtube.com/watch?v=5UErWGjj95Y', None, 'dad_super_password')
-        self.assertEqual(['en'], dm.get_preset_for_user(default_preset).get('subtitleslangs'))
+        self.assertEqual(['en'], dm.get_preset_for_user(copy.deepcopy(default_preset)).get('subtitleslangs'))
 
         dm = download_manager.DownloadManager(self.config_manager, 'https://www.youtube.com/watch?v=5UErWGjj95Y', None, 'dad_super_password')
-        self.assertEqual('./downloads/symlink_to_dad_home/', dm.get_preset_for_user(default_preset).get('paths').get('home'))
+        self.assertEqual('./downloads/symlink_to_dad_home/', dm.get_preset_for_user(copy.deepcopy(default_preset)).get('paths').get('home'))
 
     def test_simulate(self):
         default_preset = self.config_manager.get_preset_params('DEFAULT')

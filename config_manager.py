@@ -54,19 +54,6 @@ class GlobalConfig:
 
 
 class ConfigManager:
-    __config = None
-    __app_config = None
-    __presets_config = None
-    __site_config = None
-    __user_config = None
-    __auth_config = None
-    __keys_metadata = {}
-    __presets_config_object = GlobalConfig()
-    __site_config_object = GlobalConfig()
-    __user_config_object = GlobalConfig()
-    __app_config_object = GlobalConfig()
-    __auth_config_object = GlobalConfig()
-
     def __init__(self, params_file=None):
         self.__config = configparser.ConfigParser(interpolation=None)
         self.__presets_config = configparser.ConfigParser(interpolation=None)
@@ -74,6 +61,12 @@ class ConfigManager:
         self.__user_config = configparser.ConfigParser(interpolation=None)
         self.__app_config = configparser.ConfigParser(interpolation=None)
         self.__auth_config = configparser.ConfigParser(interpolation=None)
+        self.__presets_config_object = GlobalConfig()
+        self.__site_config_object = GlobalConfig()
+        self.__user_config_object = GlobalConfig()
+        self.__app_config_object = GlobalConfig()
+        self.__auth_config_object = GlobalConfig()
+        self.__keys_metadata = {}
 
         self.__config.read(params_file if params_file is not None else 'params/params.ini')
 
