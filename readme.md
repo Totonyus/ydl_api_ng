@@ -161,7 +161,7 @@ There files are in the base folder :
 
 ### Docker
 
-Simply reload the container, an updated is performed at launch
+Simply reload the container, an update is performed at launch
 
 ### Without docker
 
