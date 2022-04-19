@@ -173,10 +173,22 @@ class DownloadManager:
 
         return simulation_result
 
+    def find_downloads_in_downloaded_files_list(self, video_id):
+        for index, download in enumerate(self.downloaded_files):
+            if download.get('info_dict').get('id') == video_id:
+                return index
+        return None
+
     def progress_hooks_proxy(self, download):
         download_status = download.get('status')
-        if download_status == 'finished' or download_status == 'error':
+        is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
+
+        # Sometimes the "error" hooks is not launched by youtube-dlp. Help to keep a track of failures
+        if is_in_list is None:
             self.downloaded_files.append(download)
+
+        elif download_status == 'finished' or download == 'error':
+            self.downloaded_files[is_in_list] = download
 
     def process_download(self, preset):
         if self.__cm.get_app_params().get('_dev_mode'):

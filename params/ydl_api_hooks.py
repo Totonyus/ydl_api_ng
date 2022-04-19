@@ -37,17 +37,23 @@ def post_download_handler(ydl_opts, download_manager, config_manager, downloads)
         if download.get('status') == 'finished':
             downloads_state.get(video_id)['finished_downloads'] = downloads_state.get(video_id).get('finished_downloads') + 1
             downloads_state.get(video_id)['file_size'] = downloads_state.get(video_id).get('file_size') + download.get('total_bytes')
-        elif download.get('status') == 'error':
+        else:
             downloads_state.get(video_id)['error_downloads'] = downloads_state.get(video_id).get('error_downloads') + 1
 
         downloads_state.get(video_id).get('downloads').append(download)
+
+    logging.getLogger('post_download_hooks').info(f'[preset:{ydl_opts.get("_name")}] - {download_manager.url} :  download finished')
 
     for video_id in downloads_state:
         download_object = downloads_state.get(video_id)
 
         if download_object.get('finished_downloads') != 0 and download_object.get('error_downloads') != 0:
-            logging.getLogger('post_download_hooks').error(f'[FAILED][preset:{ydl_opts.get("_name")}] - {download_manager.url} : Not all files were downloaded')
+            logging.getLogger('post_download_hooks').error(f'[FAILED][preset:{ydl_opts.get("_name")}] - {download_object.get("downloads")[0].get("info_dict").get("webpage_url")} : Not all part of the files where downloaded')
         elif download_object.get('error_downloads') != 0 and download_object.get('finished_downloads') == 0:
-            logging.getLogger('post_download_hooks').error(f'[FAILED][preset:{ydl_opts.get("_name")}] - {download_manager.url} : No file downloaded')
+            logging.getLogger('post_download_hooks').error(f'[FAILED][preset:{ydl_opts.get("_name")}] - {download_object.get("downloads")[0].get("info_dict").get("webpage_url")} : No file downloaded')
         elif download_object.get('finished_downloads') != 0 and download_object.get('error_downloads') == 0:
-            logging.getLogger('post_download_hooks').info(f'[SUCCESS][preset:{ydl_opts.get("_name")}] - {download_manager.url} -> {download_object.get("downloads")[0].get("info_dict").get("_filename")} ({humanize.naturalsize(download_object.get("file_size"), binary=True)})')
+            logging.getLogger('post_download_hooks').info(f'[SUCCESS][preset:{ydl_opts.get("_name")}] - {download_object.get("downloads")[0].get("info_dict").get("webpage_url")} -> {download_object.get("downloads")[0].get("info_dict").get("_filename")} ({humanize.naturalsize(download_object.get("file_size"), binary=True)})')
+
+# Called after a download is terminated
+def post_termination_handler(config_manager, filename_info):
+    logging.getLogger('post_termination_hooks').info(f'Downloading has been stopped by user : {filename_info.get("full_filename")} ({humanize.naturalsize(filename_info.get("file_size"), binary=True)})')

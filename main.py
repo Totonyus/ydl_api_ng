@@ -10,6 +10,7 @@ import download_manager
 import process_utils
 
 __cm = config_manager.ConfigManager()
+__pu = process_utils.ProcessUtils(__cm)
 
 app = FastAPI()
 
@@ -127,7 +128,7 @@ async def active_downloads_request(response: Response, token=None):
         response.status_code = 401
         return
 
-    return process_utils.get_active_downloads_list()
+    return __pu.get_active_downloads_list()
 
 
 @app.get(f"{__cm.get_app_params().get('_api_route_active_downloads')}/terminate/{'{pid}'}")
@@ -139,7 +140,7 @@ async def terminate_active_download_request(response: Response, pid, token=None)
         response.status_code = 401
         return
 
-    return_status = process_utils.terminate_active_download(unquote(pid))
+    return_status = __pu.terminate_active_download(unquote(pid))
 
     if return_status is None:
         response.status_code = 400
@@ -157,7 +158,7 @@ async def terminate_all_active_downloads_request(response: Response, token=None)
         response.status_code = 401
         return
 
-    return process_utils.terminate_all_active_downloads()
+    return __pu.terminate_all_active_downloads()
 
 
 uvicorn.run(app, host="0.0.0.0", port=__cm.get_app_params().get('_listen_port'), log_config=None)
