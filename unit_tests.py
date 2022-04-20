@@ -80,6 +80,10 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(1, len(dm.get_presets_objects(['HD', '4K'])))
 
         dm.flush_presets()
+        dm.get_presets_objects(['HD', 'HD'])
+        self.assertEqual(1, dm.presets_found)
+
+        dm.flush_presets()
         dm.get_presets_objects(['HD', '4K'])
         self.assertEqual(1, dm.presets_not_found)
 

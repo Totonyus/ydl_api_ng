@@ -62,6 +62,9 @@ class DownloadManager:
             self.presets_display.append(self.__cm.sanitize_config_object_section(default_preset))
             return self.presets
 
+        # Remove duplicated presets
+        presets = list(dict.fromkeys(presets))
+
         for preset in presets:
             found_preset = self.__cm.get_preset_params(preset)
 
