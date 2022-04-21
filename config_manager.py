@@ -6,6 +6,18 @@ import logging.handlers as handlers
 
 
 class SectionConfig:
+    __defaults = {
+        '_api_route_download': '/download',
+        '_api_route_extract_info': '/extract_info',
+        '_api_route_info': '/info',
+        '_api_route_active_downloads': '/active_downloads',
+        '_enable_users_management': False,
+        '_log_level': 20,
+        '_log_backups': 7,
+        '_listen_port': 80,
+        '_listen_ip': '0.0.0.0'
+    }
+
     def append(self, key, item):
         self.__dict__[key] = item
 
@@ -13,6 +25,8 @@ class SectionConfig:
         try:
             return self.__dict__[key]
         except KeyError:
+            if self.__defaults is not None:
+                return self.__defaults.get(key)
             return None
 
     def delete(self, key):
