@@ -161,4 +161,4 @@ async def terminate_all_active_downloads_request(response: Response, token=None)
     return __pu.terminate_all_active_downloads()
 
 
-uvicorn.run(app, host="0.0.0.0", port=__cm.get_app_params().get('_listen_port'), log_config=None)
+uvicorn.run(app, host=__cm.get_app_params().get('_listen_ip'), port=__cm.get_app_params().get('_listen_port'), log_config=None)
