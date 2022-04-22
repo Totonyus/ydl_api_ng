@@ -39,6 +39,7 @@ class TestConfig(unittest.TestCase):
 
     def test_app(self):
         self.assertEqual('/download', self.config_manager.get_app_params().get('_api_route_download'))
+        self.assertTrue(self.config_manager.get_app_params().get('_unit_test'))
         self.assertIsNotNone(self.config_manager.get_app_params().get('_enable_users_management'))
 
     def test_user(self):

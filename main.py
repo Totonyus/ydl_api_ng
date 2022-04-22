@@ -1,9 +1,8 @@
-import logging
 from urllib.parse import unquote
 
 import uvicorn
 import yt_dlp.version
-from fastapi import BackgroundTasks, FastAPI, Response
+from fastapi import BackgroundTasks, FastAPI, Response, Body
 
 import config_manager
 import download_manager
@@ -38,6 +37,8 @@ async def info_request(response: Response, token=None):
             'preset_config': __cm.sanitize_config_object(__cm.get_all_preset_params()),
             'site_config': __cm.sanitize_config_object(__cm.get_all_sites_params()),
             'auth_config': __cm.sanitize_config_object(__cm.get_all_auth_params()),
+            'location_config': __cm.sanitize_config_object(__cm.get_all_locations_params()),
+            'template_config': __cm.sanitize_config_object(__cm.get_all_templates_params()),
         }
     }
 
@@ -62,41 +63,34 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
 
     if param_url == '':
         response.status_code = 400
-        logging.getLogger('api').error('Url paramater is empty')
         return
 
-    # Some presets were not found
-    if dm.presets_not_found > 0:
-        response.status_code = 206
+    response.status_code = dm.get_api_status_code()
 
-    # Some downloads can't be checked (playlists)
-    if dm.downloads_cannot_be_checked > 0:
-        response.status_code = 202
-
-    # Some presets can't be downloaded
-    if dm.failed_checks > 0 and dm.passed_checks > 0:
-        response.status_code = 206
-
-    # No video can be downloaded
-    if dm.failed_checks == dm.downloads_can_be_checked and dm.downloads_cannot_be_checked == 0:
-        logging.getLogger('api').error(f'Not downloadable with presets : {param_presets} : {param_url}')
-        response.status_code = 400
-    else:
+    if response.status_code != 400:
         background_tasks.add_task(dm.process_downloads)
 
-    return {
-        'url': param_url,
-        'url_hostname': dm.site_hostname,
-        'no_preset_found': dm.no_preset_found,
-        'presets_found': dm.presets_found,
-        'presets_not_found': dm.presets_not_found,
-        'all_downloads_checked': dm.all_downloads_checked,
-        'passed_checks': dm.passed_checks,
-        'failed_checks': dm.failed_checks,
-        'downloads_can_be_checked': dm.downloads_can_be_checked,
-        'downloads_cannot_be_checked': dm.downloads_cannot_be_checked,
-        'downloads': dm.presets_display,
-    }
+    return dm.get_api_return_object()
+
+
+@app.post(__cm.get_app_params().get('_api_route_download'))
+async def download_request(response: Response, background_tasks: BackgroundTasks, url, body=Body(...), token=None):
+    param_url = unquote(url)
+    param_token = unquote(token) if token is not None else None
+
+    user = __cm.is_user_permitted_by_token(param_token)
+
+    if user is False:
+        response.status_code = 401
+        return
+
+    dm = download_manager.DownloadManager(__cm, param_url, None, param_token, body)
+    response.status_code = dm.get_api_status_code()
+
+    if response.status_code != 400:
+        background_tasks.add_task(dm.process_downloads)
+
+    return dm.get_api_return_object()
 
 
 ###

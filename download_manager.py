@@ -5,17 +5,17 @@ from urllib.parse import urlparse
 
 import yt_dlp as ydl
 
+import config_manager
 from params import progress_hooks, postprocessor_hooks, ydl_api_hooks
 
 
 class DownloadManager:
     __cm = None
 
-    def __init__(self, config_manager, url, presets, user_token):
-        logging.getLogger('download_manager').info(f'Init download - user_token: {user_token} - presets: {presets} - url :{url} ')
-
+    def __init__(self, config_manager, url, presets_string, user_token, post_body=None):
+        logging.getLogger('download_manager').info(f'Init download - user_token: {user_token} - presets: {presets_string} - url :{url} ')
+        self.presets_string = presets_string
         self.presets = []
-        self.presets_display = []
 
         self.all_downloads_checked = True
         self.no_preset_found = False
@@ -36,7 +36,12 @@ class DownloadManager:
         self.site_hostname = urlparse(url).hostname
         self.site = self.__cm.get_site_params(self.site_hostname)
         self.user = self.__cm.get_user_param_by_token(user_token)
-        self.get_presets_objects(presets)
+
+        if presets_string is not None or (presets_string is None and (post_body is not None and post_body.get('presets') is None)):
+            self.get_presets_objects(presets_string)
+        elif post_body is not None:
+            self.get_presets_from_post_request(post_body.get('presets'))
+
         self.simulate_all_downloads()
 
     def simulate_all_downloads(self):
@@ -52,6 +57,51 @@ class DownloadManager:
             preset.append('__is_video', self.is_video())
             preset.append('__is_playlist', self.is_from_playlist())
 
+    def transform_post_preset_as_object(self, preset):
+        temp_object = config_manager.SectionConfig()
+        if preset.get('_name') is not None:
+            temp_object.append('_name', preset.get('_name'))
+        else:
+            temp_object.append('_name', 'POST_REQUEST')
+
+        for key in preset:
+            temp_object.append(key, preset[key])
+
+        return temp_object
+
+    def get_presets_from_post_request(self, presets):
+        default_preset = self.get_preset_for_user(self.__cm.get_preset_params('DEFAULT'))
+        default_preset.append('_default', True)
+
+        if presets is None:
+            self.presets.append(default_preset)
+            return self.presets
+
+        config_objects_mapping = {'_preset': self.__cm.get_preset_params,
+                                  '_template': self.__cm.get_template_params,
+                                  '_location': self.__cm.get_location_params,
+                                  '_auth': self.__cm.get_auth_params,
+                                  '_site': self.__cm.get_site_params,
+                                  '_user': None}
+
+        for preset in presets:
+            self.transform_post_preset_as_object(preset)
+
+            preset_object = self.transform_post_preset_as_object(preset)
+            for param in preset:
+                if param in config_objects_mapping:
+                    self.__cm.merge_configs_object(config_objects_mapping.get(param)(preset.get(param)), preset_object, override=False)
+
+            if preset.get('_ignore_default_preset') is not None and not preset.get('_ignore_default_preset'):
+                self.__cm.merge_configs_object(config_objects_mapping.get('_preset')('DEFAULT'), preset_object, override=False)
+
+            self.__cm.merge_configs_object(self.user, preset_object, override=True)
+
+            if preset.get('_ignore_site_config') is not None and not preset.get('_ignore_site_config'):
+                self.__cm.merge_configs_object(self.site, preset_object, override=True)
+
+            self.presets.append(preset_object)
+
     # Retrieve parameters objects from api string presets
     def get_presets_objects(self, presets):
         default_preset = self.get_preset_for_user(self.__cm.get_preset_params('DEFAULT'))
@@ -59,7 +109,6 @@ class DownloadManager:
 
         if presets is None:
             self.presets.append(default_preset)
-            self.presets_display.append(self.__cm.sanitize_config_object_section(default_preset))
             return self.presets
 
         # Remove duplicated presets
@@ -71,7 +120,6 @@ class DownloadManager:
             if found_preset is not None:
                 found_preset.append('_default', False)
                 self.presets.append(self.get_preset_for_user(found_preset))
-                self.presets_display.append(self.__cm.sanitize_config_object_section(found_preset))
 
                 self.presets_found = self.presets_found + 1
             else:
@@ -80,7 +128,6 @@ class DownloadManager:
         # Add default preset if not valid preset found
         if len(self.presets) == 0:
             self.presets.append(self.get_preset_for_user(default_preset))
-            self.presets_display.append(self.__cm.sanitize_config_object_section(default_preset))
             self.no_preset_found = True
 
         return self.presets
@@ -165,11 +212,15 @@ class DownloadManager:
         ydl_opts = copy.deepcopy(preset)
         ydl_opts.append('simulate', True)
         ydl_opts.append('logger', logging.getLogger('youtube-dlp'))
+        ydl_opts.append('ignoreerrors', False)
 
-        ydl_opts = ydl_opts.get_all()
-
-        with ydl.YoutubeDL(ydl_opts) as dl:
-            simulation_result = dl.download([self.url]) == 0
+        try:
+            with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
+                simulation_result = dl.download([self.url]) == 0
+                preset.append('__check_exception_message', None)
+        except ydl.utils.DownloadError as error:
+            simulation_result = False
+            preset.append('__check_exception_message', str(error))
 
         preset.append('__can_be_checked', True)
         preset.append('__check_result', simulation_result)
@@ -206,10 +257,15 @@ class DownloadManager:
 
         ydl_api_hooks.pre_download_handler(ydl_opts, self, self.__cm)
 
-        with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
-            download_result = dl.download([self.url]) == 0
+        try:
+            with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
+                download_result = dl.download([self.url]) == 0
+            preset.append('__download_exception_message', None)
+        except ydl.utils.DownloadError as error:
+            download_result = False
+            preset.append('__download_exception_message', str(error))
 
-            ydl_api_hooks.post_download_handler(ydl_opts, self, self.__cm, self.downloaded_files)
+        ydl_api_hooks.post_download_handler(ydl_opts, self, self.__cm, self.downloaded_files)
 
         return download_result
 
@@ -245,3 +301,36 @@ class DownloadManager:
             informations = dl.extract_info(url, download=False)
 
         return informations
+
+    def get_api_status_code(self):
+        # Some presets were not found
+        if self.presets_not_found > 0 or (self.failed_checks > 0 and self.passed_checks > 0):
+            return 206
+
+        # Some downloads can't be checked (playlists)
+        if self.downloads_cannot_be_checked > 0:
+            return 202
+
+        # No video can be downloaded
+        if self.failed_checks == self.downloads_can_be_checked and self.downloads_cannot_be_checked == 0:
+            logging.getLogger('api').error(f'Not downloadable with presets : {self.presets_string} : {self.url}')
+            return 400
+
+    def get_api_return_object(self):
+        presets_display = []
+        for preset in self.presets:
+            presets_display.append(self.__cm.sanitize_config_object_section(preset).get_all())
+
+        return {
+            'url': self.url,
+            'url_hostname': self.site_hostname,
+            'no_preset_found': self.no_preset_found,
+            'presets_found': self.presets_found,
+            'presets_not_found': self.presets_not_found,
+            'all_downloads_checked': self.all_downloads_checked,
+            'passed_checks': self.passed_checks,
+            'failed_checks': self.failed_checks,
+            'downloads_can_be_checked': self.downloads_can_be_checked,
+            'downloads_cannot_be_checked': self.downloads_cannot_be_checked,
+            'downloads': presets_display,
+        }

@@ -7,6 +7,7 @@ import logging.handlers as handlers
 
 class SectionConfig:
     __defaults = {
+        '_unit_test': True,
         '_api_route_download': '/download',
         '_api_route_extract_info': '/extract_info',
         '_api_route_info': '/info',
@@ -75,10 +76,15 @@ class ConfigManager:
         self.__user_config = configparser.ConfigParser(interpolation=None)
         self.__app_config = configparser.ConfigParser(interpolation=None)
         self.__auth_config = configparser.ConfigParser(interpolation=None)
+        self.__location_config = configparser.ConfigParser(interpolation=None)
+        self.__template_config = configparser.ConfigParser(interpolation=None)
         self.__presets_config_object = GlobalConfig()
         self.__site_config_object = GlobalConfig()
         self.__user_config_object = GlobalConfig()
         self.__app_config_object = GlobalConfig()
+        self.__auth_config_object = GlobalConfig()
+        self.__template_config_object = GlobalConfig()
+        self.__location_config_object = GlobalConfig()
         self.__auth_config_object = GlobalConfig()
         self.__keys_metadata = {}
 
@@ -112,6 +118,10 @@ class ConfigManager:
                 self.__site_config[section] = self.__expand_config(section)
             elif section.startswith('auth:'):
                 self.__auth_config[section] = self.__expand_config(section)
+            elif section.startswith('location:'):
+                self.__location_config[section] = self.__expand_config(section)
+            elif section.startswith('template:'):
+                self.__template_config[section] = self.__expand_config(section)
             elif section == 'app':
                 self.__app_config[section] = self.__config[section]
 
@@ -154,13 +164,14 @@ class ConfigManager:
 
     # Done on premise directly with objects, override values
     @staticmethod
-    def merge_configs_object(user_object, preset_object):
+    def merge_configs_object(user_object, preset_object, override=True):
         if user_object is not None:
             logging.getLogger('config_manager').debug(f'Merging preset {preset_object.get("_name")} in user {user_object.get("_name")}')
 
             for option in user_object.get_all():
                 if option != '_name':
-                    preset_object.append(option, user_object.get(option))
+                    if override or (not override and preset_object.get(option) is None):
+                        preset_object.append(option, user_object.get(option))
 
         return preset_object
 
@@ -184,6 +195,8 @@ class ConfigManager:
         self.__populate_config_object(self.__user_config, self.__user_config_object)
         self.__populate_config_object(self.__site_config, self.__site_config_object)
         self.__populate_config_object(self.__auth_config, self.__auth_config_object)
+        self.__populate_config_object(self.__location_config, self.__location_config_object)
+        self.__populate_config_object(self.__template_config, self.__template_config_object)
 
     # Set python objects with the right type of object
     def __populate_config_object(self, config_set, config_set_object):
@@ -253,6 +266,18 @@ class ConfigManager:
 
     def get_auth_params(self, preset_name):
         return self.__auth_config_object.get(preset_name)
+
+    def get_all_locations_params(self):
+        return self.__location_config_object
+
+    def get_location_params(self, location_name):
+        return self.__location_config_object.get(location_name)
+
+    def get_all_templates_params(self):
+        return self.__template_config_object
+
+    def get_template_params(self, template_name):
+        return self.__template_config_object.get(template_name)
 
     def get_keys_meta(self):
         return self.__keys_metadata
