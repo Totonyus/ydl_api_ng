@@ -7,16 +7,17 @@ import logging.handlers as handlers
 
 class SectionConfig:
     __defaults = {
-        '_unit_test': True,
+        '_allow_dangerous_post_requests': False,
+        '_api_route_active_downloads': '/active_downloads',
         '_api_route_download': '/download',
         '_api_route_extract_info': '/extract_info',
         '_api_route_info': '/info',
-        '_api_route_active_downloads': '/active_downloads',
         '_enable_users_management': False,
-        '_log_level': 20,
-        '_log_backups': 7,
+        '_listen_ip': '0.0.0.0',
         '_listen_port': 80,
-        '_listen_ip': '0.0.0.0'
+        '_log_backups': 7,
+        '_log_level': 20,
+        '_unit_test': True,
     }
 
     def append(self, key, item):

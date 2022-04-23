@@ -88,12 +88,19 @@ class DownloadManager:
             self.transform_post_preset_as_object(preset)
 
             preset_object = self.transform_post_preset_as_object(preset)
+
+            if not self.__cm.get_app_params().get('_allow_dangerous_post_requests'):
+                preset_object.append('paths', {'home': './downloads/'})  # extra security if default configuration doesn't have paths value
+                preset_object.delete('outtmpl') # No problem if no value, will juste use default youtube-dlp name template
+                self.__cm.merge_configs_object(self.__cm.get_location_params('DEFAULT'), preset_object, override=True)
+                self.__cm.merge_configs_object(self.__cm.get_template_params('DEFAULT'), preset_object, override=True)
+
             for param in preset:
                 if param in config_objects_mapping:
                     self.__cm.merge_configs_object(config_objects_mapping.get(param)(preset.get(param)), preset_object, override=False)
 
             if preset.get('_ignore_default_preset') is not None and not preset.get('_ignore_default_preset'):
-                self.__cm.merge_configs_object(config_objects_mapping.get('_preset')('DEFAULT'), preset_object, override=False)
+                self.__cm.merge_configs_object(self.__cm.get_preset_params('DEFAULT'), preset_object, override=False)
 
             self.__cm.merge_configs_object(self.user, preset_object, override=True)
 
@@ -212,7 +219,6 @@ class DownloadManager:
         ydl_opts = copy.deepcopy(preset)
         ydl_opts.append('simulate', True)
         ydl_opts.append('logger', logging.getLogger('youtube-dlp'))
-        ydl_opts.append('ignoreerrors', False)
 
         try:
             with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
@@ -257,8 +263,13 @@ class DownloadManager:
 
         ydl_api_hooks.pre_download_handler(ydl_opts, self, self.__cm)
 
-        with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
-            download_result = dl.download([self.url]) == 0
+        try:
+            with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
+                download_result = dl.download([self.url]) == 0
+                preset.append('__download_exception_message', None)
+        except ydl.utils.DownloadError as error:
+            download_result = False
+            preset.append('__download_exception_message', str(error))
 
         ydl_api_hooks.post_download_handler(ydl_opts, self, self.__cm, self.downloaded_files)
 
