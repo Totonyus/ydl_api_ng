@@ -141,6 +141,7 @@ You now should have access to download options on every site. You can also modif
 ## Files you'll probably want to consult or customize
 
 These files are generated in `params/`
+
 * `params.ini` all the default parameters of the application, everything is set up to offer you a working application
   out of the box
 * `params_metadata.ini` describe how each parameter in `params.ini` should be interpreted
@@ -154,6 +155,7 @@ These files are generated in `params/`
 * `hooks_requirements` the extra requirements you need to fully use the hooks
 
 There files are in the base folder :
+
 * `docker-compose.yml` to configure easily the container
 * `ydl_api_ng.service` a systemd service file to launch this application as a daemon
 
@@ -236,6 +238,44 @@ GET http://localhost:5011/download?url=https://www.youtube.com/watch?v=Kf1XttuuI
 GET http://localhost:5011/download?url=https://www.youtube.com/watch?v=wV4wepiucf4&token=dad_super_password
 ```
 
+## Post request
+
+You can download the video you want by providing the parameters directly in a post request
+
+```shell
+POST http://localhost:5011/download?url=https://www.youtube.com/watch?v=wV4wepiucf4&token=dad_super_password
+Content-Type: application/json
+
+{
+  "presets": [
+    {
+      "_ignore_site_config": false, # (optional, default : false) if true, will not load parameters from site detection
+      "_ignore_default_preset": false, # (optional, default : false) if true, will not expand default preset
+      # You can expand parameters
+      "_preset" : "AUDIO"
+      "_location" : "AUDIO"
+      # just put below your standard youtube-dlp options
+      "format" : "best[height=360]/bestvideo[height=360]+bestaudio/best"
+    }
+  ]
+}
+```
+
+Reminder if you want to expand a preset : all presets automatically expand the `DEFAULT` preset. Basically, expand a
+preset with `_preset` means `_ignore_default_preset`can't be true.
+
+### Important notice
+
+As the post request can be dangerous by allowing to write anywhere on your system
+(if not running in docker) a parameter `_allow_dangerous_post_requests` (`false` by default) has been added.
+
+For each preset if `_allow_dangerous_post_requests` is false :
+
+- `paths` will be deleted and replaced by the `default` location parameter
+- `outtmpl` will be deleted and replace by the `default` template parameter
+- You still can select a `paths` or a `outtmpl` by using expansion system 
+- You can only use `paths` and `outtmpl` present in `params.ini`
+
 ## Video information
 
 Returns the standard youtube-dlp extract info object.
@@ -270,4 +310,5 @@ GET http://localhost:5011/active_downloads/terminate/{pid}
 # Contributing
 
 - Found a bug ? Need an improvement ? Need help ? Open a ticket !
-- Found a typo in documentation ? That's normal ! I'm French. Don't hesitate to contact me if you don't understand a sentence or if there are mistakes.
+- Found a typo in documentation ? That's normal ! I'm French. Don't hesitate to contact me if you don't understand a
+  sentence or if there are mistakes.

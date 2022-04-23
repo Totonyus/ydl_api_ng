@@ -37,7 +37,7 @@ class DownloadManager:
         self.site = self.__cm.get_site_params(self.site_hostname)
         self.user = self.__cm.get_user_param_by_token(user_token)
 
-        if post_body is not None and post_body.get('presets') is not None:
+        if post_body is not None and post_body.get('presets') is not None and len(post_body.get('presets')) > 0:
             self.get_presets_from_post_request(post_body.get('presets'))
         else:
             self.get_presets_objects(presets_string)
@@ -90,22 +90,27 @@ class DownloadManager:
             preset_object = self.transform_post_preset_as_object(preset)
 
             if not self.__cm.get_app_params().get('_allow_dangerous_post_requests'):
-                preset_object.append('paths', {'home': './downloads/'})  # extra security if default configuration doesn't have paths value
-                preset_object.delete('outtmpl') # No problem if no value, will juste use default youtube-dlp name template
-                self.__cm.merge_configs_object(self.__cm.get_location_params('DEFAULT'), preset_object, override=True)
-                self.__cm.merge_configs_object(self.__cm.get_template_params('DEFAULT'), preset_object, override=True)
+                preset_object.delete('paths')
+                preset_object.delete('outtmpl')
 
             for param in preset:
                 if param in config_objects_mapping:
                     self.__cm.merge_configs_object(config_objects_mapping.get(param)(preset.get(param)), preset_object, override=False)
 
-            if preset.get('_ignore_default_preset') is not None and not preset.get('_ignore_default_preset'):
+            if preset_object.get('_ignore_default_preset') is None or (preset_object.get('_ignore_default_preset') is not None and not preset_object.get('_ignore_default_preset')):
                 self.__cm.merge_configs_object(self.__cm.get_preset_params('DEFAULT'), preset_object, override=False)
 
             self.__cm.merge_configs_object(self.user, preset_object, override=True)
 
-            if preset.get('_ignore_site_config') is not None and not preset.get('_ignore_site_config'):
+            if preset_object.get('_ignore_site_config') is None or (preset_object.get('_ignore_site_config') is not None and not preset_object.get('_ignore_site_config')):
                 self.__cm.merge_configs_object(self.site, preset_object, override=True)
+
+            if preset_object.get('paths') is None:
+                preset_object.append('paths', {'home': './downloads'})
+                self.__cm.merge_configs_object(self.__cm.get_location_params('DEFAULT'), preset_object, override=True)
+
+            if preset_object.get('outtmpl') is None:
+                self.__cm.merge_configs_object(self.__cm.get_template_params('DEFAULT'), preset_object, override=True)
 
             self.presets.append(preset_object)
 
