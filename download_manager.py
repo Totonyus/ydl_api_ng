@@ -205,12 +205,6 @@ class DownloadManager:
             preset.append('__can_be_checked', False)
             preset.append('__check_result', None)
 
-            when_playlist_options = preset.get('_when_playlist')
-
-            if when_playlist_options is not None:
-                for option in when_playlist_options:
-                    preset.append(option, when_playlist_options.get(option))
-
             return None
 
         self.downloads_can_be_checked = self.downloads_can_be_checked + 1
@@ -263,13 +257,8 @@ class DownloadManager:
 
         ydl_api_hooks.pre_download_handler(ydl_opts, self, self.__cm)
 
-        try:
-            with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
-                download_result = dl.download([self.url]) == 0
-            ydl_opts.append('__download_exception_message', None)
-        except ydl.utils.DownloadError as error:
-            download_result = False
-            ydl_opts.append('__download_exception_message', str(error))
+        with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
+            download_result = dl.download([self.url]) == 0
 
         ydl_api_hooks.post_download_handler(ydl_opts, self, self.__cm, self.downloaded_files)
 
@@ -300,7 +289,8 @@ class DownloadManager:
     @staticmethod
     def extract_info(url):
         ydl_opts = {
-            'ignoreerrors': True
+            'ignoreerrors': True,
+            'quiet': True
         }
 
         with ydl.YoutubeDL(ydl_opts) as dl:
