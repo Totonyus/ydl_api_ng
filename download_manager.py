@@ -37,10 +37,10 @@ class DownloadManager:
         self.site = self.__cm.get_site_params(self.site_hostname)
         self.user = self.__cm.get_user_param_by_token(user_token)
 
-        if presets_string is not None or (presets_string is None and (post_body is not None and post_body.get('presets') is None)):
-            self.get_presets_objects(presets_string)
-        elif post_body is not None:
+        if post_body is not None and post_body.get('presets') is not None:
             self.get_presets_from_post_request(post_body.get('presets'))
+        else:
+            self.get_presets_objects(presets_string)
 
         self.simulate_all_downloads()
 
@@ -205,6 +205,12 @@ class DownloadManager:
             preset.append('__can_be_checked', False)
             preset.append('__check_result', None)
 
+            when_playlist_options = preset.get('_when_playlist')
+
+            if when_playlist_options is not None:
+                for option in when_playlist_options:
+                    preset.append(option, when_playlist_options.get(option))
+
             return None
 
         self.downloads_can_be_checked = self.downloads_can_be_checked + 1
@@ -260,10 +266,10 @@ class DownloadManager:
         try:
             with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
                 download_result = dl.download([self.url]) == 0
-            preset.append('__download_exception_message', None)
+            ydl_opts.append('__download_exception_message', None)
         except ydl.utils.DownloadError as error:
             download_result = False
-            preset.append('__download_exception_message', str(error))
+            ydl_opts.append('__download_exception_message', str(error))
 
         ydl_api_hooks.post_download_handler(ydl_opts, self, self.__cm, self.downloaded_files)
 
