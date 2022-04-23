@@ -183,8 +183,11 @@ class ConfigManager:
         params_meta_parser.read('params/params_metadata.ini')
 
         for key, value in params_meta_parser['meta'].items():
+            # Retrocompatibility
+            separator = "," if value.find(',') != -1 else "\n"
+
             if value != "":
-                splitted = value.split(',')
+                splitted = value.split(separator)
             else:
                 splitted = []
             self.__keys_metadata[key] = splitted
