@@ -19,8 +19,8 @@ jobs:
       uses: peter-evans/dockerhub-description@v3.0.0
       with:
         # Docker Hub username
-        username: test
+        username: ${{ secrets.DOCKER_HUB_LOGIN }}
         # Docker Hub password
-        password: test
+        password: ${{ secrets.DOCKER_HUB_PASSWORD }}
         # Docker Hub repository in the format `<namespace>/<name>` Default: `github.repository`
         repository: totonyus/ydl_api_ng
