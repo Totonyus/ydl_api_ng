@@ -10,6 +10,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+    - name: List files in the repository
+      run: |
+        ls ${{ github.workspace }}
     - name: Docker Hub Description
       # uses: peter-evans/dockerhub-description@836d7e6aa8f6f32dce26f5a1dd46d3dc24997eae
       uses: peter-evans/dockerhub-description@v3.0.0
