@@ -20,6 +20,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
+    - name: Get current time
+      uses: josStorer/get-current-time@v2
+      id: current-time
+      with:
+        format: readableTime
+
     - name: Log in to Docker Hub
       uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
       with:
@@ -32,6 +38,10 @@ jobs:
         context: ${{ github.workspace }}
         push: true
         tags: totonyus/ydl_api_ng
+        build-args:
+          - GIT_BRANCH=${{ GITHUB_REF }}
+          - GIT_REVISION=${{ GITHUB_SHA }}
+          - DATE=${{ steps.current-time.outputs.time }}
 
     - name: Docker Hub Description
       uses: peter-evans/dockerhub-description@v3.0.0

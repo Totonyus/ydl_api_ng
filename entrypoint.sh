@@ -1,5 +1,9 @@
 #!/bin/bash
 
+echo ~~~ ydl_api_ng
+echo ~~~ Revision : $GIT_BRANCH - $GIT_REVISION
+echo ~~~ Docker image generated : $DATE
+
 mkdir -p /app/logs /app/downloads /app/params
 cp -n /app/setup/* /app/params/
 
