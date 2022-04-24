@@ -2,13 +2,15 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   unit_tests:
-    uses: ${{ github.workspace }}/.github/workflows/unit_tests.yml
+    uses: ${{ github.workspace }}/.github/workflows/unit_tests.yml@main
 
   generate_docker_image:
     runs-on: ubuntu-latest
