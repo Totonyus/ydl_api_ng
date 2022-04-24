@@ -10,7 +10,7 @@ on:
 
 jobs:
   unit_tests:
-    uses: ${{ github.workspace }}/.github/workflows/unit_tests.yml@main
+    uses: ./.github/workflows/unit_tests.yml
 
   generate_docker_image:
     runs-on: ubuntu-latest
