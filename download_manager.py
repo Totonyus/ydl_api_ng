@@ -208,6 +208,12 @@ class DownloadManager:
             preset.append('__can_be_checked', False)
             preset.append('__check_result', None)
 
+            when_playlist_options = preset.get('_when_playlist')
+
+            if when_playlist_options is not None:
+                for option in when_playlist_options:
+                    preset.append(option, when_playlist_options.get(option))
+
             return None
 
         self.downloads_can_be_checked = self.downloads_can_be_checked + 1

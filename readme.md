@@ -272,7 +272,7 @@ As the post request can be dangerous by allowing to write anywhere on your syste
 For each preset if `_allow_dangerous_post_requests` is false :
 
 - `paths` will be deleted and replaced by the `default` location parameter
-- `outtmpl` will be deleted and replace by the `default` template parameter
+- `outtmpl` will be deleted and replaced by the `default` template parameter
 - You still can select a `paths` or a `outtmpl` by using expansion system 
 - You can only use `paths` and `outtmpl` present in `params.ini`
 
