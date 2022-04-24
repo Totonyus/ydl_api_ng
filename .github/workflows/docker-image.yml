@@ -20,6 +20,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
+    - id: commit
+      uses: pr-mpt/actions-commit-hash@v1
+
+    - name: Extract branch name
+      shell: bash
+      run: echo "##[set-output name=BRANCH_NAME;]$(echo ${GITHUB_REF#refs/heads/})"
+      id: extract_branch
+
     - name: Get current time
       uses: josStorer/get-current-time@v2
       id: current-time
@@ -39,8 +47,8 @@ jobs:
         push: true
         tags: totonyus/ydl_api_ng
         build-args: |
-          GIT_BRANCH=${{ GITHUB_REF }}
-          GIT_REVISION=${{ GITHUB_SHA }}
+          GIT_BRANCH=$BRANCH_NAME
+          GIT_REVISION=${{ steps.commit.outputs.hash }}
           DATE=${{ steps.current-time.outputs.time }}
 
     - name: Docker Hub Description
