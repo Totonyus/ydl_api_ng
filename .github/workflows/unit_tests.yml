@@ -2,26 +2,26 @@ name: Run Python Tests
 
 on:
   push:
-    branches: [ * ]
+    branches: *
   pull_request:
-    branches: [ * ]
+    branches: *
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+    - uses: actions/checkout@v3
 
-      - name: Install Python 3
-        uses: actions/setup-python@v1
-        with:
-          python-version: 3.6
+    - name: Install Python 3
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
 
-      - name: Install dependencies
-        run: |
-          python -m pip3 install --upgrade pip3
-          pip3 install -r ${{ github.workspace }}/pip_requirements
-          pip3 install -r pytest
+    - name: Install dependencies
+      run: |
+        python -m pip3 install --upgrade pip3
+        pip3 install -r ${{ github.workspace }}/pip_requirements
+        pip3 install -r pytest
 
-      - name: Run tests with pytest
-        run: python3 -m pytest ${{ github.workspace }}/unit_tests.py
+    - name: Run tests with pytest
+      run: python3 -m pytest ${{ github.workspace }}/unit_tests.py
