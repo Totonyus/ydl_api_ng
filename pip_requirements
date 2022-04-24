@@ -3,3 +3,4 @@ yt-dlp
 uvicorn
 psutil
 humanize
+requests
