@@ -38,10 +38,10 @@ jobs:
         context: ${{ github.workspace }}
         push: true
         tags: totonyus/ydl_api_ng
-        build-args:
-          - GIT_BRANCH=${{ GITHUB_REF }}
-          - GIT_REVISION=${{ GITHUB_SHA }}
-          - DATE=${{ steps.current-time.outputs.time }}
+        build-args: |
+          GIT_BRANCH=${{ GITHUB_REF }}
+          GIT_REVISION=${{ GITHUB_SHA }}
+          DATE=${{ steps.current-time.outputs.time }}
 
     - name: Docker Hub Description
       uses: peter-evans/dockerhub-description@v3.0.0
