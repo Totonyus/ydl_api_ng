@@ -7,6 +7,17 @@ import config_manager
 import download_manager
 
 
+class TestActualParametersFile(unittest.TestCase):
+    config_manager = config_manager.ConfigManager()
+
+    def test_app(self):
+        self.assertEqual(80, self.config_manager.get_app_params().get('_listen_port'))
+        self.assertIsNot(True, self.config_manager.get_app_params().get('_dev_mode'))
+        self.assertFalse(self.config_manager.get_app_params().get('_enable_users_management'))
+        self.assertEqual('0.0.0.0', self.config_manager.get_app_params().get('_listen_ip'))
+        self.assertFalse(self.config_manager.get_app_params().get('_allow_dangerous_post_requests'))
+
+
 class TestConfig(unittest.TestCase):
     config_manager = config_manager.ConfigManager('params/params.sample.ini')
 

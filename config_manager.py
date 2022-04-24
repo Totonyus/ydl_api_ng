@@ -3,6 +3,7 @@ import copy
 import json
 import logging
 import logging.handlers as handlers
+import os
 
 
 class SectionConfig:
@@ -92,6 +93,8 @@ class ConfigManager:
         self.__config.read(params_file if params_file is not None else 'params/params.ini')
 
         self.__init_logger(self.__config['app'].getint('_log_level'), self.__config['app'].getint('_log_backups'))
+
+        logging.info(f"Container build date : {os.environ.get('DATE')}, git revision : {os.environ.get('GIT_BRANCH')} - {os.environ.get('GIT_REVISION')}")
 
         self.__dispatch_configs()
         self.__load_metadata()
