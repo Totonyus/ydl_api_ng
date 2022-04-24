@@ -114,29 +114,29 @@ class TestUtils(unittest.TestCase):
 
     def test_is_from_playlist(self):
         dm = download_manager.DownloadManager(self.config_manager, 'https://www.youtube.com/playlist?list=PL8Zccvo5Xlj53ESRIn2Q4lg2DvKIB92sj', None, None)
-        self.assertTrue(dm.is_from_playlist())
+        self.assertTrue(dm.check_if_from_playlist())
 
         dm = download_manager.DownloadManager(self.config_manager, 'https://www.youtube.com/watch?v=5UErWGjj95Y&list=PL8Zccvo5Xlj53ESRIn2Q4lg2DvKIB92sj&index=2', None, None)
-        self.assertTrue(dm.is_from_playlist())
+        self.assertTrue(dm.check_if_from_playlist())
 
         dm = download_manager.DownloadManager(self.config_manager, 'https://www.youtube.com/watch?v=5UErWGjj95Y', None, None)
-        self.assertFalse(dm.is_from_playlist())
+        self.assertFalse(dm.check_if_from_playlist())
 
         dm = download_manager.DownloadManager(self.config_manager, 'https://twitter.com/Totonyus/status/1471896525617909760', None, None)
-        self.assertIsNone(dm.is_from_playlist())
+        self.assertIsNone(dm.check_if_from_playlist())
 
     def test_is_video(self):
         dm = download_manager.DownloadManager(self.config_manager, 'https://www.youtube.com/playlist?list=PL8Zccvo5Xlj53ESRIn2Q4lg2DvKIB92sj', None, None)
-        self.assertFalse(dm.is_video())
+        self.assertFalse(dm.check_if_video())
 
         dm = download_manager.DownloadManager(self.config_manager, 'https://www.youtube.com/watch?v=5UErWGjj95Y&list=PL8Zccvo5Xlj53ESRIn2Q4lg2DvKIB92sj&index=2', None, None)
-        self.assertTrue(dm.is_video())
+        self.assertTrue(dm.check_if_video())
 
         dm = download_manager.DownloadManager(self.config_manager, 'https://www.youtube.com/watch?v=5UErWGjj95Y', None, None)
-        self.assertTrue(dm.is_video())
+        self.assertTrue(dm.check_if_video())
 
         dm = download_manager.DownloadManager(self.config_manager, 'https://twitter.com/Totonyus/status/1471896525617909760', None, None)
-        self.assertIsNone(dm.is_video())
+        self.assertIsNone(dm.check_if_video())
 
     def test_can_be_checked(self):
         default_preset = self.config_manager.get_preset_params('DEFAULT')

@@ -37,6 +37,12 @@ class DownloadManager:
         self.site = self.__cm.get_site_params(self.site_hostname)
         self.user = self.__cm.get_user_param_by_token(user_token)
 
+        is_from_playlist = self.check_if_from_playlist()
+        self.is_from_playlist = is_from_playlist if is_from_playlist is not None else False
+
+        is_video = self.check_if_video()
+        self.is_video = is_video if is_video is not None else False
+
         if post_body is not None and post_body.get('presets') is not None and len(post_body.get('presets')) > 0:
             self.get_presets_from_post_request(post_body.get('presets'))
         else:
@@ -54,8 +60,8 @@ class DownloadManager:
                 self.passed_checks = self.passed_checks + 1
                 logging.getLogger('download_manager').info(f'Checking url with preset {preset.get("_name")} => check passed')
 
-            preset.append('__is_video', self.is_video())
-            preset.append('__is_playlist', self.is_from_playlist())
+            preset.append('__is_video', self.is_video)
+            preset.append('__is_playlist', self.is_from_playlist)
 
     def transform_post_preset_as_object(self, preset):
         temp_object = config_manager.SectionConfig()
@@ -144,7 +150,7 @@ class DownloadManager:
 
         return self.presets
 
-    def is_from_playlist(self):
+    def check_if_from_playlist(self):
         if self.site is None or self.site.get('_playlist_indicators') is None:
             return None
 
@@ -154,7 +160,7 @@ class DownloadManager:
 
         return False
 
-    def is_video(self):
+    def check_if_video(self):
         if self.site is None or self.site.get('_video_indicators') is None:
             return None
 
@@ -168,27 +174,12 @@ class DownloadManager:
         return self.site
 
     # A playlist should not be cheched
-    # A video in a playlist should checked only if noplaylist = True
+    # A video in a playlist should be checked only if noplaylist = True
     def can_url_be_checked(self, preset):
         noplaylist_param = preset.get('noplaylist')
+        noplaylist_param = noplaylist_param if noplaylist_param is not None else False
 
-        if noplaylist_param is None:
-            noplaylist_param = False
-
-        is_from_playlist = self.is_from_playlist()
-        is_video = self.is_video()
-
-        return_value = True
-        if is_from_playlist is None and is_video is None:
-            return_value = True
-
-        if not noplaylist_param and is_from_playlist:
-            return_value = False
-
-        if noplaylist_param and is_from_playlist and not is_video:
-            return_value = False
-
-        return return_value
+        return not self.is_from_playlist or (noplaylist_param and self.is_video)
 
     def is_user_permitted(self, users_management=None):
         manage_user = self.__cm.get_app_params().get('_enable_users_management') if users_management is None else users_management
