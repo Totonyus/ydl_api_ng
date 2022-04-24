@@ -2,13 +2,9 @@ name: Run Python Tests
 
 on:
   push:
-    branches:
-      - '**'
     branches-ignore:
       - main
   pull_request:
-    branches:
-      - '**'
     branches-ignore:
       - main
 
