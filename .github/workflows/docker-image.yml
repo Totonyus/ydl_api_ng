@@ -1,0 +1,26 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:   
+    - name: Docker Hub Description
+      # You may pin to the exact commit or the version.
+      # uses: peter-evans/dockerhub-description@836d7e6aa8f6f32dce26f5a1dd46d3dc24997eae
+      uses: peter-evans/dockerhub-description@v3.0.0
+      with:
+        # Docker Hub username
+        username: test
+        # Docker Hub password
+        password: test
+        # Docker Hub repository in the format `<namespace>/<name>` Default: `github.repository`
+        repository: totonyus/ydl_api_ng
