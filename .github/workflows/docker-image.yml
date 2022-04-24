@@ -47,7 +47,7 @@ jobs:
         push: true
         tags: totonyus/ydl_api_ng
         build-args: |
-          GIT_BRANCH=${{ BRANCH_NAME }}
+          GIT_BRANCH=${{ extract_branch.outputs.BRANCH_NAME }}
           GIT_REVISION=${{ steps.commit.outputs.hash }}
           DATE=${{ steps.current-time.outputs.time }}
 
