@@ -30,7 +30,7 @@ jobs:
       with:
         context: ${{ github.workspace }}
         push: true
-#        tags: ${{ steps.meta.outputs.tags }}
+        tags: totonyus/ydl_api_ng
 #        labels: ${{ steps.meta.outputs.labels }}
 
     - name: Docker Hub Description
