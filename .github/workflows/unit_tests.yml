@@ -2,12 +2,12 @@ name: Run Python Tests
 
 on:
   push:
-    branches: '*'
+    branches: [ '*', !main ]
   pull_request:
-    branches: '*'
+    branches: [ '*', !main ]
 
 jobs:
-  build:
+  unit_tests:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3

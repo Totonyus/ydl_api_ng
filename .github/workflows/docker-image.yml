@@ -7,8 +7,12 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  unit_tests:
+    uses: ${{ github.workspace }}/.github/workflows/unit_tests.yml
+
+  generate_docker_image:
     runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -19,22 +23,14 @@ jobs:
         username: ${{ secrets.DOCKER_HUB_LOGIN }}
         password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
-#    - name: Extract metadata (tags, labels) for Docker
-#      id: meta
-#      uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
-#      with:
-#        images: registry.hub.docker.com/totonyus/ydl_api_ng
-
     - name: Build and push Docker image
       uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
       with:
         context: ${{ github.workspace }}
         push: true
         tags: totonyus/ydl_api_ng
-#        labels: ${{ steps.meta.outputs.labels }}
 
     - name: Docker Hub Description
-      # uses: peter-evans/dockerhub-description@836d7e6aa8f6f32dce26f5a1dd46d3dc24997eae
       uses: peter-evans/dockerhub-description@v3.0.0
       with:
         username: ${{ secrets.DOCKER_HUB_LOGIN }}
