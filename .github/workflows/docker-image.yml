@@ -17,4 +17,4 @@ jobs:
         username: ${{ secrets.DOCKER_HUB_LOGIN }}
         password: ${{ secrets.DOCKER_HUB_PASSWORD }}
         repository: totonyus/ydl_api_ng
-        readme-filepath: ${{ github.workspace }}/README.md
+        readme-filepath: ${{ github.workspace }}/readme.md
