@@ -24,3 +24,4 @@ jobs:
         password: ${{ secrets.DOCKER_HUB_PASSWORD }}
         # Docker Hub repository in the format `<namespace>/<name>` Default: `github.repository`
         repository: totonyus/ydl_api_ng
+        readme-filepath: /workspace/README.md
