@@ -25,8 +25,8 @@ jobs:
 
     - name: Extract branch name
       shell: bash
-      run: echo "##[set-output name=BRANCH_NAME;]$(echo ${GITHUB_REF#refs/heads/})"
       id: extract_branch
+      run: echo ::set-output name=BRANCH_NAME::${GITHUB_REF#refs/*/}
 
     - name: Get current time
       uses: josStorer/get-current-time@v2
