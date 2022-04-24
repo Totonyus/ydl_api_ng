@@ -268,10 +268,10 @@ class DownloadManager:
         try:
             with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
                 download_result = dl.download([self.url]) == 0
-                preset.append('__download_exception_message', None)
+                ydl_opts.append('__download_exception_message', None)
         except ydl.utils.DownloadError as error:
             download_result = False
-            preset.append('__download_exception_message', str(error))
+            ydl_opts.append('__download_exception_message', str(error))
 
         ydl_api_hooks.post_download_handler(ydl_opts, self, self.__cm, self.downloaded_files)
 
