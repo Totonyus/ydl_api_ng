@@ -25,7 +25,7 @@ jobs:
 
     - name: Extract branch name
       shell: bash
-      run: echo "##[set-output name=BRANCH_NAME;]$(echo ${GITHUB_REF#refs/heads/})"
+      run: echo ::set-output name=BRANCH_NAME::${GITHUB_REF#refs/*/}
       id: extract_branch
 
     - name: Get current time
