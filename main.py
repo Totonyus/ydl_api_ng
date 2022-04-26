@@ -68,7 +68,10 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
     response.status_code = dm.get_api_status_code()
 
     if response.status_code != 400:
-        background_tasks.add_task(dm.process_downloads)
+        if __cm.get_app_params().get('_enable_redis'):
+            dm.process_downloads()
+        else:
+            background_tasks.add_task(dm.process_downloads)
 
     return dm.get_api_return_object()
 

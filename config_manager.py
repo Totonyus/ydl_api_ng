@@ -19,6 +19,7 @@ class SectionConfig:
         '_log_backups': 7,
         '_log_level': 20,
         '_unit_test': True,
+        '_enable_redis': True
     }
 
     def append(self, key, item):
@@ -92,7 +93,10 @@ class ConfigManager:
 
         self.__config.read(params_file if params_file is not None else 'params/params.ini')
 
-        self.__init_logger(self.__config['app'].getint('_log_level'), self.__config['app'].getint('_log_backups'))
+        self.log_level = self.__config['app'].getint('_log_level')
+        self.log_backups = self.__config['app'].getint('_log_backups')
+
+        self.init_logger()
 
         logging.info(f"Container build date : {os.environ.get('DATE')}, git revision : {os.environ.get('GIT_BRANCH')} - {os.environ.get('GIT_REVISION')}")
 
@@ -100,12 +104,11 @@ class ConfigManager:
         self.__load_metadata()
         self.__set_config_objects()
 
-    @staticmethod
-    def __init_logger(level=30, backup_count=7):
-        logging.basicConfig(level=level, format='[%(asctime)s][%(name)s][%(levelname)s] %(message)s', datefmt='%d-%m-%y %H:%M:%S')
+    def init_logger(self):
+        logging.basicConfig(level=self.log_level, format='[%(asctime)s][%(name)s][%(levelname)s] %(message)s', datefmt='%d-%m-%y %H:%M:%S')
 
-        time_handler = handlers.TimedRotatingFileHandler('logs/ydl_api_ng', when='midnight', interval=1, backupCount=backup_count)
-        time_handler.setLevel(level)
+        time_handler = handlers.TimedRotatingFileHandler('logs/ydl_api_ng', when='midnight', interval=1, backupCount=self.log_backups)
+        time_handler.setLevel(self.log_level)
         time_handler.setFormatter(logging.Formatter('[%(asctime)s][%(name)s][%(levelname)s] %(message)s', datefmt='%d-%m-%y %H:%M:%S'))
         logging.getLogger().addHandler(time_handler)
 

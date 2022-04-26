@@ -4,6 +4,8 @@ import logging
 from urllib.parse import urlparse
 
 import yt_dlp as ydl
+from redis import Redis
+from rq import Queue
 
 import config_manager
 from params import progress_hooks, postprocessor_hooks, ydl_api_hooks
@@ -42,6 +44,8 @@ class DownloadManager:
 
         is_video = self.check_if_video()
         self.is_video = is_video if is_video is not None else False
+
+        self.enable_redis = self.__cm.get_app_params().get('_enable_redis')
 
         if post_body is not None and post_body.get('presets') is not None and len(post_body.get('presets')) > 0:
             self.get_presets_from_post_request(post_body.get('presets'))
@@ -259,23 +263,32 @@ class DownloadManager:
 
         ydl_opts = copy.deepcopy(preset)
 
-        ydl_opts.append('progress_hooks', [functools.partial(progress_hooks.handler, ydl_opts, self, self.__cm), functools.partial(self.progress_hooks_proxy)])
-        ydl_opts.append('postprocessor_hooks', [functools.partial(postprocessor_hooks.handler, ydl_opts, self, self.__cm)])
+        ydl_opts.append('progress_hooks', [functools.partial(progress_hooks.handler, ydl_opts, self, self.get_current_config_manager()), functools.partial(self.progress_hooks_proxy)])
+        ydl_opts.append('postprocessor_hooks', [functools.partial(postprocessor_hooks.handler, ydl_opts, self, self.get_current_config_manager())])
         ydl_opts.append('logger', logging.getLogger('youtube-dlp'))
 
-        ydl_api_hooks.pre_download_handler(ydl_opts, self, self.__cm)
+        ydl_api_hooks.pre_download_handler(ydl_opts, self, self.get_current_config_manager())
+
+        if self.enable_redis:
+            queue = Queue('ydl_api_ng', connection=Redis())
+            redis_id = queue.enqueue(self.send_download_order, args=[ydl_opts, True], job_timeout=-1).id
+            preset.append('_redis_id', redis_id)
+        else:
+            preset.append('_redis_id', None)
+            self.send_download_order(ydl_opts)
+
+    def send_download_order(self, ydl_opts):
+        if self.enable_redis:
+            self.get_current_config_manager().init_logger()
 
         try:
             with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
-                download_result = dl.download([self.url]) == 0
+                dl.download([self.url])
                 ydl_opts.append('__download_exception_message', None)
         except ydl.utils.DownloadError as error:
-            download_result = False
             ydl_opts.append('__download_exception_message', str(error))
 
-        ydl_api_hooks.post_download_handler(ydl_opts, self, self.__cm, self.downloaded_files)
-
-        return download_result
+        ydl_api_hooks.post_download_handler(ydl_opts, self, self.get_current_config_manager(), self.downloaded_files)
 
     def process_downloads(self):
         for preset in self.presets:
@@ -343,3 +356,6 @@ class DownloadManager:
             'downloads_cannot_be_checked': self.downloads_cannot_be_checked,
             'downloads': presets_display,
         }
+
+    def get_current_config_manager(self):
+        return self.__cm

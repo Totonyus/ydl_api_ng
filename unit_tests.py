@@ -16,6 +16,7 @@ class TestActualParametersFile(unittest.TestCase):
         self.assertFalse(self.config_manager.get_app_params().get('_enable_users_management'))
         self.assertEqual('0.0.0.0', self.config_manager.get_app_params().get('_listen_ip'))
         self.assertFalse(self.config_manager.get_app_params().get('_allow_dangerous_post_requests'))
+        self.assertTrue(self.config_manager.get_app_params().get('_enable_redis'))
 
 
 class TestConfig(unittest.TestCase):
