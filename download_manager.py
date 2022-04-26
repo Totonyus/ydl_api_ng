@@ -271,13 +271,13 @@ class DownloadManager:
 
         if self.enable_redis:
             queue = Queue('ydl_api_ng', connection=Redis())
-            redis_id = queue.enqueue(self.send_download_order, args=[ydl_opts, True], job_timeout=-1).id
+            redis_id = queue.enqueue(self.send_download_order, args=[ydl_opts, self], job_timeout=-1).id
             preset.append('_redis_id', redis_id)
         else:
             preset.append('_redis_id', None)
-            self.send_download_order(ydl_opts)
+            self.send_download_order(ydl_opts, self)
 
-    def send_download_order(self, ydl_opts):
+    def send_download_order(self, ydl_opts, dm):
         if self.enable_redis:
             self.get_current_config_manager().init_logger()
 
