@@ -289,9 +289,6 @@ class DownloadManager:
             self.send_download_order(ydl_opts, self)
 
     def send_download_order(self, ydl_opts, dm):
-        if self.enable_redis is not None and self.enable_redis is True:
-            self.get_current_config_manager().init_logger('workers')
-
         try:
             with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
                 dl.download([self.url])

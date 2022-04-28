@@ -12,6 +12,7 @@ __cm = config_manager.ConfigManager()
 __pu = process_utils.ProcessUtils(__cm)
 
 app = FastAPI()
+enable_redis = False if __cm.get_app_params().get('_enable_redis') is not True else True
 
 
 ###
@@ -68,8 +69,7 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
     response.status_code = dm.get_api_status_code()
 
     if response.status_code != 400:
-        enable_redis = __cm.get_app_params().get('_enable_redis')
-        if enable_redis is not None and enable_redis is True:
+        if enable_redis:
             dm.process_downloads()
         else:
             background_tasks.add_task(dm.process_downloads)
@@ -92,8 +92,7 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
     response.status_code = dm.get_api_status_code()
 
     if response.status_code != 400:
-        enable_redis = __cm.get_app_params().get('_enable_redis')
-        if enable_redis is not None and enable_redis is True:
+        if enable_redis:
             dm.process_downloads()
         else:
             background_tasks.add_task(dm.process_downloads)
@@ -165,6 +164,10 @@ async def terminate_all_active_downloads_request(response: Response, token=None)
 
 @app.get(f"{__cm.get_app_params().get('_api_route_queue')}")
 async def active_downloads_request(response: Response, token=None):
+    if not enable_redis:
+        response.status_code = 409
+        return "Redis management is disabled"
+
     param_token = unquote(token) if token is not None else None
     user = __cm.is_user_permitted_by_token(param_token)
 
@@ -176,7 +179,11 @@ async def active_downloads_request(response: Response, token=None):
 
 
 @app.delete(f"{__cm.get_app_params().get('_api_route_queue')}")
-async def active_downloads_request(response: Response, token=None):
+async def active_downloads_request_by_registry(response: Response, token=None):
+    if not enable_redis:
+        response.status_code = 409
+        return "Redis management is disabled"
+
     param_token = unquote(token) if token is not None else None
     user = __cm.is_user_permitted_by_token(param_token)
 
@@ -189,6 +196,10 @@ async def active_downloads_request(response: Response, token=None):
 
 @app.get(f"{__cm.get_app_params().get('_api_route_queue')}/{'{registry}'}")
 async def active_downloads_request(response: Response, registry, token=None):
+    if not enable_redis:
+        response.status_code = 409
+        return "Redis management is disabled"
+
     param_token = unquote(token) if token is not None else None
     user = __cm.is_user_permitted_by_token(param_token)
 

@@ -90,6 +90,14 @@ class ProcessUtils:
 
                         filename_info['file_size'] = filesize
 
+                        ydl_api_hooks.post_download_handler(
+                            job_object.get('preset'),
+                            job_object.get('download_manager'),
+                            job_object.get('download_manager').get_current_config_manager(),
+                            downloads = [],
+                            filename_info=filename_info
+                        )
+
                         if callable(getattr(ydl_api_hooks, 'post_redis_termination_handler', None)):
                             ydl_api_hooks.post_redis_termination_handler(job_object.get('download_manager'), filename_info)
                     except FileNotFoundError:
@@ -97,6 +105,16 @@ class ProcessUtils:
 
             if not ffmpeg_killed:
                 send_kill_horse_command(self.redis, job.get('worker').name)
+                fetched_job = Job.fetch(job_object.get('id'), connection=self.redis)
+
+                ydl_api_hooks.post_download_handler(
+                    job_object.get('preset'),
+                    job_object.get('download_manager'),
+                    job_object.get('download_manager').get_current_config_manager(),
+                    fetched_job.meta.get('downloaded_files'))
+
+                if callable(getattr(ydl_api_hooks, 'post_redis_termination_handler', None)):
+                    ydl_api_hooks.post_redis_termination_handler(job_object.get('download_manager'), None)
 
             return self.sanitize_job(job_object)
         return None
