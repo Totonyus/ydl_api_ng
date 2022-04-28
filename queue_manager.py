@@ -3,6 +3,12 @@ from redis import Redis
 from rq import Worker, Queue
 from rq.command import send_kill_horse_command
 from rq.job import Job
+import os
+import signal
+import psutil
+import re
+import pathlib
+from params import ydl_api_hooks
 
 
 class QueueManager:
@@ -77,7 +83,7 @@ class QueueManager:
         workers = []
         for worker in Worker.all(self.redis):
             worker_object = {
-                'name' : worker.name,
+                'name': worker.name,
                 'hostname': worker.hostname,
                 'pid': worker.pid,
                 'queues': worker.queues,
@@ -135,7 +141,7 @@ class QueueManager:
         for worker in self.get_workers_info():
             if worker.get('current_job_info') is not None:
                 job = worker.get('current_job_info').get('job')
-                send_kill_horse_command(self.redis, worker.get('worker').name)
+                self.stop_running_job(job.id)
                 stopped.append(job)
         return stopped
 
@@ -143,7 +149,7 @@ class QueueManager:
         job = self.find_in_running(search_job_id)
 
         if job is not None:
-            send_kill_horse_command(self.redis, job.get('worker').name)
+            child_process = psutil.Process(job.get('worker').pid).children(recursive=True)
 
             job_object = {
                 'id': job.get('id'),
@@ -153,5 +159,46 @@ class QueueManager:
                 'state': 'stopped'
             }
 
+            ffmpeg_killed = False
+            for process in child_process:
+                print(process.name(), process.pid)
+                if process.name() == "ffmpeg":
+                    ffmpeg_killed = True
+                    print('ffmpeg', process.pid)
+                    filename_info = self.get_current_download_file_destination(process.cmdline())
+                    os.kill(process.pid, signal.SIGINT)
+
+                    filesize = os.path.getsize(filename_info.get('part_filename'))
+                    os.rename(filename_info.get('part_filename'), filename_info.get('filename'))  # renaming file to remove the .part
+
+                    filename_info['file_size'] = filesize
+
+                    if callable(getattr(ydl_api_hooks, 'post_redis_termination_handler', None)):
+                        ydl_api_hooks.post_redis_termination_handler(job_object.get('download_manager'), filename_info)
+
+            if not ffmpeg_killed:
+                send_kill_horse_command(self.redis, job.get('worker').name)
+
             return job_object
         return None
+
+    def get_current_download_file_destination(self, cmdline):
+        regex = r'\'file:(.*\/)(.*)\''
+
+        match = re.search(regex, f'{cmdline}')
+
+        part_filename = f'{match.group(1)}{match.group(2)}'
+        filename = part_filename.rstrip('.part')
+
+        path = match.group(1)
+        filename_stem = pathlib.Path(filename).stem
+        extension = pathlib.Path(filename).suffix
+
+        return {
+            'part_filename': part_filename,
+            'filename': filename,
+            'path': path,
+            'filename_stem': filename_stem,
+            'extension': extension,
+            'full_filename': f'{filename_stem}{extension}'
+        }

@@ -56,4 +56,8 @@ def post_download_handler(ydl_opts, download_manager, config_manager, downloads)
 
 # Called after a download is terminated
 def post_termination_handler(config_manager, filename_info):
-    logging.getLogger('post_termination_hooks').info(f'Downloading has been stopped by user : {filename_info.get("full_filename")} ({humanize.naturalsize(filename_info.get("file_size"), binary=True)})')
+    logging.getLogger('post_termination_hooks').critical(f'Downloading has been stopped by user : {filename_info.get("full_filename")} ({humanize.naturalsize(filename_info.get("file_size"), binary=True)})')
+
+def post_redis_termination_handler(download_manager, filename_info):
+    download_manager.get_current_config_manager().init_logger('workers')
+    logging.getLogger('post_termination_hooks').critical(f'Downloading has been stopped by user : {filename_info.get("full_filename")} ({humanize.naturalsize(filename_info.get("file_size"), binary=True)})')

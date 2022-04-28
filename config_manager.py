@@ -72,6 +72,8 @@ class GlobalConfig:
 
 
 class ConfigManager:
+    redis_instance = Redis()
+
     def __init__(self, params_file=None):
         self.__config = configparser.ConfigParser(interpolation=None)
         self.__presets_config = configparser.ConfigParser(interpolation=None)
@@ -104,10 +106,10 @@ class ConfigManager:
         self.__load_metadata()
         self.__set_config_objects()
 
-    def init_logger(self):
+    def init_logger(self, file_name='ydl_api_ng'):
         logging.basicConfig(level=self.log_level, format='[%(asctime)s][%(name)s][%(levelname)s] %(message)s', datefmt='%d-%m-%y %H:%M:%S')
 
-        time_handler = handlers.TimedRotatingFileHandler('logs/ydl_api_ng', when='midnight', interval=1, backupCount=self.log_backups)
+        time_handler = handlers.TimedRotatingFileHandler(f'logs/{file_name}', when='midnight', interval=1, backupCount=self.log_backups)
         time_handler.setLevel(self.log_level)
         time_handler.setFormatter(logging.Formatter('[%(asctime)s][%(name)s][%(levelname)s] %(message)s', datefmt='%d-%m-%y %H:%M:%S'))
         logging.getLogger().addHandler(time_handler)

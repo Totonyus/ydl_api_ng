@@ -9,6 +9,7 @@ from rq import Queue
 
 import config_manager
 from params import progress_hooks, postprocessor_hooks, ydl_api_hooks
+from rq import get_current_job
 
 
 class DownloadManager:
@@ -252,9 +253,15 @@ class DownloadManager:
         # Sometimes the "error" hooks is not launched by youtube-dlp. Help to keep a track of failures
         if is_in_list is None:
             self.downloaded_files.append(download)
+            get_current_job().meta['downloaded_files'] = self.downloaded_files
+            get_current_job().save()
+            get_current_job().refresh()
 
         elif download_status == 'finished' or download == 'error':
             self.downloaded_files[is_in_list] = download
+            get_current_job().meta['downloaded_files'] = self.downloaded_files
+            get_current_job().save()
+            get_current_job().refresh()
 
     def process_download(self, preset):
         if self.__cm.get_app_params().get('_dev_mode'):
@@ -270,7 +277,7 @@ class DownloadManager:
         ydl_api_hooks.pre_download_handler(ydl_opts, self, self.get_current_config_manager())
 
         if self.enable_redis:
-            queue = Queue('ydl_api_ng', connection=Redis())
+            queue = Queue('ydl_api_ng', connection=self.__cm.redis)
             redis_id = queue.enqueue(self.send_download_order, args=[ydl_opts, self], job_timeout=-1).id
             preset.append('_redis_id', redis_id)
         else:
@@ -279,7 +286,7 @@ class DownloadManager:
 
     def send_download_order(self, ydl_opts, dm):
         if self.enable_redis:
-            self.get_current_config_manager().init_logger()
+            self.get_current_config_manager().init_logger('workers')
 
         try:
             with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
