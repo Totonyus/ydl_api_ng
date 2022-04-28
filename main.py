@@ -68,7 +68,8 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
     response.status_code = dm.get_api_status_code()
 
     if response.status_code != 400:
-        if __cm.get_app_params().get('_enable_redis'):
+        enable_redis = __cm.get_app_params().get('_enable_redis')
+        if enable_redis is not None and enable_redis is True:
             dm.process_downloads()
         else:
             background_tasks.add_task(dm.process_downloads)
@@ -91,7 +92,11 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
     response.status_code = dm.get_api_status_code()
 
     if response.status_code != 400:
-        background_tasks.add_task(dm.process_downloads)
+        enable_redis = __cm.get_app_params().get('_enable_redis')
+        if enable_redis is not None and enable_redis is True:
+            dm.process_downloads()
+        else:
+            background_tasks.add_task(dm.process_downloads)
 
     return dm.get_api_return_object()
 
@@ -156,6 +161,42 @@ async def terminate_all_active_downloads_request(response: Response, token=None)
         return
 
     return __pu.terminate_all_active_downloads()
+
+
+@app.get(f"{__cm.get_app_params().get('_api_route_queue')}")
+async def active_downloads_request(response: Response, token=None):
+    param_token = unquote(token) if token is not None else None
+    user = __cm.is_user_permitted_by_token(param_token)
+
+    if user is False:
+        response.status_code = 401
+        return
+
+    return __pu.get_queue_content('all')
+
+
+@app.delete(f"{__cm.get_app_params().get('_api_route_queue')}")
+async def active_downloads_request(response: Response, token=None):
+    param_token = unquote(token) if token is not None else None
+    user = __cm.is_user_permitted_by_token(param_token)
+
+    if user is False:
+        response.status_code = 401
+        return
+
+    return __pu.clear_all_but_pending_and_started()
+
+
+@app.get(f"{__cm.get_app_params().get('_api_route_queue')}/{'{registry}'}")
+async def active_downloads_request(response: Response, registry, token=None):
+    param_token = unquote(token) if token is not None else None
+    user = __cm.is_user_permitted_by_token(param_token)
+
+    if user is False:
+        response.status_code = 401
+        return
+
+    return __pu.get_queue_content(registry)
 
 
 uvicorn.run(app, host=__cm.get_app_params().get('_listen_ip'), port=__cm.get_app_params().get('_listen_port'), log_config=None)

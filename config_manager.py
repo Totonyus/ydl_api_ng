@@ -4,6 +4,7 @@ import json
 import logging
 import logging.handlers as handlers
 import os
+from redis import Redis
 
 
 class SectionConfig:
@@ -11,6 +12,7 @@ class SectionConfig:
         '_allow_dangerous_post_requests': False,
         '_api_route_active_downloads': '/active_downloads',
         '_api_route_download': '/download',
+        '_api_route_queue': '/queue',
         '_api_route_extract_info': '/extract_info',
         '_api_route_info': '/info',
         '_enable_users_management': False,
@@ -19,7 +21,8 @@ class SectionConfig:
         '_log_backups': 7,
         '_log_level': 20,
         '_unit_test': True,
-        '_enable_redis': True
+        '_enable_redis': True,
+        '_redis_ttl': 3600
     }
 
     def append(self, key, item):
@@ -72,8 +75,6 @@ class GlobalConfig:
 
 
 class ConfigManager:
-    redis_instance = Redis()
-
     def __init__(self, params_file=None):
         self.__config = configparser.ConfigParser(interpolation=None)
         self.__presets_config = configparser.ConfigParser(interpolation=None)
