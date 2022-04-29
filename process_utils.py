@@ -17,7 +17,7 @@ class ProcessUtils:
         self.__cm = config_manager
 
         if self.__cm.get_app_params().get('_enable_redis') is not None and self.__cm.get_app_params().get('_enable_redis') is True:
-            self.redis = Redis()
+            self.redis = Redis(host=self.__cm.get_app_params().get('_redis_host'), port=self.__cm.get_app_params().get('_redis_port'))
             self.queue = Queue('ydl_api_ng', connection=self.redis)
             self.registries = {'pending_job': self.queue,
                                'started_job': self.queue.started_job_registry,
@@ -28,7 +28,6 @@ class ProcessUtils:
                                'canceled_job': self.queue.canceled_job_registry,
                                }
 
-            # self.update_registries()
         else:
             self.redis = None
             self.queue = None
@@ -94,7 +93,7 @@ class ProcessUtils:
                             job_object.get('preset'),
                             job_object.get('download_manager'),
                             job_object.get('download_manager').get_current_config_manager(),
-                            downloads = [],
+                            downloads=[],
                             filename_info=filename_info
                         )
 
@@ -182,6 +181,36 @@ class ProcessUtils:
             'preset': self.__cm.sanitize_config_object_section(job.get('preset')).get_all(),
             'download_manager': job.get('download_manager').get_api_return_object()
         }
+
+    def sanitize_workers_list(self, workers):
+        sanitized_workers = []
+        for worker in workers:
+            sanitizer_worker = {
+                'name': worker.get('name'),
+                'hostname': worker.get('hostname'),
+                'pid': worker.get('pid'),
+                'state': worker.get('state'),
+                'last_heartbeat': worker.get('last_heartbeat'),
+                'birth_date': worker.get('birth_date'),
+                'successful_job_count': worker.get('successful_job_count'),
+                'failed_job_count': worker.get('failed_job_count'),
+                'total_working_time': worker.get('total_working_time'),
+                'current_job_info': None,
+
+            }
+
+            current_job = worker.get('current_job')
+            if current_job is not None:
+                sanitizer_worker['current_job_info'] = self.sanitize_job({
+                    'id': current_job.id,
+                    'preset': current_job.args[0],
+                    'download_manager': current_job.args[1],
+                    'job': current_job
+                })
+
+            sanitized_workers.append(sanitizer_worker)
+
+        return sanitized_workers
 
     def get_redis_active_downloads_list(self):
         # self.update_registries()
@@ -338,6 +367,9 @@ class ProcessUtils:
 
         if registry == 'all':
             registries = self.get_all_jobs()
+        elif registry == 'workers':
+            registries = self.sanitize_workers_list(self.get_workers_info())
+            return registries
         elif self.registries.get(registry) is None:
             return None
         else:

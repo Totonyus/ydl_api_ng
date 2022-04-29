@@ -22,7 +22,9 @@ class SectionConfig:
         '_log_level': 20,
         '_unit_test': True,
         '_enable_redis': True,
-        '_redis_ttl': 3600
+        '_redis_ttl': 3600,
+        '_redis_host': 'localhost',
+        '_redis_port': 6379
     }
 
     def append(self, key, item):

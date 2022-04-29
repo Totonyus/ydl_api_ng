@@ -280,7 +280,7 @@ class DownloadManager:
         ydl_api_hooks.pre_download_handler(ydl_opts, self, self.get_current_config_manager())
 
         if self.enable_redis is not None and self.enable_redis is True:
-            queue = Queue('ydl_api_ng', connection=Redis())
+            queue = Queue('ydl_api_ng', connection=Redis(host=self.__cm.get_app_params().get('_redis_host'), port=self.__cm.get_app_params().get('_redis_port')))
             redis_id = queue.enqueue(self.send_download_order, args=[ydl_opts, self], job_timeout=-1, result_ttl=self.__cm.get_app_params().get('_redis_ttl')).id
             logging.critical(redis_id)
             preset.append('_redis_id', redis_id)
