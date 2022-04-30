@@ -6,9 +6,6 @@ on:
       - main
       - develop
   pull_request:
-    branches-ignore:
-      - main
-      - develop
   workflow_call:
 
 jobs:

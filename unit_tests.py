@@ -11,7 +11,7 @@ class TestActualParametersFile(unittest.TestCase):
     def test_app(self):
         cm = config_manager.ConfigManager()
 
-        self.assertEqual(80, cm.get_app_params().get('_listen_port'))
+        self.assertEqual(5011, cm.get_app_params().get('_listen_port'))
         self.assertIsNot(True, cm.get_app_params().get('_dev_mode'))
         self.assertFalse(cm.get_app_params().get('_enable_users_management'))
         self.assertEqual('0.0.0.0', cm.get_app_params().get('_listen_ip'))
