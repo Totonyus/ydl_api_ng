@@ -20,7 +20,7 @@ def pre_download_handler(ydl_opts, download_manager, config_manager):
 
 
 # Called after all files of the preset are downloaded
-def post_download_handler(ydl_opts, download_manager, config_manager, downloads, filename_info=None):
+def post_download_handler(ydl_opts, download_manager, config_manager, downloads):
     downloads_state = {}
 
     for download in downloads:

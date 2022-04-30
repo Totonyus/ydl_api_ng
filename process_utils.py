@@ -94,12 +94,15 @@ class ProcessUtils:
                     except FileNotFoundError:
                         pass
 
+                    logging.getLogger('process_utils').info(f'ffmpeg process killed : {process.pid}')
+
             if not ffmpeg_killed:
                 send_kill_horse_command(self.redis, job.get('worker').name)
 
                 if callable(getattr(ydl_api_hooks, 'post_redis_termination_handler', None)):
                     ydl_api_hooks.post_redis_termination_handler(job_object.get('download_manager'), None)
 
+                logging.getLogger('process_utils').info(f"Job stopped on worker {job.get('worker').name}")
             return self.sanitize_job(job_object)
         return None
 

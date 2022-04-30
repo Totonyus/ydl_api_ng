@@ -15,6 +15,7 @@ addgroup --gid $GID ydl_api_ng && useradd --uid $UID --gid ydl_api_ng ydl_api_ng
 chown $UID:$GID /app/logs
 chown $UID:$GID /app/downloads
 
+if [ "$DISABLE_REDIS" == "false" ]; then
 cat <<EOT >> /app/supervisord.conf
 [supervisord]
 
@@ -30,5 +31,6 @@ user=$UID
 EOT
 
 supervisord -c /app/supervisord.conf -l /app/logs/supervisord.log -j /app/tmp/pid -u ydl_api_ng -e $LOG_LEVEL
+fi
 
 su ydl_api_ng -c "python3 main.py"
