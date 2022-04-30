@@ -19,7 +19,7 @@ class TestActualParametersFile(unittest.TestCase):
         self.assertFalse(cm.get_app_params().get('_enable_redis'))
 
     def test_docker_app(self):
-        cm = config_manager.ConfigManager()
+        cm = config_manager.ConfigManager('params/params_docker.ini')
 
         self.assertEqual(80, cm.get_app_params().get('_listen_port'))
         self.assertIsNot(True, cm.get_app_params().get('_dev_mode'))
