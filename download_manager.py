@@ -254,17 +254,8 @@ class DownloadManager:
         if is_in_list is None:
             self.downloaded_files.append(download)
 
-            if self.enable_redis is not None and self.enable_redis is True:
-                get_current_job().meta['downloaded_files'] = self.downloaded_files
-                get_current_job().save()
-                get_current_job().refresh()
-
         elif download_status == 'finished' or download == 'error':
             self.downloaded_files[is_in_list] = download
-            if self.enable_redis is not None and self.enable_redis is True:
-                get_current_job().meta['downloaded_files'] = self.downloaded_files
-                get_current_job().save()
-                get_current_job().refresh()
 
     def process_download(self, preset):
         if self.__cm.get_app_params().get('_dev_mode'):
@@ -289,6 +280,9 @@ class DownloadManager:
             self.send_download_order(ydl_opts, self)
 
     def send_download_order(self, ydl_opts, dm):
+        if self.enable_redis:
+            self.get_current_config_manager().init_logger()
+
         try:
             with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
                 dl.download([self.url])
