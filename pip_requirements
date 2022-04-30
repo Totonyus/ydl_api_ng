@@ -4,3 +4,6 @@ uvicorn
 psutil
 humanize
 requests
+redis
+rq
+supervisor

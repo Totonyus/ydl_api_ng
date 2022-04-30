@@ -12,6 +12,7 @@ __cm = config_manager.ConfigManager()
 __pu = process_utils.ProcessUtils(__cm)
 
 app = FastAPI()
+enable_redis = False if __cm.get_app_params().get('_enable_redis') is not True else True
 
 
 ###
@@ -68,7 +69,10 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
     response.status_code = dm.get_api_status_code()
 
     if response.status_code != 400:
-        background_tasks.add_task(dm.process_downloads)
+        if enable_redis:
+            dm.process_downloads()
+        else:
+            background_tasks.add_task(dm.process_downloads)
 
     return dm.get_api_return_object()
 
@@ -88,7 +92,10 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
     response.status_code = dm.get_api_status_code()
 
     if response.status_code != 400:
-        background_tasks.add_task(dm.process_downloads)
+        if enable_redis:
+            dm.process_downloads()
+        else:
+            background_tasks.add_task(dm.process_downloads)
 
     return dm.get_api_return_object()
 
@@ -137,7 +144,7 @@ async def terminate_active_download_request(response: Response, pid, token=None)
     return_status = __pu.terminate_active_download(unquote(pid))
 
     if return_status is None:
-        response.status_code = 400
+        response.status_code = 404
         return
 
     return return_status
@@ -153,6 +160,54 @@ async def terminate_all_active_downloads_request(response: Response, token=None)
         return
 
     return __pu.terminate_all_active_downloads()
+
+
+@app.get(f"{__cm.get_app_params().get('_api_route_queue')}")
+async def active_downloads_request(response: Response, token=None):
+    if not enable_redis:
+        response.status_code = 409
+        return "Redis management is disabled"
+
+    param_token = unquote(token) if token is not None else None
+    user = __cm.is_user_permitted_by_token(param_token)
+
+    if user is False:
+        response.status_code = 401
+        return
+
+    return __pu.get_queue_content('all')
+
+
+@app.delete(f"{__cm.get_app_params().get('_api_route_queue')}")
+async def clear_registries(response: Response, token=None):
+    if not enable_redis:
+        response.status_code = 409
+        return "Redis management is disabled"
+
+    param_token = unquote(token) if token is not None else None
+    user = __cm.is_user_permitted_by_token(param_token)
+
+    if user is False:
+        response.status_code = 401
+        return
+
+    return __pu.clear_all_but_pending_and_started()
+
+
+@app.get(f"{__cm.get_app_params().get('_api_route_queue')}/{'{registry}'}")
+async def active_downloads_request(response: Response, registry, token=None):
+    if not enable_redis:
+        response.status_code = 409
+        return "Redis management is disabled"
+
+    param_token = unquote(token) if token is not None else None
+    user = __cm.is_user_permitted_by_token(param_token)
+
+    if user is False:
+        response.status_code = 401
+        return
+
+    return __pu.get_queue_content(registry)
 
 
 uvicorn.run(app, host=__cm.get_app_params().get('_listen_ip'), port=__cm.get_app_params().get('_listen_port'), log_config=None)

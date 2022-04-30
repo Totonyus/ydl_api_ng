@@ -2,23 +2,23 @@ version: "3.1"
 services:
   ydl_api_ng:
     container_name: ydl_api_ng
-    image: totonyus/ydl_api_ng
+    image: ydl_api_ng
     restart: unless-stopped
+    build:
+      context: .
     depends_on:
       - ydl_api_ng_redis
     ports:
       - 5011:80
     volumes:
-      - ./params:/app/params
-      - ./logs:/app/logs
-      - ./downloads:/app/downloads
+      - ./test/params:/app/params
+      - ./test/logs:/app/logs
+      - ./test/downloads:/app/downloads
     environment:
       - UID=1000
       - GID=1000
       - NB_WORKERS=5
       - LOG_LEVEL=trace
-      # Redis will be disable is this value is not false, remember to also change the setting in params.ini file
-      - DISABLE_REDIS=false
     networks:
       - ydl_api_ng
 
@@ -31,4 +31,3 @@ services:
 
 networks:
   ydl_api_ng:
-
