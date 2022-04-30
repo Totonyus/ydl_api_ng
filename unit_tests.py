@@ -8,15 +8,25 @@ import download_manager
 
 
 class TestActualParametersFile(unittest.TestCase):
-    config_manager = config_manager.ConfigManager()
-
     def test_app(self):
-        self.assertEqual(80, self.config_manager.get_app_params().get('_listen_port'))
-        self.assertIsNot(True, self.config_manager.get_app_params().get('_dev_mode'))
-        self.assertFalse(self.config_manager.get_app_params().get('_enable_users_management'))
-        self.assertEqual('0.0.0.0', self.config_manager.get_app_params().get('_listen_ip'))
-        self.assertFalse(self.config_manager.get_app_params().get('_allow_dangerous_post_requests'))
-        self.assertTrue(self.config_manager.get_app_params().get('_enable_redis'))
+        cm = config_manager.ConfigManager()
+
+        self.assertEqual(80, cm.get_app_params().get('_listen_port'))
+        self.assertIsNot(True, cm.get_app_params().get('_dev_mode'))
+        self.assertFalse(cm.get_app_params().get('_enable_users_management'))
+        self.assertEqual('0.0.0.0', cm.get_app_params().get('_listen_ip'))
+        self.assertFalse(cm.get_app_params().get('_allow_dangerous_post_requests'))
+        self.assertFalse(cm.get_app_params().get('_enable_redis'))
+
+    def test_docker_app(self):
+        cm = config_manager.ConfigManager()
+
+        self.assertEqual(80, cm.get_app_params().get('_listen_port'))
+        self.assertIsNot(True, cm.get_app_params().get('_dev_mode'))
+        self.assertFalse(cm.get_app_params().get('_enable_users_management'))
+        self.assertEqual('0.0.0.0', cm.get_app_params().get('_listen_ip'))
+        self.assertFalse(cm.get_app_params().get('_allow_dangerous_post_requests'))
+        self.assertTrue(cm.get_app_params().get('_enable_redis'))
 
 
 class TestConfig(unittest.TestCase):

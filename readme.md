@@ -19,6 +19,7 @@ ydl_api was built to fulfill my needs, and it works really well for me. However,
 - Suitable for advanced youtube-dlp users
 - Not complicated for basic users
 - New features are planned
+- (Optional) Use redis for a better queue management
 
 # Installation
 
@@ -209,6 +210,34 @@ _playlist_indicators = ?list=,&list=,/user/,/playlists
 
 You can also add parameters tied to the site like login information
 
+## Queue management
+
+A new system of queue management has been build to have a better view of current, past and future downloads.
+
+You can choose the number of workers in the docker-compose file : `NB_WORKERS=5` (environment parameter). The number of
+workers determines the number of parallel downloads.
+
+### Without docker
+
+You can perfectly run ydl_api_ng with redis without docker. However, to keep it simple for basic users, the option is
+disabled by default in the `params.ini` file :
+
+    _enable_redis = true # (false is not in parameter file)
+    _redis_host = localhost
+    _redis_port = 6379
+
+The application will run downloads without redis and the old queue management system will be used for the
+api `/active_downloads` and `/terminate`
+
+### With docker
+
+If you don't want to use redis with docker, you can remove the corresponding block in the docker-compose
+file : `ydl_api_ng_redis`.
+
+You must disable redis in the `params.ini` file : `_enable_redis = false`
+
+You can also pass the `DISABLE_REDIS` environment parameter in the docker-compose file to avoid workers launching.
+
 # API
 
 ## Application information
@@ -273,7 +302,7 @@ For each preset if `_allow_dangerous_post_requests` is false :
 
 - `paths` will be deleted and replaced by the `default` location parameter
 - `outtmpl` will be deleted and replaced by the `default` template parameter
-- You still can select a `paths` or a `outtmpl` by using expansion system 
+- You still can select a `paths` or a `outtmpl` by using expansion system
 - You can only use `paths` and `outtmpl` present in `params.ini`
 
 ## Video information
@@ -292,6 +321,7 @@ GET http://localhost:5011/extract_info?url=https://www.youtube.com/watch?v=9Lgc3
 
 The process management system only works you livestreams
 
+### Global 
 ```shell
 # Get all active downloads (with PID)
 GET http://localhost:5011/active_downloads
@@ -300,7 +330,21 @@ GET http://localhost:5011/active_downloads
 GET http://localhost:5011/active_downloads/terminate
 
 # Stop the active download with it PID. It uses se system PID, this feature is safe, a non-child process cannot be killed
+# If using redis, also permit to cancel pending job
+# If job is finished or canceled, will delete from queue
 GET http://localhost:5011/active_downloads/terminate/{pid}
+```
+
+### Redis only
+```shell
+# Get all registries content
+GET http://localhost:5011/queue
+
+# Get registry content (all, workers, pending_job, started_job, finished_job, failed_job, deferred_job, scheduled_job, canceled_job)
+GET http://localhost:5011/queue/finished_job
+
+# Delete all jobs but pending and started jobs
+DELETE http://localhost:5011/queue
 ```
 
 ## Responses status

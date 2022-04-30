@@ -144,7 +144,7 @@ async def terminate_active_download_request(response: Response, pid, token=None)
     return_status = __pu.terminate_active_download(unquote(pid))
 
     if return_status is None:
-        response.status_code = 400
+        response.status_code = 404
         return
 
     return return_status
@@ -179,7 +179,7 @@ async def active_downloads_request(response: Response, token=None):
 
 
 @app.delete(f"{__cm.get_app_params().get('_api_route_queue')}")
-async def active_downloads_request_by_registry(response: Response, token=None):
+async def clear_registries(response: Response, token=None):
     if not enable_redis:
         response.status_code = 409
         return "Redis management is disabled"

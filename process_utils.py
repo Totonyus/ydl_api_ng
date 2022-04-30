@@ -104,7 +104,18 @@ class ProcessUtils:
 
                 logging.getLogger('process_utils').info(f"Job stopped on worker {job.get('worker').name}")
             return self.sanitize_job(job_object)
-        return None
+        else:
+            job = self.find_job_by_id(search_job_id)
+
+            if job is None:
+                return None
+
+            try:
+                job.get('job').cancel()
+            except rq.exceptions.InvalidJobOperation:
+                job.get('job').delete()
+
+            return self.sanitize_job(job)
 
     def terminate_all_active_downloads(self):
         if self.redis is None:
