@@ -27,7 +27,6 @@ class ProcessUtils:
                                'scheduled_job': self.queue.scheduled_job_registry,
                                'canceled_job': self.queue.canceled_job_registry,
                                }
-
         else:
             self.redis = None
             self.queue = None
@@ -48,10 +47,7 @@ class ProcessUtils:
             child.terminate()
             filename_info = self.get_current_download_file_destination(child.cmdline())
 
-            filesize = os.path.getsize(filename_info.get('part_filename'))
             os.rename(filename_info.get('part_filename'), filename_info.get('filename'))  # renaming file to remove the .part
-
-            filename_info['file_size'] = filesize
 
             if callable(getattr(ydl_api_hooks, 'post_termination_handler', None)):
                 ydl_api_hooks.post_termination_handler(self.__cm, filename_info)
@@ -62,39 +58,58 @@ class ProcessUtils:
 
         return None
 
+    def find_ffmpeg_filename_info(self, job):
+        child_process = psutil.Process(job.get('worker').pid).children(recursive=True)
+
+        for process in child_process:
+            if process.name() == "ffmpeg":
+                info = self.get_current_download_file_destination(process.cmdline())
+                return process.pid, info
+
+        return None, None
+
+    def find_ffmpeg_filename_info_by_pid(self, pid):
+        child_process = psutil.Process(pid).children(recursive=True)
+
+        for process in child_process:
+            if process.name() == "ffmpeg":
+                info = self.get_current_download_file_destination(process.cmdline())
+                return process.pid, info
+
+        return None, None
+
     def terminate_redis_active_download(self, search_job_id):
         job = self.find_in_running(search_job_id)
 
         if job is not None:
-            child_process = psutil.Process(job.get('worker').pid).children(recursive=True)
+            ffmpeg_killed = False
+            process_pid, filename_info = self.find_ffmpeg_filename_info(job)
 
             job_object = {
                 'id': job.get('id'),
                 'preset': job.get('preset'),
                 'download_manager': job.get('download_manager'),
                 'worker': job.get('worker'),
-                'job': job.get('job')
+                'job': job.get('job'),
             }
 
-            ffmpeg_killed = False
-            for process in child_process:
-                if process.name() == "ffmpeg":
-                    ffmpeg_killed = True
-                    filename_info = self.get_current_download_file_destination(process.cmdline())
-                    os.kill(process.pid, signal.SIGINT)
+            if filename_info is not None:
+                ffmpeg_killed = True
+                os.kill(process_pid, signal.SIGINT)
 
-                    try:
-                        filesize = os.path.getsize(filename_info.get('part_filename'))
-                        os.rename(filename_info.get('part_filename'), filename_info.get('filename'))  # renaming file to remove the .part
+                try:
+                    os.rename(filename_info.get('part_filename'), filename_info.get('filename'))  # renaming file to remove the .part
 
-                        filename_info['file_size'] = filesize
+                    job.get('job').meta['filename_info'] = filename_info
+                    job.get('job').save()
+                    job.get('job').refresh()
 
-                        if callable(getattr(ydl_api_hooks, 'post_redis_termination_handler', None)):
-                            ydl_api_hooks.post_redis_termination_handler(job_object.get('download_manager'), filename_info)
-                    except FileNotFoundError:
-                        pass
+                    if callable(getattr(ydl_api_hooks, 'post_redis_termination_handler', None)):
+                        ydl_api_hooks.post_redis_termination_handler(job_object.get('download_manager'), filename_info)
+                except FileNotFoundError:
+                    pass
 
-                    logging.getLogger('process_utils').info(f'ffmpeg process killed : {process.pid}')
+                logging.getLogger('process_utils').info(f'ffmpeg process killed : {process_pid}')
 
             if not ffmpeg_killed:
                 send_kill_horse_command(self.redis, job.get('worker').name)
@@ -138,8 +153,7 @@ class ProcessUtils:
         for worker in self.get_workers_info():
             if worker.get('job') is not None:
                 job = worker.get('job').get('job')
-                self.terminate_redis_active_download(job.id)
-                stopped.append(self.sanitize_job(worker.get('job')))
+                stopped.append(self.terminate_redis_active_download(job.id))
         return stopped
 
     def get_active_downloads_list(self):
@@ -179,7 +193,7 @@ class ProcessUtils:
             'id': job.get('id'),
             'preset': self.__cm.sanitize_config_object_section(job.get('preset')).get_all(),
             'download_manager': job.get('download_manager').get_api_return_object(),
-            'job': self.sanitize_job_object(job.get('job'))
+            'job': self.sanitize_job_object(job.get('job')),
         }
 
     def sanitize_job_object(self, job):
@@ -195,6 +209,7 @@ class ProcessUtils:
             'exc_info': job.exc_info,
             'last_heartbeat': job.last_heartbeat,
             'worker_name': job.worker_name,
+            'meta': job.meta
         }
 
         return sanitize_object
@@ -213,7 +228,6 @@ class ProcessUtils:
                 'failed_job_count': worker.get('failed_job_count'),
                 'total_working_time': worker.get('total_working_time'),
                 'job': None,
-
             }
 
             current_job = worker.get('current_job')
@@ -230,7 +244,6 @@ class ProcessUtils:
         return sanitized_workers
 
     def get_redis_active_downloads_list(self):
-        # self.update_registries()
         return {
             'started_job': self.sanitize_registry('started_job'),
             'pending_job': self.sanitize_registry('pending_job')
@@ -285,7 +298,6 @@ class ProcessUtils:
 
             job.delete()
 
-        # self.update_registries()
         return cleared_jobs_ids
 
     def clear_all_but_pending_and_started(self):
@@ -329,6 +341,8 @@ class ProcessUtils:
                     'job': current_job
                 }
 
+                pid, current_job.meta['filename_info'] = self.find_ffmpeg_filename_info_by_pid(worker.pid)
+
             workers.append(worker_object)
 
         return workers
@@ -355,7 +369,8 @@ class ProcessUtils:
                     'id': current_job.id,
                     'preset': current_job.args[0],
                     'download_manager': current_job.args[1],
-                    'worker': worker
+                    'worker': worker,
+                    'job': current_job
                 }
         return None
 
@@ -377,7 +392,8 @@ class ProcessUtils:
             'path': path,
             'filename_stem': filename_stem,
             'extension': extension,
-            'full_filename': f'{filename_stem}{extension}'
+            'full_filename': f'{filename_stem}{extension}',
+            'file_size': os.path.getsize(part_filename)
         }
 
     def get_queue_content(self, registry):

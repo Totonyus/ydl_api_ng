@@ -43,7 +43,9 @@ jobs:
       with:
         context: ${{ github.workspace }}
         push: true
-        tags: totonyus/ydl_api_ng
+        tags: |
+          totonyus/ydl_api_ng
+          totonyus/ydl_api_ng:preview
         build-args: |
           GIT_BRANCH=${{ steps.extract_branch.outputs.BRANCH_NAME }}
           GIT_REVISION=${{ steps.commit.outputs.hash }}

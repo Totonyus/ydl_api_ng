@@ -247,15 +247,13 @@ class DownloadManager:
         return None
 
     def progress_hooks_proxy(self, download):
-        download_status = download.get('status')
         is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
+        self.downloaded_files[is_in_list] = download
 
-        # Sometimes the "error" hooks is not launched by youtube-dlp. Help to keep a track of failures
-        if is_in_list is None:
-            self.downloaded_files.append(download)
-
-        elif download_status == 'finished' or download == 'error':
-            self.downloaded_files[is_in_list] = download
+        if self.enable_redis is not None and self.enable_redis is True:
+            get_current_job().meta['downloaded_files'] = self.downloaded_files
+            get_current_job().save()
+            get_current_job().refresh()
 
     def process_download(self, preset):
         if self.__cm.get_app_params().get('_dev_mode'):
@@ -273,7 +271,6 @@ class DownloadManager:
         if self.enable_redis is not None and self.enable_redis is True:
             queue = Queue('ydl_api_ng', connection=Redis(host=self.__cm.get_app_params().get('_redis_host'), port=self.__cm.get_app_params().get('_redis_port')))
             redis_id = queue.enqueue(self.send_download_order, args=[ydl_opts, self], job_timeout=-1, result_ttl=self.__cm.get_app_params().get('_redis_ttl')).id
-            logging.critical(redis_id)
             preset.append('_redis_id', redis_id)
         else:
             preset.append('_redis_id', None)
