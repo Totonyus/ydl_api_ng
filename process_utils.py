@@ -73,7 +73,7 @@ class ProcessUtils:
                 'preset': job.get('preset'),
                 'download_manager': job.get('download_manager'),
                 'worker': job.get('worker'),
-                'state': 'stopped'
+                'job': job.get('job')
             }
 
             ffmpeg_killed = False
@@ -136,10 +136,10 @@ class ProcessUtils:
     def terminate_all_redis_active_downloads(self):
         stopped = []
         for worker in self.get_workers_info():
-            if worker.get('current_job_info') is not None:
-                job = worker.get('current_job_info').get('job')
+            if worker.get('job') is not None:
+                job = worker.get('job').get('job')
                 self.terminate_redis_active_download(job.id)
-                stopped.append(self.sanitize_job(worker.get('current_job_info')))
+                stopped.append(self.sanitize_job(worker.get('job')))
         return stopped
 
     def get_active_downloads_list(self):
@@ -178,8 +178,26 @@ class ProcessUtils:
         return {
             'id': job.get('id'),
             'preset': self.__cm.sanitize_config_object_section(job.get('preset')).get_all(),
-            'download_manager': job.get('download_manager').get_api_return_object()
+            'download_manager': job.get('download_manager').get_api_return_object(),
+            'job': self.sanitize_job_object(job.get('job'))
         }
+
+    def sanitize_job_object(self, job):
+        if job is None:
+            return None
+
+        sanitize_object = {
+            'status': job.get_status(refresh=True),
+            'result': job.result,
+            'enqueued_at': job.enqueued_at,
+            'started_at': job.started_at,
+            'ended_at': job.ended_at,
+            'exc_info': job.exc_info,
+            'last_heartbeat': job.last_heartbeat,
+            'worker_name': job.worker_name,
+        }
+
+        return sanitize_object
 
     def sanitize_workers_list(self, workers):
         sanitized_workers = []
@@ -194,13 +212,13 @@ class ProcessUtils:
                 'successful_job_count': worker.get('successful_job_count'),
                 'failed_job_count': worker.get('failed_job_count'),
                 'total_working_time': worker.get('total_working_time'),
-                'current_job_info': None,
+                'job': None,
 
             }
 
             current_job = worker.get('current_job')
             if current_job is not None:
-                sanitizer_worker['current_job_info'] = self.sanitize_job({
+                sanitizer_worker['job'] = self.sanitize_job({
                     'id': current_job.id,
                     'preset': current_job.args[0],
                     'download_manager': current_job.args[1],
@@ -247,7 +265,8 @@ class ProcessUtils:
                 'id': job.id,
                 'registry': registry,
                 'preset': job.args[0],
-                'download_manager': job.args[1]
+                'download_manager': job.args[1],
+                'job': job
             })
 
         return jobs
@@ -303,7 +322,7 @@ class ProcessUtils:
 
             current_job = worker_object.get('current_job')
             if current_job is not None:
-                worker_object['current_job_info'] = {
+                worker_object['job'] = {
                     'id': current_job.id,
                     'preset': current_job.args[0],
                     'download_manager': current_job.args[1],
