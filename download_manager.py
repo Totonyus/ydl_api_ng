@@ -248,7 +248,11 @@ class DownloadManager:
 
     def progress_hooks_proxy(self, download):
         is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
-        self.downloaded_files[is_in_list] = download
+
+        if is_in_list is None:
+            self.downloaded_files.append(download)
+        else:
+            self.downloaded_files[is_in_list] = download
 
         if self.enable_redis is not None and self.enable_redis is True:
             get_current_job().meta['downloaded_files'] = self.downloaded_files
