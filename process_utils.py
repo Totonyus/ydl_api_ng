@@ -118,6 +118,9 @@ class ProcessUtils:
                     ydl_api_hooks.post_redis_termination_handler(job_object.get('download_manager'), None)
 
                 logging.getLogger('process_utils').info(f"Job stopped on worker {job.get('worker').name}")
+
+                ydl_api_hooks.post_download_handler(job.get('preset'), job.get('download_manager'), job.get('download_manager').get_current_config_manager(), job.get('job').meta.get('downloaded_files'))
+
             return self.sanitize_job(job_object)
         else:
             job = self.find_job_by_id(search_job_id)
