@@ -6,11 +6,12 @@ from urllib.parse import urlparse
 import yt_dlp as ydl
 from redis import Redis
 from rq import Queue
+from rq.job import Job
 
 import config_manager
 from params import progress_hooks, postprocessor_hooks, ydl_api_hooks
 from rq import get_current_job
-
+import inspect
 
 class DownloadManager:
     __cm = None
@@ -291,7 +292,16 @@ class DownloadManager:
         except ydl.utils.DownloadError as error:
             ydl_opts.append('__download_exception_message', str(error))
 
-        ydl_api_hooks.post_download_handler(ydl_opts, self, self.get_current_config_manager(), self.downloaded_files)
+        filename_info = None
+
+        if self.enable_redis:
+            job = Job.fetch(get_current_job().id, connection=Redis(host=self.__cm.get_app_params().get('_redis_host'), port=self.__cm.get_app_params().get('_redis_port')))
+            filename_info = job.meta.get('filename_info')
+
+        if 'filename_info' in inspect.getfullargspec(ydl_api_hooks.post_download_handler).args:
+            ydl_api_hooks.post_download_handler(ydl_opts, self, self.get_current_config_manager(), self.downloaded_files, filename_info=filename_info)
+        else: # retrocompatibility
+            ydl_api_hooks.post_download_handler(ydl_opts, self, self.get_current_config_manager(), self.downloaded_files)
 
     def process_downloads(self):
         for preset in self.presets:
