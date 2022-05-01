@@ -14,7 +14,10 @@ class SectionConfig:
             self.__dict__[key] = item
 
     def get(self, key):
-        return self.__dict__[key]
+        try:
+            return self.__dict__[key]
+        except KeyError:
+            return None
 
     def delete(self, key):
         try:
