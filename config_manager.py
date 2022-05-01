@@ -5,38 +5,16 @@ import logging
 import logging.handlers as handlers
 import os
 from redis import Redis
+import defaults
 
 
 class SectionConfig:
-    __defaults = {
-        '_allow_dangerous_post_requests': False,
-        '_api_route_active_downloads': '/active_downloads',
-        '_api_route_download': '/download',
-        '_api_route_queue': '/queue',
-        '_api_route_extract_info': '/extract_info',
-        '_api_route_info': '/info',
-        '_enable_users_management': False,
-        '_listen_ip': '0.0.0.0',
-        '_listen_port': 80,
-        '_log_backups': 7,
-        '_log_level': 20,
-        '_unit_test': True,
-        '_enable_redis': True,
-        '_redis_ttl': 3600,
-        '_redis_host': 'ydl_api_ng',
-        '_redis_port': 6379
-    }
-
-    def append(self, key, item):
-        self.__dict__[key] = item
+    def append(self, key, item, override=True):
+        if override or self.__dict__.get(key) is None:
+            self.__dict__[key] = item
 
     def get(self, key):
-        try:
-            return self.__dict__[key]
-        except KeyError:
-            if self.__defaults is not None:
-                return self.__defaults.get(key)
-            return None
+        return self.__dict__[key]
 
     def delete(self, key):
         try:
@@ -59,8 +37,8 @@ class GlobalConfig:
         except KeyError:
             return None
 
-    def add_item(self, group, key, item):
-        self.__dict__[group].append(key, item)
+    def add_item(self, group, key, item, override=True):
+        self.__dict__[group].append(key, item, override)
 
     def search_section_by_value(self, key, value):
         for item in self.__dict__:
@@ -206,12 +184,17 @@ class ConfigManager:
 
     def __set_config_objects(self):
         self.__populate_config_object(self.__app_config, self.__app_config_object)
+        self.__apply_defaults_app_parameters(self.__app_config_object, defaults.app_defaults)
         self.__populate_config_object(self.__presets_config, self.__presets_config_object)
         self.__populate_config_object(self.__user_config, self.__user_config_object)
         self.__populate_config_object(self.__site_config, self.__site_config_object)
         self.__populate_config_object(self.__auth_config, self.__auth_config_object)
         self.__populate_config_object(self.__location_config, self.__location_config_object)
         self.__populate_config_object(self.__template_config, self.__template_config_object)
+
+    def __apply_defaults_app_parameters(self, config_object, default_object):
+        for parameter in default_object:
+            config_object.add_item(group='APP', key=parameter, item=default_object[parameter], override=False)
 
     # Set python objects with the right type of object
     def __populate_config_object(self, config_set, config_set_object):

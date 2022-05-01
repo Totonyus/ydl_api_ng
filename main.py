@@ -7,6 +7,7 @@ from fastapi import BackgroundTasks, FastAPI, Response, Body
 import config_manager
 import download_manager
 import process_utils
+import os
 
 __cm = config_manager.ConfigManager()
 __pu = process_utils.ProcessUtils(__cm)
@@ -29,8 +30,12 @@ async def info_request(response: Response, token=None):
         return
 
     return {
+        'ydl_engine': 'yt-dlp',
         'ydl_version': yt_dlp.version.__version__,
         'ydl_git_head': yt_dlp.version.RELEASE_GIT_HEAD,
+        'ydl_api_ng_container_date': os.environ.get('DATE'),
+        'ydl_api_ng_branch': os.environ.get('GIT_BRANCH'),
+        'ydl_api_ng_revision': os.environ.get('GIT_REVISION'),
         'processed_config': {
             'meta_keys': __cm.get_keys_meta(),
             'app_config': __cm.sanitize_config_object(__cm.get_app_params_object()),
