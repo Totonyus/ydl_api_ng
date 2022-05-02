@@ -105,6 +105,42 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
     return dm.get_api_return_object()
 
 
+@app.get(f"{__cm.get_app_params().get('_api_route_download')}/{'{redis_id}'}/failed")
+async def relaunch_failed_download(response: Response, redis_id, token=None):
+    if not enable_redis:
+        response.status_code = 409
+        return "Redis management is disabled"
+
+    param_token = unquote(token) if token is not None else None
+
+    user = __cm.is_user_permitted_by_token(param_token)
+
+    if user is False:
+        response.status_code = 401
+        return
+
+    response.status_code, return_object = __pu.relaunch_failed(redis_id, token)
+    return return_object
+
+
+@app.get(f"{__cm.get_app_params().get('_api_route_download')}/{'{redis_id}'}")
+async def relaunch_download(response: Response, redis_id, token=None):
+    if not enable_redis:
+        response.status_code = 409
+        return "Redis management is disabled"
+
+    param_token = unquote(token) if token is not None else None
+
+    user = __cm.is_user_permitted_by_token(param_token)
+
+    if user is False:
+        response.status_code = 401
+        return
+
+    response.status_code, return_object = __pu.relaunch_job(redis_id, token)
+    return return_object
+
+
 ###
 # Video
 ###

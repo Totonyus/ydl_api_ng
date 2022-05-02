@@ -9,6 +9,8 @@ import signal
 import psutil
 import re
 import pathlib
+
+import download_manager
 from params import ydl_api_hooks
 
 
@@ -416,3 +418,46 @@ class ProcessUtils:
             sanitized_jobs[r] = self.sanitize_registry(r)
 
         return sanitized_jobs
+
+    def relaunch_failed(self, job_id, user_token=None):
+        try:
+            job = Job.fetch(job_id, connection=self.redis)
+        except rq.exceptions.NoSuchJobError:
+            return 404, None
+
+        preset = job.args[0].get_all()
+
+        downloads_state = {}
+        launched_downloads = []
+
+        downloaded_files = job.meta.get('downloaded_files')
+        if downloaded_files is not None:
+            downloads_state = download_manager.DownloadManager.get_downloaded_files_info(job.meta.get('downloaded_files'))
+
+        for video_id in downloads_state:
+            download_object = downloads_state.get(video_id)
+            if download_object.get('error_downloads') > 0:
+                url = download_object.get('downloads')[0].get('info_dict').get('webpage_url')
+
+                dm = download_manager.DownloadManager(self.__cm, url, None, user_token, {'presets': [preset]}, ignore_post_security=True)
+                dm.process_downloads()
+
+                launched_downloads.append(dm.get_api_return_object())
+
+        return 200, launched_downloads
+
+    def relaunch_job(self, job_id, user_token):
+        try:
+            job = Job.fetch(job_id, connection=self.redis)
+        except rq.exceptions.NoSuchJobError:
+            return 404, None
+
+        preset = job.args[0].get_all()
+        dm = job.args[1]
+
+        dm = download_manager.DownloadManager(self.__cm, dm.url, None, user_token, {'presets': [preset]}, ignore_post_security=True)
+
+        if dm.get_api_status_code() != 400:
+            dm.process_downloads()
+
+        return dm.get_api_status_code(), dm.get_api_return_object()

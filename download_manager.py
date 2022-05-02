@@ -13,10 +13,11 @@ from params import progress_hooks, postprocessor_hooks, ydl_api_hooks
 from rq import get_current_job
 import inspect
 
+
 class DownloadManager:
     __cm = None
 
-    def __init__(self, config_manager, url, presets_string, user_token, post_body=None):
+    def __init__(self, config_manager, url, presets_string, user_token, post_body=None, ignore_post_security=False):
         logging.getLogger('download_manager').info(f'Init download - user_token: {user_token} - presets: {presets_string} - url :{url} ')
         self.presets_string = presets_string
         self.presets = []
@@ -48,6 +49,8 @@ class DownloadManager:
         self.is_video = is_video if is_video is not None else False
 
         self.enable_redis = self.__cm.get_app_params().get('_enable_redis')
+
+        self.ignore_post_security = ignore_post_security
 
         if post_body is not None and post_body.get('presets') is not None and len(post_body.get('presets')) > 0:
             self.get_presets_from_post_request(post_body.get('presets'))
@@ -97,11 +100,9 @@ class DownloadManager:
                                   '_user': None}
 
         for preset in presets:
-            self.transform_post_preset_as_object(preset)
-
             preset_object = self.transform_post_preset_as_object(preset)
 
-            if not self.__cm.get_app_params().get('_allow_dangerous_post_requests'):
+            if not self.__cm.get_app_params().get('_allow_dangerous_post_requests') and not self.ignore_post_security:
                 preset_object.delete('paths')
                 preset_object.delete('outtmpl')
 
@@ -109,20 +110,21 @@ class DownloadManager:
                 if param in config_objects_mapping:
                     self.__cm.merge_configs_object(config_objects_mapping.get(param)(preset.get(param)), preset_object, override=False)
 
-            if preset_object.get('_ignore_default_preset') is None or (preset_object.get('_ignore_default_preset') is not None and not preset_object.get('_ignore_default_preset')):
-                self.__cm.merge_configs_object(self.__cm.get_preset_params('DEFAULT'), preset_object, override=False)
+            if self.ignore_post_security is False:
+                if preset_object.get('_ignore_default_preset') is None or (preset_object.get('_ignore_default_preset') is not None and not preset_object.get('_ignore_default_preset')):
+                    self.__cm.merge_configs_object(self.__cm.get_preset_params('DEFAULT'), preset_object, override=False)
 
-            self.__cm.merge_configs_object(self.user, preset_object, override=True)
+                self.__cm.merge_configs_object(self.user, preset_object, override=True)
 
-            if preset_object.get('_ignore_site_config') is None or (preset_object.get('_ignore_site_config') is not None and not preset_object.get('_ignore_site_config')):
-                self.__cm.merge_configs_object(self.site, preset_object, override=True)
+                if preset_object.get('_ignore_site_config') is None or (preset_object.get('_ignore_site_config') is not None and not preset_object.get('_ignore_site_config')):
+                    self.__cm.merge_configs_object(self.site, preset_object, override=True)
 
-            if preset_object.get('paths') is None:
-                preset_object.append('paths', {'home': './downloads'})
-                self.__cm.merge_configs_object(self.__cm.get_location_params('DEFAULT'), preset_object, override=True)
+                if preset_object.get('paths') is None:
+                    preset_object.append('paths', {'home': './downloads'})
+                    self.__cm.merge_configs_object(self.__cm.get_location_params('DEFAULT'), preset_object, override=True)
 
-            if preset_object.get('outtmpl') is None:
-                self.__cm.merge_configs_object(self.__cm.get_template_params('DEFAULT'), preset_object, override=True)
+                if preset_object.get('outtmpl') is None:
+                    self.__cm.merge_configs_object(self.__cm.get_template_params('DEFAULT'), preset_object, override=True)
 
             self.presets.append(preset_object)
 
@@ -372,3 +374,27 @@ class DownloadManager:
 
     def get_current_config_manager(self):
         return self.__cm
+
+    @staticmethod
+    def get_downloaded_files_info(downloaded_files_list):
+        downloads_state = {}
+
+        for download in downloaded_files_list:
+            video_id = download.get('info_dict').get('id')
+
+            if downloads_state.get(video_id) is None:
+                downloads_state[video_id] = {
+                    'finished_downloads': 0,
+                    'error_downloads': 0,
+                    'file_size': 0,
+                    'downloads': []
+                }
+
+            if download.get('status') == 'finished':
+                downloads_state.get(video_id)['finished_downloads'] = downloads_state.get(video_id).get('finished_downloads') + 1
+                downloads_state.get(video_id)['file_size'] = downloads_state.get(video_id).get('file_size') + download.get('total_bytes')
+            else:
+                downloads_state.get(video_id)['error_downloads'] = downloads_state.get(video_id).get('error_downloads') + 1
+
+            downloads_state.get(video_id).get('downloads').append(download)
+        return downloads_state

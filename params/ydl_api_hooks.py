@@ -21,26 +21,7 @@ def pre_download_handler(ydl_opts, download_manager, config_manager):
 
 # Called after all files of the preset are downloaded
 def post_download_handler(ydl_opts, download_manager, config_manager, downloads, filename_info=None):
-    downloads_state = {}
-
-    for download in downloads:
-        video_id = download.get('info_dict').get('id')
-
-        if downloads_state.get(video_id) is None:
-            downloads_state[video_id] = {
-                'finished_downloads': 0,
-                'error_downloads': 0,
-                'file_size': 0,
-                'downloads': []
-            }
-
-        if download.get('status') == 'finished':
-            downloads_state.get(video_id)['finished_downloads'] = downloads_state.get(video_id).get('finished_downloads') + 1
-            downloads_state.get(video_id)['file_size'] = downloads_state.get(video_id).get('file_size') + download.get('total_bytes')
-        else:
-            downloads_state.get(video_id)['error_downloads'] = downloads_state.get(video_id).get('error_downloads') + 1
-
-        downloads_state.get(video_id).get('downloads').append(download)
+    downloads_state = download_manager.get_downloaded_files_info(downloads)
 
     logging.getLogger('post_download_hooks').info(f'[preset:{ydl_opts.get("_name")}] - {download_manager.url} :  download finished')
 
