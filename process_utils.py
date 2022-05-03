@@ -426,6 +426,7 @@ class ProcessUtils:
             return 404, None
 
         preset = job.args[0].get_all()
+        preset['ignoreerrors'] = False
 
         downloads_state = {}
         launched_downloads = []

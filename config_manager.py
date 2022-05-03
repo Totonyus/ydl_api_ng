@@ -79,8 +79,8 @@ class ConfigManager:
 
         self.__config.read(params_file if params_file is not None else 'params/params.ini')
 
-        self.log_level = self.__config['app'].getint('_log_level')
-        self.log_backups = self.__config['app'].getint('_log_backups')
+        self.log_level = self.__config['app'].getint('_log_level') if self.__config['app'].getint('_log_level') is not None else 20
+        self.log_backups = self.__config['app'].getint('_log_backups') if self.__config['app'].getint('_log_backups') is not None else 7
 
         self.init_logger()
 
