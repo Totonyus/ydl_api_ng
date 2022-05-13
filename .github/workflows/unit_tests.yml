@@ -5,7 +5,13 @@ on:
     branches-ignore:
       - main
       - develop
+    paths-ignore:
+      - '**.md'
+      - 'docker-compose*'
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'docker-compose*'
   workflow_call:
 
 jobs:
