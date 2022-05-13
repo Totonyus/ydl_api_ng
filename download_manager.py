@@ -353,12 +353,15 @@ class DownloadManager:
             logging.getLogger('api').error(f'Not downloadable with presets : {self.presets_string} : {self.url}')
             return 400
 
+        return 200
+
     def get_api_return_object(self):
         presets_display = []
         for preset in self.presets:
             presets_display.append(self.__cm.sanitize_config_object_section(preset).get_all())
 
         return {
+            'status_code': self.get_api_status_code(),
             'url': self.url,
             'url_hostname': self.site_hostname,
             'no_preset_found': self.no_preset_found,

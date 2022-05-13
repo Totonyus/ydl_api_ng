@@ -65,11 +65,11 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
 
     if user is False:
         response.status_code = 401
-        return
+        return {'status_code': response.status_code}
 
     if param_url == '':
         response.status_code = 400
-        return
+        return {'status_code': response.status_code}
 
     response.status_code = dm.get_api_status_code()
 
