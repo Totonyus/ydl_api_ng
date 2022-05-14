@@ -278,14 +278,17 @@ class ProcessUtils:
         jobs = []
 
         for job_id in self.registries.get(registry).get_job_ids():
-            job = Job.fetch(job_id, connection=self.redis)
-            jobs.append({
-                'id': job.id,
-                'registry': registry,
-                'preset': job.args[0],
-                'download_manager': job.args[1],
-                'job': job
-            })
+            try:
+                job = Job.fetch(job_id, connection=self.redis)
+                jobs.append({
+                    'id': job.id,
+                    'registry': registry,
+                    'preset': job.args[0],
+                    'download_manager': job.args[1],
+                    'job': job
+                })
+            except rq.exceptions.NoSuchJobError:
+                pass
 
         return jobs
 
@@ -293,15 +296,15 @@ class ProcessUtils:
         cleared_jobs_ids = []
 
         for job_id in self.registries.get(registry).get_job_ids():
-            job = Job.fetch(job_id, connection=self.redis)
-            cleared_jobs_ids.append(job.id)
-
             try:
+                job = Job.fetch(job_id, connection=self.redis)
+                cleared_jobs_ids.append(job.id)
+
                 job.cancel()
             except rq.exceptions.InvalidJobOperation:
+                job.delete()
+            except rq.exceptions.NoSuchJobError:
                 pass
-
-            job.delete()
 
         return cleared_jobs_ids
 
@@ -356,14 +359,17 @@ class ProcessUtils:
         for registry in self.registries:
             for job_id in self.registries.get(registry).get_job_ids():
                 if job_id == searched_job_id:
-                    job = Job.fetch(job_id, connection=self.redis)
-                    return {
-                        'id': job.id,
-                        'registry': registry,
-                        'preset': job.args[0],
-                        'download_manager': job.args[1],
-                        'job': job
-                    }
+                    try:
+                        job = Job.fetch(job_id, connection=self.redis)
+                        return {
+                            'id': job.id,
+                            'registry': registry,
+                            'preset': job.args[0],
+                            'download_manager': job.args[1],
+                            'job': job
+                        }
+                    except rq.exceptions.NoSuchJobError:
+                        return None
         return None
 
     def find_in_running(self, search_job_id):
