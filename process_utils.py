@@ -116,7 +116,6 @@ class ProcessUtils:
 
             if not ffmpeg_killed:
                 send_kill_horse_command(self.redis, job.get('worker').name)
-                job.get('job').cancel()
 
                 if callable(getattr(ydl_api_hooks, 'post_redis_termination_handler', None)):
                     ydl_api_hooks.post_redis_termination_handler(job_object.get('download_manager'), None)
