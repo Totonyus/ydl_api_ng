@@ -116,16 +116,17 @@ class ProcessUtils:
 
             if not ffmpeg_killed:
                 send_kill_horse_command(self.redis, job.get('worker').name)
+                job.get('job').cancel()
 
                 if callable(getattr(ydl_api_hooks, 'post_redis_termination_handler', None)):
                     ydl_api_hooks.post_redis_termination_handler(job_object.get('download_manager'), None)
 
                 logging.getLogger('process_utils').info(f"Job stopped on worker {job.get('worker').name}")
 
-            if inspect.getfullargspec(ydl_api_hooks.post_download_handler).varkw is not None:
-                ydl_api_hooks.post_download_handler(job.get('preset'), job.get('download_manager'), job.get('download_manager').get_current_config_manager(), job.get('job').meta.get('downloaded_files'), job=job)
-            else:
-                ydl_api_hooks.post_download_handler(job.get('preset'), job.get('download_manager'), job.get('download_manager').get_current_config_manager(), job.get('job').meta.get('downloaded_files'))
+                if inspect.getfullargspec(ydl_api_hooks.post_download_handler).varkw is not None:
+                    ydl_api_hooks.post_download_handler(job.get('preset'), job.get('download_manager'), job.get('download_manager').get_current_config_manager(), job.get('job').meta.get('downloaded_files'), job=job)
+                else:
+                    ydl_api_hooks.post_download_handler(job.get('preset'), job.get('download_manager'), job.get('download_manager').get_current_config_manager(), job.get('job').meta.get('downloaded_files'))
 
             return self.sanitize_job(job_object)
         else:
