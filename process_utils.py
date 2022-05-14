@@ -132,6 +132,7 @@ class ProcessUtils:
 
             try:
                 job.get('job').cancel()
+                job.get('job').delete()
             except rq.exceptions.InvalidJobOperation:
                 job.get('job').delete()
 
