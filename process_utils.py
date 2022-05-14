@@ -9,6 +9,7 @@ import signal
 import psutil
 import re
 import pathlib
+import inspect
 
 import download_manager
 from params import ydl_api_hooks
@@ -121,6 +122,9 @@ class ProcessUtils:
 
                 logging.getLogger('process_utils').info(f"Job stopped on worker {job.get('worker').name}")
 
+            if inspect.getfullargspec(ydl_api_hooks.post_download_handler).varkw is not None:
+                ydl_api_hooks.post_download_handler(job.get('preset'), job.get('download_manager'), job.get('download_manager').get_current_config_manager(), job.get('job').meta.get('downloaded_files'), job=job)
+            else:
                 ydl_api_hooks.post_download_handler(job.get('preset'), job.get('download_manager'), job.get('download_manager').get_current_config_manager(), job.get('job').meta.get('downloaded_files'))
 
             return self.sanitize_job(job_object)

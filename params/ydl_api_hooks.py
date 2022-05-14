@@ -14,13 +14,13 @@ sys.path.insert(1, 'params/hooks_utils/')
 ###
 
 # Called just before preset effective download
-def pre_download_handler(ydl_opts, download_manager, config_manager):
+def pre_download_handler(ydl_opts, download_manager, config_manager, **kwargs):
     logging.getLogger('pre_download_hooks').info(f'Downloading {download_manager.url} with preset {ydl_opts.get("_name")} in {ydl_opts.get("outtmpl")}')
     pass
 
 
 # Called after all files of the preset are downloaded
-def post_download_handler(ydl_opts, download_manager, config_manager, downloads, filename_info=None):
+def post_download_handler(ydl_opts, download_manager, config_manager, downloads, filename_info=None, **kwargs):
     downloads_state = download_manager.get_downloaded_files_info(downloads)
 
     logging.getLogger('post_download_hooks').info(f'[preset:{ydl_opts.get("_name")}] - {download_manager.url} :  download finished')
@@ -36,10 +36,10 @@ def post_download_handler(ydl_opts, download_manager, config_manager, downloads,
             logging.getLogger('post_download_hooks').info(f'[SUCCESS][preset:{ydl_opts.get("_name")}] - {download_object.get("downloads")[0].get("info_dict").get("webpage_url")} -> {download_object.get("downloads")[0].get("info_dict").get("_filename")} ({humanize.naturalsize(download_object.get("file_size"), binary=True)})')
 
 # Called after a download is terminated
-def post_termination_handler(config_manager, filename_info):
+def post_termination_handler(config_manager, filename_info, **kwargs):
     logging.getLogger('post_termination_hooks').info(f'Downloading has been stopped by user : {filename_info.get("full_filename")} ({humanize.naturalsize(filename_info.get("file_size"), binary=True)})')
 
-def post_redis_termination_handler(download_manager, filename_info):
+def post_redis_termination_handler(download_manager, filename_info, **kwargs):
     if filename_info is None:
         logging.getLogger('post_termination_hooks').info(f'Downloading has been stopped by user : {download_manager.url}')
     else:

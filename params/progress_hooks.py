@@ -13,7 +13,7 @@ sys.path.insert(1, 'params/hooks_utils/')
 # download contains the standart youtube-dlp object for progress hooks
 ###
 
-def handler(ydl_opts, download_manager, config_manager, download):
+def handler(ydl_opts, download_manager, config_manager, download, **kwargs):
     if download.get('status') == 'finished':
         logging.getLogger('progress_hooks').debug(f'[SUCCESS][preset:{ydl_opts.get("_name")}] - {download_manager.url} -> {download.get("filename")} ({humanize.naturalsize(download.get("total_bytes"), binary=True)})')
     if download.get('status') == 'error':
