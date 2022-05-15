@@ -187,7 +187,10 @@ class DownloadManager:
         noplaylist_param = preset.get('noplaylist')
         noplaylist_param = noplaylist_param if noplaylist_param is not None else False
 
-        return not self.is_from_playlist or (noplaylist_param and self.is_video)
+        if self.ignore_post_security:
+            return False
+        else:
+            return not self.is_from_playlist or (noplaylist_param and self.is_video)
 
     def is_user_permitted(self, users_management=None):
         manage_user = self.__cm.get_app_params().get('_enable_users_management') if users_management is None else users_management
