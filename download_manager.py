@@ -234,7 +234,7 @@ class DownloadManager:
             with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
                 simulation_result = dl.download([self.url]) == 0
                 preset.append('__check_exception_message', None)
-        except ydl.utils.DownloadError as error:
+        except Exception as error:
             simulation_result = False
             preset.append('__check_exception_message', str(error))
 
@@ -291,7 +291,7 @@ class DownloadManager:
             with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
                 dl.download([self.url])
                 ydl_opts.append('__download_exception_message', None)
-        except ydl.utils.DownloadError as error:
+        except Exception as error:
             ydl_opts.append('__download_exception_message', str(error))
 
         filename_info = None
