@@ -17,7 +17,7 @@ import inspect
 class DownloadManager:
     __cm = None
 
-    def __init__(self, config_manager, url, presets_string, user_token, post_body=None, ignore_post_security=False):
+    def __init__(self, config_manager, url, presets_string, user_token, post_body=None, ignore_post_security=False, **kwargs):
         logging.getLogger('download_manager').info(f'Init download - user_token: {user_token} - presets: {presets_string} - url :{url} ')
         self.presets_string = presets_string
         self.presets = []
@@ -51,6 +51,8 @@ class DownloadManager:
         self.enable_redis = self.__cm.get_app_params().get('_enable_redis')
 
         self.ignore_post_security = ignore_post_security
+
+        self.relaunch_failed_mode = kwargs.get('relaunch_failed_mode') if kwargs.get('relaunch_failed_mode') is not None else None
 
         if post_body is not None and post_body.get('presets') is not None and len(post_body.get('presets')) > 0:
             self.get_presets_from_post_request(post_body.get('presets'))
@@ -187,10 +189,7 @@ class DownloadManager:
         noplaylist_param = preset.get('noplaylist')
         noplaylist_param = noplaylist_param if noplaylist_param is not None else False
 
-        if self.ignore_post_security:
-            return False
-        else:
-            return not self.is_from_playlist or (noplaylist_param and self.is_video)
+        return not self.is_from_playlist or (noplaylist_param and self.is_video)
 
     def is_user_permitted(self, users_management=None):
         manage_user = self.__cm.get_app_params().get('_enable_users_management') if users_management is None else users_management
@@ -212,7 +211,12 @@ class DownloadManager:
         return preset
 
     def simulate_download(self, preset):
-        if not self.can_url_be_checked(preset):
+        if self.relaunch_failed_mode is True:
+            preset.append('__can_be_checked', True)
+            preset.append('__check_result', None)
+            return None
+
+        elif not self.can_url_be_checked(preset):
             self.downloads_cannot_be_checked = self.downloads_cannot_be_checked + 1
             self.all_downloads_checked = False
 

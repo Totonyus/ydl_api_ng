@@ -451,7 +451,7 @@ class ProcessUtils:
             if download_object.get('error_downloads') > 0:
                 url = download_object.get('downloads')[0].get('info_dict').get('webpage_url')
 
-                dm = download_manager.DownloadManager(self.__cm, url, None, user_token, {'presets': [preset]}, ignore_post_security=True)
+                dm = download_manager.DownloadManager(self.__cm, url, None, user_token, {'presets': [preset]}, ignore_post_security=True, relaunch_failed_mode=True)
                 dm.process_downloads()
 
                 launched_downloads.append(dm.get_api_return_object())
