@@ -375,6 +375,8 @@ class DownloadManager:
             'failed_checks': self.failed_checks,
             'downloads_can_be_checked': self.downloads_can_be_checked,
             'downloads_cannot_be_checked': self.downloads_cannot_be_checked,
+            'ignore_post_security' : self.ignore_post_security,
+            'relaunch_failed_mode' : self.relaunch_failed_mode,
             'downloads': presets_display,
         }
 
