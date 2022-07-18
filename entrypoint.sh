@@ -4,7 +4,7 @@ echo ~~~ ydl_api_ng
 echo ~~~ Revision : $GIT_BRANCH - $GIT_REVISION
 echo ~~~ Docker image generated : $DATE
 
-mkdir -p /app/logs /app/downloads /app/params /app/tmp
+mkdir -p /app/logs /app/downloads /app/params /app/tmp /home/ydl_api_ng
 cp -n /app/setup/* /app/params/
 
 pip3 install yt-dlp --upgrade
@@ -12,8 +12,7 @@ pip3 install -r /app/params/hooks_requirements
 
 addgroup --gid $GID ydl_api_ng && useradd --uid $UID --gid ydl_api_ng ydl_api_ng
 
-chown $UID:$GID /app/logs
-chown $UID:$GID /app/downloads
+chown $UID:$GID /app/logs /app/downloads /home/ydl_api_ng
 
 if [ "$DISABLE_REDIS" == "false" ]; then
 cat <<EOT >> /app/supervisord.conf
