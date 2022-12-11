@@ -16,3 +16,21 @@ app_defaults = {
     '_redis_host': 'ydl_api_ng',
     '_redis_port': 6379
 }
+
+programmation_object_default = {
+    'id': None,
+    'url': None,
+    'user_token': None,
+    'enabled': True,
+    'planning': {
+        'recording_start_date': None,
+        'recording_duration': None,
+        'recording_stops_at_end': False,
+
+        'recurrence_cron': None,
+        'recurrence_start_date': None,
+        'recurrence_end_date': None,
+    },
+    'presets': None
+}
+
