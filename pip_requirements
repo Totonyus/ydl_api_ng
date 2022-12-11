@@ -8,3 +8,4 @@ redis
 rq
 supervisor
 tinydb
+cronsim
