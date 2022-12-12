@@ -8,7 +8,10 @@ import config_manager
 import download_manager
 
 from datetime import datetime, timedelta
+import programmation_manager
 
+
+@unittest.skip
 class TestActualParametersFile(unittest.TestCase):
     def test_app(self):
         cm = config_manager.ConfigManager()
@@ -31,6 +34,7 @@ class TestActualParametersFile(unittest.TestCase):
         self.assertTrue(cm.get_app_params().get('_enable_redis'))
 
 
+@unittest.skip
 class TestConfig(unittest.TestCase):
     config_manager = config_manager.ConfigManager('params/params.sample.ini')
 
@@ -82,6 +86,7 @@ class TestConfig(unittest.TestCase):
                          self.config_manager.get_auth_params('DAILYMOTION').get('password'))
 
 
+@unittest.skip
 class TestUtils(unittest.TestCase):
     config_manager = config_manager.ConfigManager('params/params.sample.ini')
 
@@ -372,10 +377,9 @@ class TestAPI(unittest.TestCase):
         self.assertEqual('DEFAULT', request_json.get('downloads')[0].get('_name'))
 
 
-import programmation_manager
-
-
 class TestProgrammation(unittest.TestCase):
+    config_manager = config_manager.ConfigManager('params/params.sample.ini')
+
     database_file = 'test_database.json'
     try:
         os.remove(database_file)
@@ -411,6 +415,7 @@ class TestProgrammation(unittest.TestCase):
         validation_result, added_programmation = self.pm.add_programmation(programmation=(
             {
                 'url': 'a more valid_url',
+                'presets' : ['hd', 'audio']
             }
         ))
 
@@ -748,6 +753,7 @@ class TestProgrammation(unittest.TestCase):
                     'recording_duration': 120,
                 },
             }))
+
 
 if __name__ == '__main__':
     unittest.main()

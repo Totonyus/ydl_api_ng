@@ -107,6 +107,10 @@ class ProgrammationManager:
         # TODO delete in redis queue
         return self.__scheduled_jobs_table.remove(Query().id == id)
 
+    def delete_programmation_by_url(self, url=None, *args, **kwargs):
+        # TODO delete in redis queue
+        return self.__scheduled_jobs_table.remove(Query().url == url)
+
     def get_all_from_date(self, from_date=datetime.now(), *args, **kwargs):
         all_programmations = self.get_all_programmations()
         programmations = []
