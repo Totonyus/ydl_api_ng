@@ -19,7 +19,7 @@ cat <<EOT >> /app/supervisord.conf
 [supervisord]
 
 [program:worker]
-command=rq worker ydl_api_ng -u "redis://ydl_api_ng_redis:6379"
+command=rq worker ydl_api_ng --with-scheduler -u "redis://ydl_api_ng_redis:6379"
 process_name=%(program_name)s-%(process_num)s
 numprocs=$NB_WORKERS
 directory=.

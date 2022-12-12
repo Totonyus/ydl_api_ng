@@ -19,8 +19,10 @@ class ProcessUtils:
     def __init__(self, config_manager):
         self.__cm = config_manager
 
-        if self.__cm.get_app_params().get('_enable_redis') is not None and self.__cm.get_app_params().get('_enable_redis') is True:
-            self.redis = Redis(host=self.__cm.get_app_params().get('_redis_host'), port=self.__cm.get_app_params().get('_redis_port'))
+        if self.__cm.get_app_params().get('_enable_redis') is not None and self.__cm.get_app_params().get(
+                '_enable_redis') is True:
+            self.redis = Redis(host=self.__cm.get_app_params().get('_redis_host'),
+                               port=self.__cm.get_app_params().get('_redis_port'))
             self.queue = Queue('ydl_api_ng', connection=self.redis)
             self.registries = {'pending_job': self.queue,
                                'started_job': self.queue.started_job_registry,
@@ -30,6 +32,11 @@ class ProcessUtils:
                                'scheduled_job': self.queue.scheduled_job_registry,
                                'canceled_job': self.queue.canceled_job_registry,
                                }
+            self.programmation_registries = {
+                'pending_job': self.queue,
+                'started_job': self.queue.started_job_registry,
+            }
+
         else:
             self.redis = None
             self.queue = None
@@ -50,7 +57,8 @@ class ProcessUtils:
             child.terminate()
             filename_info = self.get_current_download_file_destination(child.cmdline())
 
-            os.rename(filename_info.get('part_filename'), filename_info.get('filename'))  # renaming file to remove the .part
+            os.rename(filename_info.get('part_filename'),
+                      filename_info.get('filename'))  # renaming file to remove the .part
 
             if callable(getattr(ydl_api_hooks, 'post_termination_handler', None)):
                 ydl_api_hooks.post_termination_handler(self.__cm, filename_info)
@@ -81,6 +89,10 @@ class ProcessUtils:
 
         return None, None
 
+    def terminate_redis_download_by_programmation_id(self, programmation_id=None, *args, **kwargs):
+        found_job = self.find_job_by_programmation_id(programmation_id)
+        self.terminate_redis_active_download(found_job.get('id'))
+
     def terminate_redis_active_download(self, search_job_id):
         job = self.find_in_running(search_job_id)
 
@@ -101,7 +113,8 @@ class ProcessUtils:
                 os.kill(process_pid, signal.SIGINT)
 
                 try:
-                    os.rename(filename_info.get('part_filename'), filename_info.get('filename'))  # renaming file to remove the .part
+                    os.rename(filename_info.get('part_filename'),
+                              filename_info.get('filename'))  # renaming file to remove the .part
 
                     job.get('job').meta['filename_info'] = filename_info
                     job.get('job').save()
@@ -123,9 +136,13 @@ class ProcessUtils:
                 logging.getLogger('process_utils').info(f"Job stopped on worker {job.get('worker').name}")
 
                 if inspect.getfullargspec(ydl_api_hooks.post_download_handler).varkw is not None:
-                    ydl_api_hooks.post_download_handler(job.get('preset'), job.get('download_manager'), job.get('download_manager').get_current_config_manager(), job.get('job').meta.get('downloaded_files'), job=job)
+                    ydl_api_hooks.post_download_handler(job.get('preset'), job.get('download_manager'),
+                                                        job.get('download_manager').get_current_config_manager(),
+                                                        job.get('job').meta.get('downloaded_files'), job=job)
                 else:
-                    ydl_api_hooks.post_download_handler(job.get('preset'), job.get('download_manager'), job.get('download_manager').get_current_config_manager(), job.get('job').meta.get('downloaded_files'))
+                    ydl_api_hooks.post_download_handler(job.get('preset'), job.get('download_manager'),
+                                                        job.get('download_manager').get_current_config_manager(),
+                                                        job.get('job').meta.get('downloaded_files'))
 
             return self.sanitize_job(job_object)
         else:
@@ -285,6 +302,7 @@ class ProcessUtils:
         for job_id in self.registries.get(registry).get_job_ids():
             try:
                 job = Job.fetch(job_id, connection=self.redis)
+
                 jobs.append({
                     'id': job.id,
                     'registry': registry,
@@ -314,6 +332,8 @@ class ProcessUtils:
         return cleared_jobs_ids
 
     def clear_all_but_pending_and_started(self):
+        self.clear_registry('pending_job')  # TODO
+        self.clear_registry('started_job')  # TODO
         self.clear_registry('finished_job')
         self.clear_registry('failed_job')
         self.clear_registry('deferred_job')
@@ -375,6 +395,40 @@ class ProcessUtils:
                         }
                     except rq.exceptions.NoSuchJobError:
                         return None
+        return None
+
+    def find_job_with_programmation_end_date(self):
+        jobs = []
+        for registry in self.registries:
+            for job_id in self.registries.get(registry).get_job_ids():
+                try:
+                    job = Job.fetch(job_id, connection=self.redis)
+
+                    if job.meta.get('programmation_end_date') is not None:
+                        jobs.append({
+                            'id': job.id,
+                            'registry': registry,
+                            'preset': job.args[0],
+                            'download_manager': job.args[1],
+                            'job': job
+                        })
+                except rq.exceptions.NoSuchJobError:
+                    return None
+        return jobs
+
+    def find_job_by_programmation_id(self, programmation_id=None, *args, **kwargs):
+        for registry, content in self.programmation_registries.items():
+            for job_id in content.get_job_ids():
+                job = Job.fetch(job_id, connection=self.redis)
+
+                if job.meta.get('programmation_id') == programmation_id:
+                    return {
+                        'id': job.id,
+                        'registry': registry,
+                        'preset': job.args[0],
+                        'download_manager': job.args[1],
+                        'job': job
+                    }
         return None
 
     def find_in_running(self, search_job_id):
@@ -444,14 +498,16 @@ class ProcessUtils:
 
         downloaded_files = job.meta.get('downloaded_files')
         if downloaded_files is not None:
-            downloads_state = download_manager.DownloadManager.get_downloaded_files_info(job.meta.get('downloaded_files'))
+            downloads_state = download_manager.DownloadManager.get_downloaded_files_info(
+                job.meta.get('downloaded_files'))
 
         for video_id in downloads_state:
             download_object = downloads_state.get(video_id)
             if download_object.get('error_downloads') > 0:
                 url = download_object.get('downloads')[0].get('info_dict').get('webpage_url')
 
-                dm = download_manager.DownloadManager(self.__cm, url, None, user_token, {'presets': [preset]}, ignore_post_security=True, relaunch_failed_mode=True)
+                dm = download_manager.DownloadManager(self.__cm, url, None, user_token, {'presets': [preset]},
+                                                      ignore_post_security=True, relaunch_failed_mode=True)
                 dm.process_downloads()
 
                 launched_downloads.append(dm.get_api_return_object())
@@ -467,7 +523,8 @@ class ProcessUtils:
         preset = job.args[0].get_all()
         dm = job.args[1]
 
-        dm = download_manager.DownloadManager(self.__cm, dm.url, None, user_token, {'presets': [preset]}, ignore_post_security=True)
+        dm = download_manager.DownloadManager(self.__cm, dm.url, None, user_token, {'presets': [preset]},
+                                              ignore_post_security=True)
 
         if dm.get_api_status_code() != 400:
             dm.process_downloads()

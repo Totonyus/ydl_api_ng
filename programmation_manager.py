@@ -104,14 +104,16 @@ class ProgrammationManager:
         return result[0] if len(result) != 0 else None
 
     def delete_programmation_by_id(self, id=None, *args, **kwargs):
-        # TODO delete in redis queue
-        return self.__scheduled_jobs_table.remove(Query().id == id)
+        ret = self.__scheduled_jobs_table.remove(Query().id == id)
+        return ret
 
     def delete_programmation_by_url(self, url=None, *args, **kwargs):
-        # TODO delete in redis queue
-        return self.__scheduled_jobs_table.remove(Query().url == url)
+        ret = self.__scheduled_jobs_table.remove(Query().url == url)
+        return ret
 
-    def get_all_from_date(self, from_date=datetime.now(), *args, **kwargs):
+    def get_all_from_date(self, from_date=None, *args, **kwargs):
+        from_date = datetime.now() if from_date is None else from_date
+
         all_programmations = self.get_all_programmations()
         programmations = []
 
@@ -136,16 +138,13 @@ class ProgrammationManager:
         if planning is None:
             return None
 
-        if recording_start_date is not None and recording_duration is not None:
+        if recurrence_end_date is None and recording_start_date is not None and recording_duration is not None:
             end_date = datetime.fromisoformat(recording_start_date) + timedelta(minutes=recording_duration)
 
-        if recurrence_end_date is not None:
-            end_date = datetime.fromisoformat(recurrence_end_date)
+        elif recurrence_end_date is None and recording_start_date is not None:
+            end_date = datetime.fromisoformat(recording_start_date)
 
-        if recurrence_end_date is not None and recording_duration is not None:
-            end_date = datetime.fromisoformat(recurrence_end_date) + timedelta(minutes=recording_duration)
-
-        if recurrence_end_date is not None and recurrence_cron is not None:
+        elif recurrence_end_date is not None and recurrence_cron is not None:
             end_date = datetime.fromisoformat(recurrence_start_date)
 
             cron = CronSim(recurrence_cron, datetime.fromisoformat(recurrence_start_date))
@@ -157,6 +156,12 @@ class ProgrammationManager:
 
             if recording_duration is not None:
                 end_date = end_date + timedelta(minutes=recording_duration)
+
+        elif recurrence_end_date is not None and recording_duration is not None:
+            end_date = datetime.fromisoformat(recurrence_end_date) + timedelta(minutes=recording_duration)
+
+        elif recurrence_end_date is not None:
+            end_date = datetime.fromisoformat(recurrence_end_date)
 
         return end_date
 
@@ -177,7 +182,9 @@ class ProgrammationManager:
             self.__scheduled_jobs_table.update(changed_programmation, Query().id == stored_programmation.get('id'))
             return validation_result, changed_programmation
 
-    def purge_all_past_programmations(self, from_date=datetime.now(), *args, **kwargs):
+    def purge_all_past_programmations(self, from_date=None, *args, **kwargs):
+        from_date = datetime.now() if from_date is None else from_date
+
         programmations = self.get_all_from_date(from_date=from_date)
 
         for programmation in programmations:
@@ -185,7 +192,8 @@ class ProgrammationManager:
 
         return programmations
 
-    def get_next_execution(self, programmation=None, from_date=datetime.now(), *args, **kwargs):
+    def get_next_execution(self, programmation=None, from_date=None, *args, **kwargs):
+        from_date = datetime.now() if from_date is None else from_date
         planning = programmation.get('planning')
 
         recording_start_date = planning.get('recording_start_date')
@@ -207,7 +215,8 @@ class ProgrammationManager:
         # If None, must launch it immediately
         return next_iteration
 
-    def must_be_restarted(self, programmation=None, from_date=datetime.now(), *args, **kwargs):
+    def must_be_restarted(self, programmation=None, from_date=None, *args, **kwargs):
+        from_date = datetime.now() if from_date is None else from_date
         planning = programmation.get('planning')
 
         recording_start_date = planning.get('recording_start_date')
@@ -215,16 +224,16 @@ class ProgrammationManager:
         recurrence_cron = planning.get('recurrence_cron')
         recurrence_start_date = planning.get('recurrence_start_date')
 
-
-        if recording_start_date is not None:
+        if recording_duration is None:
+            return None
+        elif recording_start_date is not None:
             start_date = datetime.fromisoformat(recording_start_date)
-        elif recurrence_start_date is not None:
+        elif recurrence_start_date is not None and recording_duration is not None:
             start_date = next(CronSim(recurrence_cron, from_date - timedelta(minutes=recording_duration)))
         else:
-            return False
+            return None
 
         if start_date < from_date < start_date + timedelta(minutes=recording_duration):
-            return True
+            return int((start_date + timedelta(minutes=recording_duration) - from_date).seconds / 60)
         else:
-            return False
-
+            return None

@@ -28,6 +28,8 @@ services:
     restart: unless-stopped
     networks:
       - ydl_api_ng
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
 
 networks:
   ydl_api_ng:

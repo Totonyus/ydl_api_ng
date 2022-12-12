@@ -8,8 +8,10 @@ import config_manager
 import download_manager
 import process_utils
 import os
+import logging
 
-__cm = config_manager.ConfigManager()
+__cm = config_manager.ConfigManager(params_file='params/params_docker.ini')
+# __cm = config_manager.ConfigManager()
 __pu = process_utils.ProcessUtils(__cm)
 
 app = FastAPI()

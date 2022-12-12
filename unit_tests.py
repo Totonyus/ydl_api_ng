@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import programmation_manager
 
 
-@unittest.skip
+# @unittest.skip
 class TestActualParametersFile(unittest.TestCase):
     def test_app(self):
         cm = config_manager.ConfigManager()
@@ -32,9 +32,10 @@ class TestActualParametersFile(unittest.TestCase):
         self.assertEqual('0.0.0.0', cm.get_app_params().get('_listen_ip'))
         self.assertFalse(cm.get_app_params().get('_allow_dangerous_post_requests'))
         self.assertTrue(cm.get_app_params().get('_enable_redis'))
+        self.assertEqual('ydl_api_ng', cm.get_app_params().get('_redis_host'))
 
 
-@unittest.skip
+# @unittest.skip
 class TestConfig(unittest.TestCase):
     config_manager = config_manager.ConfigManager('params/params.sample.ini')
 
@@ -86,7 +87,7 @@ class TestConfig(unittest.TestCase):
                          self.config_manager.get_auth_params('DAILYMOTION').get('password'))
 
 
-@unittest.skip
+# @unittest.skip
 class TestUtils(unittest.TestCase):
     config_manager = config_manager.ConfigManager('params/params.sample.ini')
 
@@ -415,7 +416,7 @@ class TestProgrammation(unittest.TestCase):
         validation_result, added_programmation = self.pm.add_programmation(programmation=(
             {
                 'url': 'a more valid_url',
-                'presets' : ['hd', 'audio']
+                'presets' : ['HD', 'AUDIO']
             }
         ))
 
@@ -681,7 +682,7 @@ class TestProgrammation(unittest.TestCase):
         self.assertEqual(4, len(self.pm.get_all_programmations()))
 
     def test_restart(self):
-        self.assertFalse(self.pm.must_be_restarted(
+        self.assertIsNone(self.pm.must_be_restarted(
             from_date=datetime.fromisoformat('2022-12-01 12:00'),
             programmation={
                 'url': "a valid url",
@@ -691,7 +692,7 @@ class TestProgrammation(unittest.TestCase):
                 },
             }))
 
-        self.assertTrue(self.pm.must_be_restarted(
+        self.assertEqual(60, self.pm.must_be_restarted(
             from_date=datetime.fromisoformat('2022-12-01 01:00'),
             programmation={
                 'url': "a valid url",
@@ -701,7 +702,7 @@ class TestProgrammation(unittest.TestCase):
                 },
             }))
 
-        self.assertFalse(self.pm.must_be_restarted(
+        self.assertIsNone(self.pm.must_be_restarted(
             from_date=datetime.fromisoformat('2022-12-01 15:00'),
             programmation={
                 'url': "a valid url",
@@ -712,7 +713,7 @@ class TestProgrammation(unittest.TestCase):
                 },
             }))
 
-        self.assertTrue(self.pm.must_be_restarted(
+        self.assertEqual(60, self.pm.must_be_restarted(
             from_date=datetime.fromisoformat('2022-12-01 13:00'),
             programmation={
                 'url': "a valid url",
@@ -723,14 +724,14 @@ class TestProgrammation(unittest.TestCase):
                 },
             }))
 
-        self.assertFalse(self.pm.must_be_restarted(
+        self.assertIsNone(self.pm.must_be_restarted(
             from_date=datetime.fromisoformat('2022-12-01 13:00'),
             programmation={
                 'url': "a valid url",
                 'planning': {},
             }))
 
-        self.assertFalse(self.pm.must_be_restarted(
+        self.assertIsNone(self.pm.must_be_restarted(
             from_date=datetime.fromisoformat('2022-12-02 15:00'),
             programmation={
                 'url': "a valid url",
@@ -742,8 +743,8 @@ class TestProgrammation(unittest.TestCase):
                 },
             }))
 
-        self.assertTrue(self.pm.must_be_restarted(
-            from_date=datetime.fromisoformat('2022-12-02 13:00'),
+        self.assertEqual(45, self.pm.must_be_restarted(
+            from_date=datetime.fromisoformat('2022-12-02 13:15'),
             programmation={
                 'url': "a valid url",
                 'planning': {
