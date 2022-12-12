@@ -32,7 +32,7 @@ class TestActualParametersFile(unittest.TestCase):
         self.assertEqual('0.0.0.0', cm.get_app_params().get('_listen_ip'))
         self.assertFalse(cm.get_app_params().get('_allow_dangerous_post_requests'))
         self.assertTrue(cm.get_app_params().get('_enable_redis'))
-        self.assertEqual('ydl_api_ng', cm.get_app_params().get('_redis_host'))
+        self.assertEqual('ydl_api_ng_redis', cm.get_app_params().get('_redis_host'))
 
 
 # @unittest.skip
