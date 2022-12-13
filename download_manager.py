@@ -319,7 +319,7 @@ class DownloadManager:
         if self.enable_redis is not None and self.enable_redis is True:
             queue = Queue('ydl_api_ng', connection=Redis(host=self.__cm.get_app_params().get('_redis_host'),
                                                          port=self.__cm.get_app_params().get('_redis_port')))
-            redis_ttl = 0 if self.programmation_id is not None else self.__cm.get_app_params().get('_redis_ttl')
+            redis_ttl = 15 if self.programmation_id is not None else self.__cm.get_app_params().get('_redis_ttl')
             redis_meta = {
                 'programmation_id': self.programmation_id,
                 'programmation_date': self.programmation_date,
