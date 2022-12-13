@@ -43,7 +43,7 @@ class ProcessUtils:
             self.registries = None
 
     def terminate_active_download(self, id):
-        if self.redis is None:
+        if self.redis is None or (self.redis is not None and self.redis is False):
             return self.terminate_basic_active_download(id)
         else:
             return self.terminate_redis_active_download(id)
@@ -135,14 +135,14 @@ class ProcessUtils:
 
                 logging.getLogger('process_utils').info(f"Job stopped on worker {job.get('worker').name}")
 
-                if inspect.getfullargspec(ydl_api_hooks.post_download_handler).varkw is not None:
-                    ydl_api_hooks.post_download_handler(job.get('preset'), job.get('download_manager'),
-                                                        job.get('download_manager').get_current_config_manager(),
-                                                        job.get('job').meta.get('downloaded_files'), job=job)
-                else:
-                    ydl_api_hooks.post_download_handler(job.get('preset'), job.get('download_manager'),
-                                                        job.get('download_manager').get_current_config_manager(),
-                                                        job.get('job').meta.get('downloaded_files'))
+            if inspect.getfullargspec(ydl_api_hooks.post_download_handler).varkw is not None:
+                ydl_api_hooks.post_download_handler(job.get('preset'), job.get('download_manager'),
+                                                    job.get('download_manager').get_current_config_manager(),
+                                                    job.get('job').meta.get('downloaded_files'), job=job)
+            else:
+                ydl_api_hooks.post_download_handler(job.get('preset'), job.get('download_manager'),
+                                                    job.get('download_manager').get_current_config_manager(),
+                                                    job.get('job').meta.get('downloaded_files'))
 
             return self.sanitize_job(job_object)
         else:

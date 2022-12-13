@@ -18,7 +18,7 @@ addgroup --gid $GID ydl_api_ng && useradd --uid $UID --gid ydl_api_ng ydl_api_ng
 chown $UID:$GID /app/logs /app/downloads /home/ydl_api_ng /app/data /app/data/database.json
 
 if [ "$DISABLE_REDIS" == "false" ]; then
-cat <<EOT >> /app/supervisord_api.conf
+cat <<EOT >> /app/supervisord_workers.conf
 [supervisord]
 
 [program:worker]
@@ -32,7 +32,7 @@ autorestart=true
 user=$UID
 EOT
 
-supervisord -c /app/supervisord_api.conf -l /app/logs/supervisord_api.log -j /app/tmp/pid_api -u ydl_api_ng -e $LOG_LEVEL
+supervisord -c /app/supervisord_workers.conf -l /app/logs/supervisord_workers.log -j /app/tmp/pid_api -u ydl_api_ng -e $LOG_LEVEL
 fi
 
 cat <<EOT >> /app/supervisord_programmation.conf
