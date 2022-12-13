@@ -23,7 +23,7 @@ def pre_download_handler(ydl_opts, download_manager, config_manager, **kwargs):
 def post_download_handler(ydl_opts, download_manager, config_manager, downloads, filename_info=None, **kwargs):
     downloads_state = download_manager.get_downloaded_files_info(downloads)
 
-    if download_manager.programmation_id is not None and len(downloads_state) == 0:
+    if download_manager.programmation_id is not None and len(downloads_state) == 0 and filename_info is None:
         return
 
     logging.getLogger('post_download_hooks').info(f'[preset:{ydl_opts.get("_name")}] - {download_manager.url} :  download finished')
