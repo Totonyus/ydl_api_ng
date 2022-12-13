@@ -70,14 +70,19 @@ class ProgrammationManager:
         if programmation.get('presets') is not None and type(programmation.get('presets')) != list:
             errors_list.append({'field': 'presets', 'error': 'must be None or list'})
 
-        if programmation.get('planning').get('recording_duration') is not None and type(
-                programmation.get('planning').get('recording_duration')) != int:
-            errors_list.append({'field': 'recording_duration', 'error': 'must be None or int'})
+        if programmation.get('planning').get('recording_duration') is not None:
+            if type(programmation.get('planning').get('recording_duration')) != int:
+                errors_list.append({'field': 'recording_duration', 'error': 'must be None or int'})
+            if type(programmation.get('planning').get('recording_duration')) == int and programmation.get(
+                    'planning').get('recording_duration') < 1:
+                errors_list.append(
+                    {'field': 'recording_duration', 'value': programmation.get('planning').get('recording_duration'),
+                     'error': 'must be greater than 0'})
 
         if programmation.get('planning').get('recurrence_cron') is not None and programmation.get('planning').get(
                 'recording_start_date') is not None:
-            errors_list.append({'field': 'recurrence_cron', 'error': 'cannont be use with recording_start_date field'})
-            errors_list.append({'field': 'recording_start_date', 'error': 'cannont be use with recurrence_cron field'})
+            errors_list.append({'field': 'recurrence_cron', 'error': 'cannot be use with recording_start_date field'})
+            errors_list.append({'field': 'recording_start_date', 'error': 'cannot be use with recurrence_cron field'})
 
         try:
             if programmation.get('planning').get('recurrence_cron') is not None:
