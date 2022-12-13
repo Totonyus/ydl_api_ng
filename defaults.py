@@ -35,4 +35,3 @@ programmation_object_default = {
     },
     'presets': None
 }
-
