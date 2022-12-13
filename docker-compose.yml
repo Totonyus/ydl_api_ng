@@ -12,6 +12,8 @@ services:
       - ./params:/app/params
       - ./logs:/app/logs
       - ./downloads:/app/downloads
+      - ./data:/app/data
+      - /etc/localtime:/etc/localtime:ro
     environment:
       - UID=1000
       - GID=1000

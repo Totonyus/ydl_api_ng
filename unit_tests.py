@@ -409,7 +409,7 @@ class TestProgrammation(unittest.TestCase):
         validation_result, added_programmation = self.pm.add_programmation(programmation=(
             {
                 'url': 'a more valid_url',
-                'presets' : ['HD', 'AUDIO']
+                'presets': ['HD', 'AUDIO']
             }
         ))
 

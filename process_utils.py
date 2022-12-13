@@ -332,8 +332,6 @@ class ProcessUtils:
         return cleared_jobs_ids
 
     def clear_all_but_pending_and_started(self):
-        self.clear_registry('pending_job')  # TODO
-        self.clear_registry('started_job')  # TODO
         self.clear_registry('finished_job')
         self.clear_registry('failed_job')
         self.clear_registry('deferred_job')

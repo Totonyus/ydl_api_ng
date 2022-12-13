@@ -16,10 +16,7 @@ programmation_interval = __cm.get_app_params().get('_programmation_interval')
 
 enable_redis = False if __cm.get_app_params().get('_enable_redis') is not True else True
 
-if not enable_redis:
-    exit()
-
-while True:
+def run():
     logging.getLogger('programmation').info(f'New iteration : {datetime.now()}')
 
     purged_programmations = __pm.purge_all_past_programmations()
@@ -27,11 +24,13 @@ while True:
 
     all_programmations = __pm.get_all_enabled_programmations()
 
-    jobs_to_check= __pu.find_job_with_programmation_end_date()
+    jobs_to_check = __pu.find_job_with_programmation_end_date()
 
     for job in jobs_to_check:
         if job is not None and job.get('job').meta.get('programmation_end_date') < datetime.now():
             if job.get('job').meta.get('programmation_end_date') < datetime.now():
+                logging.getLogger('programmation').info(
+                    f"Programmation {job.get('job').meta.get('programmation_id')} stopped by daemon")
                 __pu.terminate_redis_active_download(job.get('id'))
 
     for programmation in all_programmations:
@@ -47,7 +46,8 @@ while True:
                 effective_duration = programmation.get('planning').get('recording_duration')
 
             if effective_duration is not None and programmation.get('planning').get('recording_stops_at_end'):
-                programmation_end_date = datetime.now().replace(second=0, microsecond=0) + timedelta(minutes=effective_duration + 1)
+                programmation_end_date = datetime.now().replace(second=0, microsecond=0) + timedelta(
+                    minutes=effective_duration + 1)
             else:
                 programmation_end_date = None
 
@@ -57,14 +57,25 @@ while True:
                 will_be_executed = True
 
             if must_be_restarted is not None or will_be_executed:
+                if must_be_restarted is not None:
+                    effective_programmation_date = datetime.now()
+                else:
+                    effective_programmation_date = next_execution
+
                 dm = download_manager.DownloadManager(__cm,
                                                       programmation.get('url'),
                                                       programmation.get('presets'),
                                                       programmation.get('user_token'),
                                                       programmation_id=programmation.get('id'),
                                                       programmation_end_date=programmation_end_date,
-                                                      programmation_date=next_execution
+                                                      programmation_date=effective_programmation_date
                                                       )
                 dm.process_downloads()
 
-    time.sleep(programmation_interval)
+if __name__ == '__main__':
+    if not enable_redis:
+        exit()
+
+    while True:
+        run()
+        time.sleep(programmation_interval)

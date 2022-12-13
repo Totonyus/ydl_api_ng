@@ -10,6 +10,7 @@ import process_utils
 import os
 
 import programmation_manager
+import programmation_daemon
 
 __cm = config_manager.ConfigManager()
 __pu = process_utils.ProcessUtils(__cm)
@@ -292,7 +293,7 @@ async def get_all_active_programmations(response: Response, token=None):
 
 
 @app.post(f"{__cm.get_app_params().get('_api_route_programmation')}")
-async def add_programmation(response: Response, url, body=Body(...), token=None):
+async def add_programmation(response: Response, background_tasks: BackgroundTasks, url, body=Body(...), token=None):
     if not enable_redis:
         response.status_code = 409
         return "Redis management is disabled"
@@ -321,6 +322,8 @@ async def add_programmation(response: Response, url, body=Body(...), token=None)
     if added_programmation is None:
         response.status_code = 400
         return validation_result
+
+    background_tasks.add_task(programmation_daemon.run)
 
     return added_programmation
 
