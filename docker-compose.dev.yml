@@ -1,38 +1,34 @@
 version: "3.1"
 services:
-#  ydl_api_ng:
-#    container_name: ydl_api_ng
-#    image: ydl_api_ng
-#    restart: unless-stopped
-#    build:
-#      context: .
-#    depends_on:
-#      - ydl_api_ng_redis
-#    ports:
-#      - 5011:80
-#    volumes:
-##      - ./test/params:/app/params
-#      - ./test/logs:/app/logs
-#      - ./test/downloads:/app/downloads
-#    environment:
-#      - UID=1000
-#      - GID=1000
-#      - NB_WORKERS=5
-#      - LOG_LEVEL=trace
-#    networks:
-#      - ydl_api_ng
+  ydl_api_ng:
+    container_name: ydl_api_ng
+    image: ydl_api_ng
+    restart: unless-stopped
+    build:
+      context: .
+    depends_on:
+      - ydl_api_ng_redis
+    ports:
+      - 5011:80
+    volumes:
+      - ./test/params:/app/params
+      - ./test/logs:/app/logs
+      - ./test/downloads:/app/downloads
+      - ./test/data:/app/data
+    environment:
+      - UID=1000
+      - GID=1000
+      - NB_WORKERS=5
+      - LOG_LEVEL=trace
+    networks:
+      - ydl_api_ng
 
   ydl_api_ng_redis:
     container_name: ydl_api_ng_redis
     image: redis
     restart: unless-stopped
-    ports:
-      - 6379:6379
     networks:
       - ydl_api_ng
-    volumes:
-      - ./redis_data:/data
-      - /etc/localtime:/etc/localtime:ro
 
 networks:
   ydl_api_ng:

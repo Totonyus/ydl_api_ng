@@ -7,11 +7,10 @@ import requests
 import config_manager
 import download_manager
 
-from datetime import datetime, timedelta
+from datetime import datetime
 import programmation_manager
 
 
-# @unittest.skip
 class TestActualParametersFile(unittest.TestCase):
     def test_app(self):
         cm = config_manager.ConfigManager()
@@ -35,7 +34,6 @@ class TestActualParametersFile(unittest.TestCase):
         self.assertEqual('ydl_api_ng_redis', cm.get_app_params().get('_redis_host'))
 
 
-# @unittest.skip
 class TestConfig(unittest.TestCase):
     config_manager = config_manager.ConfigManager('params/params.sample.ini')
 
@@ -87,7 +85,6 @@ class TestConfig(unittest.TestCase):
                          self.config_manager.get_auth_params('DAILYMOTION').get('password'))
 
 
-# @unittest.skip
 class TestUtils(unittest.TestCase):
     config_manager = config_manager.ConfigManager('params/params.sample.ini')
 
@@ -390,8 +387,6 @@ class TestProgrammation(unittest.TestCase):
     pm = programmation_manager.ProgrammationManager(database_file=database_file)
 
     def test_add_programmation(self):
-
-        ### URL is invalid
         validation_result, added_programmation = self.pm.add_programmation(programmation=(
             {
                 'url': None
@@ -401,7 +396,6 @@ class TestProgrammation(unittest.TestCase):
         self.assertEqual(1, len(validation_result))
         self.assertIsNone(added_programmation)
 
-        ### PRESET is wrong
         validation_result, added_programmation = self.pm.add_programmation(programmation=(
             {
                 'url': 'a more valid_url',
@@ -412,7 +406,6 @@ class TestProgrammation(unittest.TestCase):
         self.assertEqual(1, len(validation_result))
         self.assertIsNone(added_programmation)
 
-        ### ALL is right
         validation_result, added_programmation = self.pm.add_programmation(programmation=(
             {
                 'url': 'a more valid_url',
@@ -423,7 +416,6 @@ class TestProgrammation(unittest.TestCase):
         self.assertEqual(0, len(validation_result))
         self.assertIsNotNone(added_programmation)
 
-        ### The THREE DATES are wrong
         validation_result, added_programmation = self.pm.add_programmation(programmation=(
             {
                 'url': "a more valid_url",
@@ -438,7 +430,6 @@ class TestProgrammation(unittest.TestCase):
         self.assertEqual(3, len(validation_result))
         self.assertIsNone(added_programmation)
 
-        ### Everything is right
         validation_result, added_programmation = self.pm.add_programmation(programmation=(
             {
                 'url': "a more valid_url",
@@ -465,7 +456,6 @@ class TestProgrammation(unittest.TestCase):
         self.assertEqual(1, len(validation_result))
         self.assertIsNone(added_programmation)
 
-        ### Known range date
         validation_result, added_programmation = self.pm.add_programmation(programmation=(
             {
                 'url': "a valid url",
@@ -504,11 +494,6 @@ class TestProgrammation(unittest.TestCase):
         self.assertEqual(0, len(validation_result))
         self.assertIsNotNone(added_programmation)
 
-        ###
-        ### Add useful tests cases
-        ###
-
-        ### Continuous downloading
         validation_result, added_programmation = self.pm.add_programmation(programmation=(
             {
                 'url': "a valid url",
@@ -518,7 +503,6 @@ class TestProgrammation(unittest.TestCase):
         self.assertEqual(0, len(validation_result))
         self.assertIsNotNone(added_programmation)
 
-        ### Known date
         validation_result, added_programmation = self.pm.add_programmation(programmation=(
             {
                 'url': "a valid url",
@@ -532,7 +516,6 @@ class TestProgrammation(unittest.TestCase):
         self.assertEqual(0, len(validation_result))
         self.assertIsNotNone(added_programmation)
 
-        ### Known date but disabled
         validation_result, added_programmation = self.pm.add_programmation(programmation=(
             {
                 'id': '0',
@@ -550,7 +533,6 @@ class TestProgrammation(unittest.TestCase):
         self.assertFalse(added_programmation.get('enabled'))
         self.assertNotEqual('0', added_programmation.get('id'))
 
-        ### Known range date
         validation_result, added_programmation = self.pm.add_programmation(programmation=(
             {
                 'url': "a valid url",
@@ -567,7 +549,6 @@ class TestProgrammation(unittest.TestCase):
         self.assertEqual(0, len(validation_result))
         self.assertIsNotNone(added_programmation)
 
-        ### Known range date
         validation_result, added_programmation = self.pm.add_programmation(programmation=(
             {
                 'url': "a valid url",
@@ -615,7 +596,7 @@ class TestProgrammation(unittest.TestCase):
         self.assertEqual(8, len(self.pm.get_all_programmations()))
         self.assertEqual(6, len(self.pm.get_all_enabled_programmations()))
 
-        latest_created_programmation = self.pm.get_programmation_by_id(id=self.last_added_id)
+        latest_created_programmation = self.pm.get_programmation_by_id(id=self.last_added_id)[0]
         self.assertIsNotNone(latest_created_programmation)
         self.assertFalse(latest_created_programmation.get('enabled'))
 

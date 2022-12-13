@@ -1,23 +1,16 @@
 import time
 from datetime import datetime, timedelta
 
-from urllib.parse import unquote
-
-import uvicorn
-import yt_dlp.version
-from fastapi import BackgroundTasks, FastAPI, Response, Body
-
 import config_manager
 import download_manager
 import process_utils
-import os
+
 import programmation_manager
 import logging
 
-__cm = config_manager.ConfigManager(params_file='params/params_docker.ini')
-# __cm = config_manager.ConfigManager()
+__cm = config_manager.ConfigManager()
 __pu = process_utils.ProcessUtils(__cm)
-__pm = programmation_manager.ProgrammationManager(database_file='test_database.json')
+__pm = programmation_manager.ProgrammationManager()
 
 programmation_interval = __cm.get_app_params().get('_programmation_interval')
 
@@ -27,9 +20,10 @@ if not enable_redis:
     exit()
 
 while True:
-    logging.info(f'New iteration : {datetime.now()}')
+    logging.getLogger('programmation').info(f'New iteration : {datetime.now()}')
 
-    __pm.purge_all_past_programmations()
+    purged_programmations = __pm.purge_all_past_programmations()
+    logging.getLogger('programmation').info(f'{len(purged_programmations)} deleted outdated entries')
 
     all_programmations = __pm.get_all_enabled_programmations()
 

@@ -5,6 +5,7 @@ app_defaults = {
     '_api_route_queue': '/queue',
     '_api_route_extract_info': '/extract_info',
     '_api_route_info': '/info',
+    '_api_route_programmation': '/programmation',
     '_enable_users_management': False,
     '_listen_ip': '0.0.0.0',
     '_listen_port': 80,

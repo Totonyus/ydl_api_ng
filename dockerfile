@@ -8,7 +8,7 @@ ENV UID=1000 GID=1000 GIT_BRANCH=$GIT_BRANCH GIT_REVISION=$GIT_REVISION DATE=$DA
 
 RUN apt update && apt install ffmpeg dos2unix -y && apt-get autoremove && apt-get -y clean && rm -rf /var/lib/apt/lists/*
 
-COPY config_manager.py download_manager.py main.py process_utils.py entrypoint.sh pip_requirements defaults.py ./
+COPY config_manager.py download_manager.py main.py process_utils.py entrypoint.sh pip_requirements defaults.py programmation_manager.py programmation_daemon.py ./
 COPY params/ydl_api_hooks.py params/postprocessor_hooks.py params/progress_hooks.py params/params.ini params/params_metadata.ini params/params.sample.ini params/userscript.js params/hooks_requirements ./setup/
 COPY params/params_docker.ini ./setup/params.ini
 

@@ -1,9 +1,6 @@
 import copy
-import json
 import logging
-import logging.handlers as handlers
-import os
-from redis import Redis
+
 import defaults
 import uuid
 from tinydb import TinyDB, Query
@@ -16,7 +13,7 @@ class ProgrammationManager:
         self.__database_file = database_file if database_file is not None else 'database.json'
 
         self.__db = TinyDB(self.__database_file)
-        self.__scheduled_jobs_table = self.__db.table('scheduled_jobs')
+        self.__scheduled_jobs_table = self.__db.table('scheduled_jobs', cache_size=0)
 
     @staticmethod
     def generate_identifier(*args, **kwargs):
@@ -58,7 +55,8 @@ class ProgrammationManager:
                 try:
                     datetime.fromisoformat(programmation.get('planning').get(field))
                 except Exception as error:
-                    errors_list.append({'field': field, 'error': error})
+                    errors_list.append(
+                        {'field': field, 'value': programmation.get('planning').get(field), 'error': f'{error}'})
 
         if programmation.get('url') is None or programmation.get('url') == '':
             errors_list.append({'field': 'url', 'error': 'url is empty'})
@@ -89,7 +87,9 @@ class ProgrammationManager:
                     programmation.get('planning')['recurrence_start_date'] = datetime.isoformat(next(cron), sep=' ')
 
         except Exception as e:
-            errors_list.append({'field': 'recurrence_cron', 'error': e})
+            errors_list.append(
+                {'field': 'recurrence_cron', 'value': programmation.get('planning').get('recurrence_cron'),
+                 'error': f'{e}'})
 
         return errors_list
 
@@ -101,14 +101,21 @@ class ProgrammationManager:
 
     def get_programmation_by_id(self, id=None, *args, **kwargs):
         result = self.__scheduled_jobs_table.search(Query().id == id)
-        return result[0] if len(result) != 0 else None
+        return result if len(result) != 0 else None
+
+    def get_programmation_by_url(self, url=None, *args, **kwargs):
+        result = self.__scheduled_jobs_table.search(Query().url == url)
+        return result if len(result) != 0 else None
 
     def delete_programmation_by_id(self, id=None, *args, **kwargs):
-        ret = self.__scheduled_jobs_table.remove(Query().id == id)
+        ret = self.get_programmation_by_id(id=id)
+        self.__scheduled_jobs_table.remove(Query().id == id)
         return ret
 
     def delete_programmation_by_url(self, url=None, *args, **kwargs):
-        ret = self.__scheduled_jobs_table.remove(Query().url == url)
+        ret = self.get_programmation_by_url(url=url)
+        self.__scheduled_jobs_table.remove(Query().url == url)
+
         return ret
 
     def get_all_from_date(self, from_date=None, *args, **kwargs):
@@ -166,7 +173,7 @@ class ProgrammationManager:
         return end_date
 
     def update_programmation_by_id(self, id=None, programmation=None, *args, **kwargs):
-        stored_programmation = self.get_programmation_by_id(id)
+        stored_programmation = self.get_programmation_by_id(id)[0]
 
         if stored_programmation is None:
             return None

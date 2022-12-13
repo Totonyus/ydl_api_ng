@@ -8,11 +8,12 @@ import config_manager
 import download_manager
 import process_utils
 import os
-import logging
 
-__cm = config_manager.ConfigManager(params_file='params/params_docker.ini')
-# __cm = config_manager.ConfigManager()
+import programmation_manager
+
+__cm = config_manager.ConfigManager()
 __pu = process_utils.ProcessUtils(__cm)
+__pm = programmation_manager.ProgrammationManager()
 
 app = FastAPI()
 enable_redis = False if __cm.get_app_params().get('_enable_redis') is not True else True
@@ -95,6 +96,10 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
         response.status_code = 401
         return
 
+    if param_url == '':
+        response.status_code = 400
+        return {'status_code': response.status_code}
+
     dm = download_manager.DownloadManager(__cm, param_url, None, param_token, body)
     response.status_code = dm.get_api_status_code()
 
@@ -156,6 +161,10 @@ async def extract_info_request(response: Response, url, token=None):
     if user is False:
         response.status_code = 401
         return
+
+    if param_url == '':
+        response.status_code = 400
+        return {'status_code': response.status_code}
 
     return download_manager.DownloadManager.extract_info(param_url)
 
@@ -253,4 +262,153 @@ async def active_downloads_request(response: Response, registry, token=None):
     return __pu.get_queue_content(registry)
 
 
-uvicorn.run(app, host=__cm.get_app_params().get('_listen_ip'), port=__cm.get_app_params().get('_listen_port'), log_config=None)
+###
+# Programmation
+###
+
+@app.get(f"{__cm.get_app_params().get('_api_route_programmation')}")
+async def get_all_active_programmations(response: Response, token=None):
+    if not enable_redis:
+        response.status_code = 409
+        return "Redis management is disabled"
+
+    param_token = unquote(token) if token is not None else None
+    user = __cm.is_user_permitted_by_token(param_token)
+
+    print(user)
+    if user is False \
+            or (user is not None and user.get('_allow_programmation') is None) \
+            or (user is not None and user.get('_allow_programmation') is not None and user.get(
+        '_allow_programmation') is False):
+        response.status_code = 401
+        return
+
+    programmations = __pm.get_all_programmations()
+
+    for programmation in programmations:
+        programmation['user_token'] = 'censored'
+
+    return programmations
+
+
+@app.post(f"{__cm.get_app_params().get('_api_route_programmation')}")
+async def add_programmation(response: Response, url, body=Body(...), token=None):
+    if not enable_redis:
+        response.status_code = 409
+        return "Redis management is disabled"
+
+    param_token = unquote(token) if token is not None else None
+    user = __cm.is_user_permitted_by_token(param_token)
+    param_url = unquote(url)
+
+    if user is False \
+            or (user is not None and user.get('_allow_programmation') is None) \
+            or (user is not None and user.get('_allow_programmation') is not None and user.get(
+        '_allow_programmation') is False):
+        response.status_code = 401
+        return
+
+    if param_url == '':
+        response.status_code = 400
+        return {'status_code': response.status_code}
+
+    programmation_object = body
+    programmation_object['url'] = param_url
+    programmation_object['user_token'] = token
+
+    validation_result, added_programmation = __pm.add_programmation(programmation=programmation_object)
+
+    if added_programmation is None:
+        response.status_code = 400
+        return validation_result
+
+    return added_programmation
+
+
+@app.delete(f"{__cm.get_app_params().get('_api_route_programmation')}/{'{id}'}")
+async def delete_programmation_by_id(response: Response, id, token=None):
+    if not enable_redis:
+        response.status_code = 409
+        return "Redis management is disabled"
+
+    param_token = unquote(token) if token is not None else None
+    user = __cm.is_user_permitted_by_token(param_token)
+
+    if user is False \
+            or (user is not None and user.get('_allow_programmation') is None) \
+            or (user is not None and user.get('_allow_programmation') is not None and user.get(
+        '_allow_programmation') is False):
+        response.status_code = 401
+        return
+
+    deleted_programmation = __pm.delete_programmation_by_id(id=id)
+
+    if deleted_programmation is not None:
+        for programmation in deleted_programmation:
+            programmation['user_token'] = 'censored'
+    else:
+        response.status_code = 404
+        return
+
+    return deleted_programmation
+
+
+@app.delete(f"{__cm.get_app_params().get('_api_route_programmation')}")
+async def delete_programmation_by_url(response: Response, url, token=None):
+    if not enable_redis:
+        response.status_code = 409
+        return "Redis management is disabled"
+
+    param_token = unquote(token) if token is not None else None
+    user = __cm.is_user_permitted_by_token(param_token)
+    param_url = unquote(url)
+
+    if user is False \
+            or (user is not None and user.get('_allow_programmation') is None) \
+            or (user is not None and user.get('_allow_programmation') is not None and user.get(
+        '_allow_programmation') is False):
+        response.status_code = 401
+        return
+
+    if param_url == '':
+        response.status_code = 400
+        return {'status_code': response.status_code}
+
+    deleted_programmation = __pm.delete_programmation_by_url(url=url)
+
+    if deleted_programmation is not None:
+        for programmation in deleted_programmation:
+            programmation['user_token'] = 'censored'
+    else:
+        return []
+
+    return deleted_programmation
+
+
+@app.put(f"{__cm.get_app_params().get('_api_route_programmation')}/{'{id}'}")
+async def delete_programmation_by_id(response: Response, id, body=Body(...), token=None):
+    if not enable_redis:
+        response.status_code = 409
+        return "Redis management is disabled"
+
+    param_token = unquote(token) if token is not None else None
+    user = __cm.is_user_permitted_by_token(param_token)
+
+    if user is False \
+            or (user is not None and user.get('_allow_programmation') is None) \
+            or (user is not None and user.get('_allow_programmation') is not None and user.get(
+        '_allow_programmation') is False):
+        response.status_code = 401
+        return
+
+    validation_result, updated_programmation = __pm.update_programmation_by_id(id=id, programmation=body)
+
+    if updated_programmation is None:
+        response.status_code = 400
+        return validation_result
+
+    return updated_programmation
+
+
+uvicorn.run(app, host=__cm.get_app_params().get('_listen_ip'), port=__cm.get_app_params().get('_listen_port'),
+            log_config=None)
