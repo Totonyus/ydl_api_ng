@@ -70,7 +70,9 @@ def run():
                                                       programmation_end_date=programmation_end_date,
                                                       programmation_date=effective_programmation_date
                                                       )
-                dm.process_downloads()
+
+                if dm.get_api_status_code() != 400:
+                    dm.process_downloads()
 
 if __name__ == '__main__':
     if not enable_redis:

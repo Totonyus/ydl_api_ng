@@ -240,12 +240,6 @@ class DownloadManager:
             preset.append('__check_result', None)
             return None
 
-        elif self.programmation_id is not None:
-            self.downloads_cannot_be_checked = self.downloads_cannot_be_checked + 1
-            preset.append('__can_be_checked', False)
-            preset.append('__check_result', None)
-            return None
-
         elif not self.can_url_be_checked(preset):
             self.downloads_cannot_be_checked = self.downloads_cannot_be_checked + 1
             self.all_downloads_checked = False
@@ -319,7 +313,7 @@ class DownloadManager:
         if self.enable_redis is not None and self.enable_redis is True:
             queue = Queue('ydl_api_ng', connection=Redis(host=self.__cm.get_app_params().get('_redis_host'),
                                                          port=self.__cm.get_app_params().get('_redis_port')))
-            redis_ttl = 15 if self.programmation_id is not None else self.__cm.get_app_params().get('_redis_ttl')
+
             redis_meta = {
                 'programmation_id': self.programmation_id,
                 'programmation_date': self.programmation_date,
@@ -329,7 +323,7 @@ class DownloadManager:
             redis_id = queue.enqueue(self.send_download_order,
                                      args=[ydl_opts, self],
                                      job_timeout=-1,
-                                     result_ttl=redis_ttl,
+                                     result_ttl=self.__cm.get_app_params().get('_redis_ttl'),
                                      meta=redis_meta).id
 
             preset.append('_redis_id', redis_id)
@@ -407,7 +401,7 @@ class DownloadManager:
 
         # No video can be downloaded
         if self.failed_checks == self.downloads_can_be_checked and self.downloads_cannot_be_checked == 0:
-            logging.getLogger('api').error(f'Not downloadable with presets : {self.presets_string} : {self.url}')
+            logging.getLogger('download_manager').error(f'Not downloadable with presets : {self.presets_string} : {self.url}')
             return 400
 
         return 200

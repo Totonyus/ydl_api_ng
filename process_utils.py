@@ -58,8 +58,10 @@ class ProcessUtils:
             child.terminate()
             filename_info = self.get_current_download_file_destination(child.cmdline())
 
-            background_tasks.add_task(self.ffmpeg_terminated_file, filename_info=filename_info)
-
+            if background_tasks is not None:
+                background_tasks.add_task(self.ffmpeg_terminated_file, filename_info=filename_info)
+            else:
+                self.ffmpeg_terminated_file(filename_info=filename_info)
 
             if callable(getattr(ydl_api_hooks, 'post_termination_handler', None)):
                 ydl_api_hooks.post_termination_handler(self.__cm, filename_info)
@@ -114,7 +116,10 @@ class ProcessUtils:
                 os.kill(process_pid, signal.SIGINT)
 
                 try:
-                    background_tasks.add_task(self.ffmpeg_terminated_file, filename_info=filename_info)
+                    if background_tasks is not None:
+                        background_tasks.add_task(self.ffmpeg_terminated_file, filename_info=filename_info)
+                    else:
+                        self.ffmpeg_terminated_file(filename_info=filename_info)
 
                     job.get('job').meta['filename_info'] = filename_info
                     job.get('job').save()
@@ -397,7 +402,7 @@ class ProcessUtils:
 
     def find_job_with_programmation_end_date(self):
         jobs = []
-        for registry in self.registries:
+        for registry in ["pending_job", "started_job"]:
             for job_id in self.registries.get(registry).get_job_ids():
                 try:
                     job = Job.fetch(job_id, connection=self.redis)
