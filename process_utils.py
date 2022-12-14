@@ -539,12 +539,8 @@ class ProcessUtils:
 
     def ffmpeg_terminated_file(self,filename_info=None, *args, **kwargs):
         try:
-            stream = ffmpeg.input(filename_info.get('part_filename'))
-            stream = ffmpeg.output(stream, filename_info.get('filename'))
-            ffmpeg.run(stream, quiet=True, overwrite_output=True)
-
-            os.remove(filename_info.get('part_filename'))
+            os.rename(filename_info.get('part_filename'), filename_info.get('filename'))
         except Exception as e:
-            logging.getLogger('process_utils').error(f'Error during processing of the file : {filename_info.get("part_filename")} : {e}')
+            logging.getLogger('process_utils').error(f'{filename_info.get("part_filename")} : {e}')
 
         return filename_info
