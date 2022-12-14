@@ -68,7 +68,8 @@ def run():
                                                       programmation.get('user_token'),
                                                       programmation_id=programmation.get('id'),
                                                       programmation_end_date=programmation_end_date,
-                                                      programmation_date=effective_programmation_date
+                                                      programmation_date=effective_programmation_date,
+                                                      programmation=programmation
                                                       )
 
                 if dm.get_api_status_code() != 400:

@@ -22,6 +22,7 @@ class DownloadManager:
         logging.getLogger('download_manager').info(
             f'Init download - user_token: {user_token} - presets: {presets_string} - url :{url} ')
 
+        self.programmation = None if kwargs.get('programmation') is None else kwargs.get('programmation')
         self.programmation_id = None if kwargs.get('programmation_id') is None else kwargs.get('programmation_id')
         self.programmation_date = None if kwargs.get('programmation_date') is None else kwargs.get('programmation_date')
         self.programmation_end_date = None if kwargs.get('programmation_end_date') is None else kwargs.get(
@@ -411,6 +412,9 @@ class DownloadManager:
         for preset in self.presets:
             presets_display.append(self.__cm.sanitize_config_object_section(preset).get_all())
 
+        if self.programmation is not None:
+            self.programmation['user_token'] = 'censored'
+
         return {
             'status_code': self.get_api_status_code(),
             'url': self.url,
@@ -426,8 +430,7 @@ class DownloadManager:
             'ignore_post_security': self.ignore_post_security,
             'relaunch_failed_mode': self.relaunch_failed_mode,
             'downloads': presets_display,
-            'is_programmation': self.programmation_id,
-            'programmation_date': self.programmation_date,
+            'programmation' : self.programmation
         }
 
     def get_current_config_manager(self):
