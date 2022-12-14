@@ -116,18 +116,21 @@ class ProcessUtils:
                 os.kill(process_pid, signal.SIGINT)
 
                 try:
+                    job.get('job').meta['filename_info'] = filename_info
+                    job.get('job').save()
+                    job.get('job').refresh()
+
                     if background_tasks is not None:
                         background_tasks.add_task(self.ffmpeg_terminated_file, filename_info=filename_info)
                     else:
                         self.ffmpeg_terminated_file(filename_info=filename_info)
 
-                    job.get('job').meta['filename_info'] = filename_info
-                    job.get('job').save()
-                    job.get('job').refresh()
-
                     if callable(getattr(ydl_api_hooks, 'post_redis_termination_handler', None)):
                         ydl_api_hooks.post_redis_termination_handler(job_object.get('download_manager'), filename_info)
-                except FileNotFoundError:
+
+
+                except FileNotFoundError as e:
+                    logging.getLogger('process_utils').error(e)
                     pass
 
                 logging.getLogger('process_utils').info(f'ffmpeg process killed : {process_pid}')
