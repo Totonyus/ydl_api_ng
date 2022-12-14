@@ -9,3 +9,4 @@ rq
 supervisor
 tinydb
 cronsim
+ffmpeg-python

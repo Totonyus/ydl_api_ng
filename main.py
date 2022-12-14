@@ -186,7 +186,7 @@ async def active_downloads_request(response: Response, token=None):
 
 
 @app.get(f"{__cm.get_app_params().get('_api_route_active_downloads')}/terminate/{'{pid}'}")
-async def terminate_active_download_request(response: Response, pid, token=None):
+async def terminate_active_download_request(response: Response, background_tasks: BackgroundTasks, pid, token=None):
     param_token = unquote(token) if token is not None else None
     user = __cm.is_user_permitted_by_token(param_token)
 
@@ -194,7 +194,7 @@ async def terminate_active_download_request(response: Response, pid, token=None)
         response.status_code = 401
         return
 
-    return_status = __pu.terminate_active_download(unquote(pid))
+    return_status = __pu.terminate_active_download(unquote(pid), background_tasks=background_tasks)
 
     if return_status is None:
         response.status_code = 404
@@ -204,7 +204,7 @@ async def terminate_active_download_request(response: Response, pid, token=None)
 
 
 @app.get(f"{__cm.get_app_params().get('_api_route_active_downloads')}/terminate")
-async def terminate_all_active_downloads_request(response: Response, token=None):
+async def terminate_all_active_downloads_request(response: Response, background_tasks: BackgroundTasks, token=None):
     param_token = unquote(token) if token is not None else None
     user = __cm.is_user_permitted_by_token(param_token)
 
@@ -212,7 +212,7 @@ async def terminate_all_active_downloads_request(response: Response, token=None)
         response.status_code = 401
         return
 
-    return __pu.terminate_all_active_downloads()
+    return __pu.terminate_all_active_downloads(background_tasks=background_tasks)
 
 
 @app.get(f"{__cm.get_app_params().get('_api_route_queue')}")

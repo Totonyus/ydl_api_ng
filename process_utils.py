@@ -10,6 +10,7 @@ import psutil
 import re
 import pathlib
 import inspect
+import ffmpeg
 
 import download_manager
 from params import ydl_api_hooks
@@ -42,13 +43,13 @@ class ProcessUtils:
             self.queue = None
             self.registries = None
 
-    def terminate_active_download(self, id):
+    def terminate_active_download(self, id, background_tasks=None):
         if self.redis is None or (self.redis is not None and self.redis is False):
-            return self.terminate_basic_active_download(id)
+            return self.terminate_basic_active_download(id, background_tasks=background_tasks)
         else:
-            return self.terminate_redis_active_download(id)
+            return self.terminate_redis_active_download(id, background_tasks=background_tasks)
 
-    def terminate_basic_active_download(self, pid):
+    def terminate_basic_active_download(self, pid, background_tasks=None):
         child = self.get_child_object(int(pid))
 
         if child is not None:
@@ -57,8 +58,8 @@ class ProcessUtils:
             child.terminate()
             filename_info = self.get_current_download_file_destination(child.cmdline())
 
-            os.rename(filename_info.get('part_filename'),
-                      filename_info.get('filename'))  # renaming file to remove the .part
+            background_tasks.add_task(self.ffmpeg_terminated_file, filename_info=filename_info)
+
 
             if callable(getattr(ydl_api_hooks, 'post_termination_handler', None)):
                 ydl_api_hooks.post_termination_handler(self.__cm, filename_info)
@@ -93,7 +94,7 @@ class ProcessUtils:
         found_job = self.find_job_by_programmation_id(programmation_id)
         self.terminate_redis_active_download(found_job.get('id'))
 
-    def terminate_redis_active_download(self, search_job_id):
+    def terminate_redis_active_download(self, search_job_id, background_tasks=None):
         job = self.find_in_running(search_job_id)
 
         if job is not None:
@@ -113,8 +114,7 @@ class ProcessUtils:
                 os.kill(process_pid, signal.SIGINT)
 
                 try:
-                    os.rename(filename_info.get('part_filename'),
-                              filename_info.get('filename'))  # renaming file to remove the .part
+                    background_tasks.add_task(self.ffmpeg_terminated_file, filename_info=filename_info)
 
                     job.get('job').meta['filename_info'] = filename_info
                     job.get('job').save()
@@ -159,28 +159,28 @@ class ProcessUtils:
 
             return self.sanitize_job(job)
 
-    def terminate_all_active_downloads(self):
+    def terminate_all_active_downloads(self, background_tasks=None):
         if self.redis is None:
-            return self.terminate_all_basic_active_downloads()
+            return self.terminate_all_basic_active_downloads(background_tasks=background_tasks)
         else:
-            return self.terminate_all_redis_active_downloads()
+            return self.terminate_all_redis_active_downloads(background_tasks=background_tasks)
 
-    def terminate_all_basic_active_downloads(self):
+    def terminate_all_basic_active_downloads(self, background_tasks=None):
         logging.getLogger('process_utils').info('All active downloads are being terminated')
 
         informations = []
         for download in self.get_active_downloads_list():
             pid = download.get('pid')
-            informations.append(self.terminate_active_download(pid))
+            informations.append(self.terminate_active_download(pid, background_tasks=background_tasks))
 
         return informations
 
-    def terminate_all_redis_active_downloads(self):
+    def terminate_all_redis_active_downloads(self, background_tasks=None):
         stopped = []
         for worker in self.get_workers_info():
             if worker.get('job') is not None:
                 job = worker.get('job').get('job')
-                stopped.append(self.terminate_redis_active_download(job.id))
+                stopped.append(self.terminate_redis_active_download(job.id, background_tasks=background_tasks))
         return stopped
 
     def get_active_downloads_list(self):
@@ -528,3 +528,15 @@ class ProcessUtils:
             dm.process_downloads()
 
         return dm.get_api_status_code(), dm.get_api_return_object()
+
+    def ffmpeg_terminated_file(self,filename_info=None, *args, **kwargs):
+        try:
+            stream = ffmpeg.input(filename_info.get('part_filename'))
+            stream = ffmpeg.output(stream, filename_info.get('filename'))
+            ffmpeg.run(stream, quiet=True, overwrite_output=True)
+
+            os.remove(filename_info.get('part_filename'))
+        except Exception as e:
+            logging.getLogger('process_utils').error(f'Error during processing of the file : {filename_info.get("part_filename")} : {e}')
+
+        return filename_info
