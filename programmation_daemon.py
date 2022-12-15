@@ -76,7 +76,10 @@ def run():
                     dm.process_downloads()
 
 if __name__ == '__main__':
+    __cm.init_logger('ydl_api_ng_programmation_deaemon')
+
     if not enable_redis:
+        logging.getLogger('programmation').warning('Redis disabled, programmation daemon exited')
         exit()
 
     while True:
