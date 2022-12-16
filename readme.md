@@ -387,6 +387,26 @@ Content-Type: application/json
 }
 ```
 
+It is possible to add a timer to stop the download (`recording_stops_at_end` will be automatically set on `True`) :
+
+```shell
+POST http://localhost:5011/download?url=https://www.youtube.com/watch?v=wV4wepiucf4&token=dad_super_password
+Content-Type: application/json
+
+{
+  "programmation": {
+    "planning": {
+      "recording_duration": 10
+    }
+  },
+  "presets": [
+    {
+      "_preset": "HD"
+    }
+  ]
+}
+```
+
 Reminder if you want to expand a preset : all presets automatically expand the `DEFAULT` preset. Basically, expand a
 preset with `_preset` means `_ignore_default_preset`can't be true.
 

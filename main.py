@@ -11,6 +11,7 @@ import os
 
 import programmation_manager
 import programmation_daemon
+from datetime import datetime, timedelta
 
 __cm = config_manager.ConfigManager()
 __pu = process_utils.ProcessUtils(__cm)
@@ -101,7 +102,37 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
         response.status_code = 400
         return {'status_code': response.status_code}
 
-    dm = download_manager.DownloadManager(__cm, param_url, None, param_token, body)
+    programmation_object = body.get('programmation')
+    generated_programmation = None
+    programmation_end_date = None
+
+    if programmation_object is not None:
+        programmation_object['url'] = param_url
+        programmation_object['user_token'] = token
+        programmation_object['not_stored'] = True
+
+        generated_programmation = __pm.generate_programmation(programmation=programmation_object)
+        validation_result = __pm.validate_programmation(programmation=generated_programmation)
+
+        if len(validation_result) != 0:
+            response.status_code = 400
+            return validation_result
+
+        planning = generated_programmation.get('planning')
+
+        if planning.get('recording_duration') is not None:
+            planning['recording_stops_at_end'] = True
+            programmation_end_date = datetime.now().replace(second=0, microsecond=0) + timedelta(minutes=1 + planning.get('recording_duration'))
+
+    if generated_programmation is None:
+        dm = download_manager.DownloadManager(__cm, param_url, None, param_token, body)
+    else:
+        dm = download_manager.DownloadManager(__cm, param_url, None, param_token, body,
+                                              programmation_id=generated_programmation.get('id'),
+                                              programmation_end_date=programmation_end_date,
+                                              programmation_date=datetime.now(),
+                                              programmation=generated_programmation)
+
     response.status_code = dm.get_api_status_code()
 
     if response.status_code != 400:
