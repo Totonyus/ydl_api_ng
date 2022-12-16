@@ -117,6 +117,7 @@ class ProcessUtils:
 
                 try:
                     job.get('job').meta['filename_info'] = filename_info
+                    job.get('job').meta['terminated'] = True
                     job.get('job').save()
                     job.get('job').refresh()
 

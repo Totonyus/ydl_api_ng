@@ -33,7 +33,6 @@ user=$UID
 EOT
 
 supervisord -c /app/supervisord_workers.conf -l /app/logs/supervisord_workers.log -j /app/tmp/pid_api -u ydl_api_ng -e $LOG_LEVEL
-fi
 
 cat <<EOT >> /app/supervisord_programmation.conf
 [supervisord]
@@ -50,5 +49,6 @@ user=$UID
 EOT
 
 supervisord -c /app/supervisord_programmation.conf -l /app/logs/supervisord_programmation.log -j /app/tmp/pid_programmation -u ydl_api_ng -e $LOG_LEVEL
+fi
 
 su ydl_api_ng -c "python3 main.py"

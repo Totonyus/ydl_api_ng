@@ -82,15 +82,11 @@ class ConfigManager:
         self.log_level = self.__config['app'].getint('_log_level') if self.__config['app'].getint('_log_level') is not None else 20
         self.log_backups = self.__config['app'].getint('_log_backups') if self.__config['app'].getint('_log_backups') is not None else 7
 
-        self.init_logger()
-
-        logging.info(f"Container build date : {os.environ.get('DATE')}, git revision : {os.environ.get('GIT_BRANCH')} - {os.environ.get('GIT_REVISION')}")
-
         self.__dispatch_configs()
         self.__load_metadata()
         self.__set_config_objects()
 
-    def init_logger(self, file_name='ydl_api_ng'):
+    def init_logger(self, file_name='ydl_api_ng.log'):
         logging.basicConfig(level=self.log_level, format='[%(asctime)s][%(name)s][%(levelname)s] %(message)s', datefmt='%d-%m-%y %H:%M:%S')
 
         time_handler = handlers.TimedRotatingFileHandler(f'logs/{file_name}', when='midnight', interval=1, backupCount=self.log_backups)
@@ -99,6 +95,7 @@ class ConfigManager:
         logging.getLogger().addHandler(time_handler)
 
         logging.getLogger('config_manager').info('Logger initialized')
+        logging.info(f"Container build date : {os.environ.get('DATE')}, git revision : {os.environ.get('GIT_BRANCH')} - {os.environ.get('GIT_REVISION')}")
 
     # Send configs to the right objects
     def __dispatch_configs(self):

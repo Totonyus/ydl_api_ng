@@ -17,6 +17,8 @@ __cm = config_manager.ConfigManager()
 __pu = process_utils.ProcessUtils(__cm)
 __pm = programmation_manager.ProgrammationManager()
 
+__cm.init_logger(file_name='api.log')
+
 app = FastAPI()
 enable_redis = False if __cm.get_app_params().get('_enable_redis') is not True else True
 
@@ -307,7 +309,6 @@ async def get_all_active_programmations(response: Response, token=None):
     param_token = unquote(token) if token is not None else None
     user = __cm.is_user_permitted_by_token(param_token)
 
-    print(user)
     if user is False \
             or (user is not None and user.get('_allow_programmation') is None) \
             or (user is not None and user.get('_allow_programmation') is not None and user.get(
@@ -353,8 +354,6 @@ async def add_programmation(response: Response, background_tasks: BackgroundTask
     if added_programmation is None:
         response.status_code = 400
         return validation_result
-
-    background_tasks.add_task(programmation_daemon.run)
 
     return added_programmation
 

@@ -18,7 +18,7 @@ services:
       - UID=1000
       - GID=1000
       - NB_WORKERS=5
-      - LOG_LEVEL=trace
+      - LOG_LEVEL=error
       # Redis will be disable is this value is not false, remember to also change the setting in params.ini file
       - DISABLE_REDIS=false
     networks:

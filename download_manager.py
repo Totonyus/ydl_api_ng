@@ -334,7 +334,7 @@ class DownloadManager:
 
     def send_download_order(self, ydl_opts, dm):
         if self.enable_redis:
-            self.get_current_config_manager().init_logger()
+            self.get_current_config_manager().init_logger(file_name='downloader.log')
 
         try:
             with ydl.YoutubeDL(ydl_opts.get_all()) as dl:

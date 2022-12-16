@@ -16,11 +16,14 @@ programmation_interval = __cm.get_app_params().get('_programmation_interval')
 
 enable_redis = False if __cm.get_app_params().get('_enable_redis') is not True else True
 
+
 def run():
     logging.getLogger('programmation').info(f'New iteration : {datetime.now()}')
 
     purged_programmations = __pm.purge_all_past_programmations()
-    logging.getLogger('programmation').info(f'{len(purged_programmations)} deleted outdated entries')
+
+    if len(purged_programmations) > 0:
+        logging.getLogger('programmation').info(f'{len(purged_programmations)} deleted outdated entries')
 
     all_programmations = __pm.get_all_enabled_programmations()
 
@@ -75,8 +78,9 @@ def run():
                 if dm.get_api_status_code() != 400:
                     dm.process_downloads()
 
+
 if __name__ == '__main__':
-    __cm.init_logger('ydl_api_ng_programmation_deaemon')
+    __cm.init_logger(file_name='programmation_daemon.log')
 
     if not enable_redis:
         logging.getLogger('programmation').warning('Redis disabled, programmation daemon exited')
