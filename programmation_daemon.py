@@ -6,6 +6,8 @@ import download_manager
 import process_utils
 
 import programmation_persistence_manager
+from programmation_class import Programmation
+
 import logging
 
 __cm = config_manager.ConfigManager()
@@ -37,23 +39,20 @@ def run():
                 __pu.terminate_redis_active_download(job.get('id'))
 
     for programmation in all_programmations:
-        planning = programmation.get('planning')
+        prog = Programmation(programmation=programmation)
 
-        recording_duration = planning.get('recording_duration')
-        recording_stops_at_end = planning.get('recording_stops_at_end')
+        found_job = __pu.find_job_by_programmation_id(prog.id)
 
-        found_job = __pu.find_job_by_programmation_id(programmation_id=programmation.get('id'))
-
-        must_be_restarted = __pm.must_be_restarted(programmation=programmation)
+        must_be_restarted = prog.must_be_restarted()
 
         if found_job is None:
-            next_execution = __pm.get_next_execution(programmation=programmation)
+            next_execution = prog.get_next_execution()
 
             effective_duration = must_be_restarted
-            if effective_duration is None and recording_duration:
-                effective_duration = recording_duration
+            if effective_duration is None and prog.recording_duration:
+                effective_duration = prog.recording_duration
 
-            if effective_duration is not None and recording_stops_at_end:
+            if effective_duration is not None and prog.recording_stops_at_end:
                 programmation_end_date = datetime.now().replace(second=0, microsecond=0) + timedelta(
                     minutes=effective_duration + 1)
             else:
@@ -71,13 +70,13 @@ def run():
                     effective_programmation_date = next_execution
 
                 dm = download_manager.DownloadManager(__cm,
-                                                      programmation.get('url'),
-                                                      programmation.get('presets'),
-                                                      programmation.get('user_token'),
-                                                      programmation_id=programmation.get('id'),
+                                                      prog.url,
+                                                      prog.presets,
+                                                      prog.user_token,
+                                                      programmation_id=programmation.get.id,
                                                       programmation_end_date=programmation_end_date,
                                                       programmation_date=effective_programmation_date,
-                                                      programmation=programmation
+                                                      programmation=programmation.get()
                                                       )
 
                 if dm.get_api_status_code() != 400:
