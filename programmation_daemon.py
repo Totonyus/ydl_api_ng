@@ -73,10 +73,10 @@ def run():
                                                       prog.url,
                                                       prog.presets,
                                                       prog.user_token,
-                                                      programmation_id=programmation.get.id,
+                                                      programmation_id=prog.id,
                                                       programmation_end_date=programmation_end_date,
                                                       programmation_date=effective_programmation_date,
-                                                      programmation=programmation.get()
+                                                      programmation=prog.get()
                                                       )
 
                 if dm.get_api_status_code() != 400:
