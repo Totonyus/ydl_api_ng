@@ -11,7 +11,7 @@ app_defaults = {
     '_listen_port': 80,
     '_log_backups': 7,
     '_log_level': 20,
-    '_programmation_interval' : 60,
+    '_programmation_interval': 60,
     '_unit_test': True,
     '_enable_redis': True,
     '_redis_ttl': 3600,

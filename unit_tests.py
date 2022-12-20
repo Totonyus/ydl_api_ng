@@ -8,7 +8,8 @@ import config_manager
 import download_manager
 
 from datetime import datetime
-import programmation_manager
+from programmation_persistence_manager import ProgrammationPersistenceManager as Ppm
+from programmation_class import Programmation
 
 
 class TestActualParametersFile(unittest.TestCase):
@@ -384,172 +385,147 @@ class TestProgrammation(unittest.TestCase):
     except FileNotFoundError:
         pass
 
-    pm = programmation_manager.ProgrammationManager(database_file=database_file)
+    pm = Ppm(database_file=database_file)
 
     def test_add_programmation(self):
-        validation_result, added_programmation = self.pm.add_programmation(programmation=(
-            {
-                'url': None
-            }
-        ))
+        prog = Programmation(programmation={
+            'url': None
+        })
 
-        self.assertEqual(1, len(validation_result))
-        self.assertIsNone(added_programmation)
+        self.assertEqual(1, len(prog.errors))
+        self.assertIsNone(self.pm.add_programmation(programmation=prog))
 
-        validation_result, added_programmation = self.pm.add_programmation(programmation=(
-            {
-                'url': 'a more valid_url',
-                'presets': "non valid presets"
-            }
-        ))
+        prog = Programmation(programmation={
+            'url': 'a more valid_url',
+            'presets': "non valid presets"
+        })
 
-        self.assertEqual(1, len(validation_result))
-        self.assertIsNone(added_programmation)
+        self.assertEqual(1, len(prog.errors))
+        self.assertIsNone(self.pm.add_programmation(programmation=prog))
 
-        validation_result, added_programmation = self.pm.add_programmation(programmation=(
-            {
-                'url': 'a more valid_url',
-                'presets': ['HD', 'AUDIO']
-            }
-        ))
+        prog = Programmation(programmation={
+            'url': 'a more valid_url',
+            'presets': ['HD', 'AUDIO']
+        })
 
-        self.assertEqual(0, len(validation_result))
-        self.assertIsNotNone(added_programmation)
+        self.assertEqual(0, len(prog.errors))
+        self.assertIsNotNone(self.pm.add_programmation(programmation=prog))
 
-        validation_result, added_programmation = self.pm.add_programmation(programmation=(
-            {
-                'url': "a more valid_url",
-                'planning': {
-                    'recording_start_date': '2022-12-00 00:00',
-                    'recurrence_start_date': '2022-12-00 00:00',
-                    'recurrence_end_date': '2022-12-00 00:00',
-                },
-            }
-        ))
+        prog = Programmation(programmation={
+            'url': "a more valid_url8",
+            'planning': {
+                'recording_start_date': '2022-12-00 00:00',
+                'recurrence_start_date': '2022-12-00 00:00',
+                'recurrence_end_date': '2022-12-00 00:00',
+            },
+        })
 
-        self.assertEqual(3, len(validation_result))
-        self.assertIsNone(added_programmation)
+        self.assertEqual(3, len(prog.errors))
+        self.assertIsNone(self.pm.add_programmation(programmation=prog))
 
-        validation_result, added_programmation = self.pm.add_programmation(programmation=(
-            {
-                'url': "a more valid_url",
-                'planning': {
-                    'recording_start_date': '2022-12-01 00:00',
-                    'recurrence_start_date': '2022-12-01 00:00',
-                    'recurrence_end_date': '2022-12-02 00:00',
-                },
-            }
-        ))
+        prog = Programmation(programmation={
+            'url': "a more valid_url",
+            'planning': {
+                'recording_start_date': '2022-12-01 00:00',
+                'recurrence_start_date': '2022-12-01 00:00',
+                'recurrence_end_date': '2022-12-02 00:00',
+            },
+        })
 
-        self.assertEqual(0, len(validation_result))
-        self.assertIsNotNone(added_programmation)
+        self.assertEqual(0, len(prog.errors))
+        self.assertIsNotNone(self.pm.add_programmation(programmation=prog))
 
-        validation_result, added_programmation = self.pm.add_programmation(programmation=(
-            {
-                'url': "a valid url",
-                'planning': {
-                    'recording_duration': 'not valid',
-                },
-            }
-        ))
+        prog = Programmation(programmation={
+            'url': "a valid url",
+            'planning': {
+                'recording_duration': 'not valid',
+            },
+        })
 
-        self.assertEqual(1, len(validation_result))
-        self.assertIsNone(added_programmation)
+        self.assertEqual(1, len(prog.errors))
+        self.assertIsNone(self.pm.add_programmation(programmation=prog))
 
-        validation_result, added_programmation = self.pm.add_programmation(programmation=(
-            {
-                'url': "a valid url",
-                'planning': {
-                    'recurrence_cron': 'invalid'
-                },
-            }
-        ))
+        prog = Programmation(programmation={
+            'url': "a valid url",
+            'planning': {
+                'recurrence_cron': 'invalid'
+            },
+        })
 
-        self.assertEqual(1, len(validation_result))
-        self.assertIsNone(added_programmation)
+        self.assertEqual(1, len(prog.errors))
+        self.assertIsNone(self.pm.add_programmation(programmation=prog))
 
-        validation_result, added_programmation = self.pm.add_programmation(programmation=(
-            {
-                'url': "a valid url",
-                'planning': {
-                    'recurrence_cron': '00 12 * * *',
-                    'recording_start_date': '2022-12-01 10:00'
-                },
-            }
-        ))
+        prog = Programmation(programmation={
+            'url': "a valid url",
+            'planning': {
+                'recurrence_cron': '00 12 * * *',
+                'recording_start_date': '2022-12-01 10:00'
+            },
+        })
 
-        self.assertEqual(2, len(validation_result))
-        self.assertIsNone(added_programmation)
+        self.assertEqual(2, len(prog.errors))
+        self.assertIsNone(self.pm.add_programmation(programmation=prog))
 
-        validation_result, added_programmation = self.pm.add_programmation(programmation=(
-            {
-                'url': "a special test",
-                'planning': {
-                    'recurrence_cron': '00 13 * * *',
-                    'recurrence_start_date': None,
-                },
-            }
-        ))
+        prog = Programmation(programmation={
+            'url': "a special test",
+            'planning': {
+                'recurrence_cron': '00 13 * * *',
+                'recurrence_start_date': None,
+            },
+        })
 
-        self.assertEqual(0, len(validation_result))
-        self.assertIsNotNone(added_programmation)
+        self.assertEqual(0, len(prog.errors))
+        self.assertIsNotNone(self.pm.add_programmation(programmation=prog))
+        self.assertIsNotNone(prog.recurrence_start_date)
 
-        validation_result, added_programmation = self.pm.add_programmation(programmation=(
-            {
-                'url': "a valid url",
-            }
-        ))
+        prog = Programmation(programmation={
+            'url': "a valid url",
+        })
 
-        self.assertEqual(0, len(validation_result))
-        self.assertIsNotNone(added_programmation)
+        self.assertEqual(0, len(prog.errors))
+        self.assertIsNotNone(self.pm.add_programmation(programmation=prog))
 
-        validation_result, added_programmation = self.pm.add_programmation(programmation=(
-            {
-                'url': "a valid url",
-                'planning': {
-                    'recording_start_date': '2022-12-01 00:00',
-                    'recording_duration': 120,
-                },
-            }
-        ))
+        prog = Programmation(programmation={
+            'url': "a valid url",
+            'planning': {
+                'recording_start_date': '2022-12-01 00:00',
+                'recording_duration': 120,
+            },
+        })
 
-        self.assertEqual(0, len(validation_result))
-        self.assertIsNotNone(added_programmation)
+        self.assertEqual(0, len(prog.errors))
+        self.assertIsNotNone(self.pm.add_programmation(programmation=prog))
 
-        validation_result, added_programmation = self.pm.add_programmation(programmation=(
-            {
-                'id': '0',
-                'url': "a valid url",
-                'enabled': False,
-                'planning': {
-                    'recording_start_date': '2022-12-01 00:00',
-                    'recording_duration': 120,
-                },
-            }
-        ))
+        prog = Programmation(programmation={
+            'id': '0',
+            'url': "a valid url",
+            'enabled': False,
+            'planning': {
+                'recording_start_date': '2022-12-01 00:00',
+                'recording_duration': 120,
+            },
+        })
 
-        self.assertEqual(0, len(validation_result))
-        self.assertIsNotNone(added_programmation)
-        self.assertFalse(added_programmation.get('enabled'))
-        self.assertNotEqual('0', added_programmation.get('id'))
+        self.assertEqual(0, len(prog.errors))
+        self.assertIsNotNone(self.pm.add_programmation(programmation=prog))
+        self.assertFalse(prog.enabled)
+        self.assertNotEqual('0', prog.id)
 
-        validation_result, added_programmation = self.pm.add_programmation(programmation=(
-            {
-                'url': "a valid url",
-                'planning': {
-                    'recurrence_cron': '00 12 * * *',
-                    'recording_duration': 60,
+        prog = Programmation(programmation={
+            'url': "a valid url",
+            'planning': {
+                'recurrence_cron': '00 12 * * *',
+                'recording_duration': 60,
 
-                    'recurrence_start_date': '2022-12-01 00:00',
-                    'recurrence_end_date': '2022-12-31 23:59',
-                },
-            }
-        ))
+                'recurrence_start_date': '2022-12-01 00:00',
+                'recurrence_end_date': '2022-12-31 23:59',
+            },
+        })
 
-        self.assertEqual(0, len(validation_result))
-        self.assertIsNotNone(added_programmation)
+        self.assertEqual(0, len(prog.errors))
+        self.assertIsNotNone(self.pm.add_programmation(programmation=prog))
 
-        validation_result, added_programmation = self.pm.add_programmation(programmation=(
+        prog = Programmation(programmation=(
             {
                 'url': "a valid url",
                 'planning': {
@@ -562,43 +538,43 @@ class TestProgrammation(unittest.TestCase):
             }
         ))
 
-        self.assertEqual(0, len(validation_result))
-        self.assertIsNotNone(added_programmation)
-        self.assertTrue(added_programmation.get('enabled'))
+        self.assertEqual(0, len(prog.errors))
+        self.assertIsNotNone(self.pm.add_programmation(programmation=prog))
+        self.assertTrue(prog.enabled)
 
-        self.last_added_id = added_programmation.get('id')
+        self.last_added_id = prog.id
 
-        validation_result, changed_programmation = self.pm.update_programmation_by_id(
+        prog = self.pm.update_programmation_by_id(
             id=self.last_added_id,
             programmation={
                 'enabled': False
             })
-        self.assertEqual(0, len(validation_result))
-        self.assertIsNotNone(changed_programmation)
 
-        self.assertEqual('2022-12-01 13:00:00',
-                         datetime.isoformat(self.pm.get_next_execution(programmation=changed_programmation,
-                                                                       from_date=datetime.fromisoformat(
-                                                                           '2022-11-30 12:00')), sep=' '))
+        self.assertEqual(0, len(prog.errors))
+        self.assertFalse(prog.enabled)
 
-        validation_result, changed_programmation = self.pm.update_programmation_by_id(
-            id=self.last_added_id,
-            programmation={
-                'planning': {
-                    'recurrence_start_date': '2022-12-00 12:00'
-                }
-            })
+        self.assertEqual(prog.id, self.last_added_id)
+        self.assertIsNotNone(self.pm.get_programmation_by_id(self.last_added_id))
 
-        self.assertNotEqual(0, len(validation_result))
-        self.assertIsNone(changed_programmation)
+        self.assertEqual(datetime.fromisoformat('2022-12-01 13:00:00'),
+                         prog.get_next_execution(from_date=datetime.fromisoformat('2022-11-30 12:00')))
+
+        prog = self.pm.update_programmation_by_id(id=self.last_added_id,
+                                                  programmation={
+                                                      'planning': {
+                                                          'recurrence_start_date': '2022-12-00 12:00'
+                                                      }
+                                                  })
+
+        self.assertEqual(1, len(prog.errors))
 
         ### ACCESS
         self.assertEqual(8, len(self.pm.get_all_programmations()))
         self.assertEqual(6, len(self.pm.get_all_enabled_programmations()))
 
-        latest_created_programmation = self.pm.get_programmation_by_id(id=self.last_added_id)[0]
+        latest_created_programmation = self.pm.get_programmation_by_id(id=self.last_added_id)
         self.assertIsNotNone(latest_created_programmation)
-        self.assertFalse(latest_created_programmation.get('enabled'))
+        self.assertFalse(latest_created_programmation.enabled)
 
         self.assertIsNone(self.pm.get_programmation_by_id('0'))
 
@@ -606,85 +582,96 @@ class TestProgrammation(unittest.TestCase):
         self.assertEqual(6, len(self.pm.get_all_enabled_programmations()))
 
     def test_end_dates_manipulation(self):
-        self.assertEqual('2022-12-01 02:00:00',
-                         datetime.isoformat(
-                             self.pm.get_end_date(programmation=self.pm.generate_programmation(programmation={
-                                 'url': "a valid url",
-                                 'planning': {
-                                     'recording_start_date': '2022-12-01 00:00',
-                                     'recording_duration': 120,
-                                 },
-                             })), sep=' '))
+        self.assertEqual(datetime.fromisoformat('2022-12-01 02:00'), Programmation(programmation={
+            'url': "a valid url",
+            'planning': {
+                'recording_start_date': '2022-12-01 00:00',
+                'recording_duration': 120,
+            },
+        }).get_end_date())
 
-        self.assertEqual('2022-12-01 00:00:00',
-                         datetime.isoformat(
-                             self.pm.get_end_date(programmation=self.pm.generate_programmation(programmation={
-                                 'url': "a valid url",
-                                 'planning': {
-                                     'recurrence_end_date': '2022-12-01 00:00',
-                                 },
-                             })), sep=' '))
+        self.assertEqual(datetime.fromisoformat('2022-12-01 02:00'),
+                         Programmation(programmation={
+                             'url': "a valid url",
+                             'planning': {
+                                 'recording_start_date': '2022-12-01 00:00',
+                                 'recording_duration': 120,
+                             },
+                         }).get_end_date())
 
-        self.assertEqual('2022-12-01 02:00:00',
-                         datetime.isoformat(
-                             self.pm.get_end_date(programmation=self.pm.generate_programmation(programmation={
-                                 'url': "a valid url",
-                                 'planning': {
-                                     'recurrence_end_date': '2022-12-01 00:00',
-                                     'recording_duration': 120,
-                                 },
-                             })), sep=' '))
+        self.assertEqual(datetime.fromisoformat('2022-12-01 00:00'),
+                         Programmation(programmation={
+                             'url': "a valid url",
+                             'planning': {
+                                 'recurrence_end_date': '2022-12-01 00:00',
+                             },
+                         }).get_end_date())
 
-        self.assertEqual('2022-12-31 12:15:00',
-                         datetime.isoformat(
-                             self.pm.get_end_date(programmation=self.pm.generate_programmation(programmation={
-                                 'url': "a valid url",
-                                 'planning': {
-                                     'recurrence_cron': '15 12 * * *',
-                                     'recurrence_start_date': '2022-12-30 00:00',
-                                     'recurrence_end_date': '2022-12-31 23:59',
-                                 },
-                             })), sep=' '))
+        self.assertEqual(datetime.fromisoformat('2022-12-01 02:00'),
+                         Programmation(programmation={
+                             'url': "a valid url",
+                             'planning': {
+                                 'recurrence_end_date': '2022-12-01 00:00',
+                                 'recording_duration': 120,
+                             },
+                         }).get_end_date())
 
-        self.assertEqual('2022-12-31 13:15:00',
-                         datetime.isoformat(
-                             self.pm.get_end_date(programmation=self.pm.generate_programmation(programmation={
-                                 'url': "a valid url",
-                                 'planning': {
-                                     'recurrence_cron': '15 12 * * *',
-                                     'recording_duration': 60,
-                                     'recurrence_start_date': '2022-12-30 00:00',
-                                     'recurrence_end_date': '2022-12-31 23:59',
-                                 },
-                             })), sep=' '))
+        self.assertEqual(datetime.fromisoformat('2022-12-31 12:15'),
+                         Programmation(programmation={
+                             'url': "a valid url",
+                             'planning': {
+                                 'recurrence_cron': '15 12 * * *',
+                                 'recurrence_start_date': '2022-12-30 00:00',
+                                 'recurrence_end_date': '2022-12-31 23:59',
+                             },
+                         }).get_end_date())
+
+        self.assertEqual(datetime.fromisoformat('2022-12-31 13:15'),
+                         Programmation(programmation={
+                             'url': "a valid url",
+                             'planning': {
+                                 'recurrence_cron': '15 12 * * *',
+                                 'recording_duration': 60,
+                                 'recurrence_start_date': '2022-12-30 00:00',
+                                 'recurrence_end_date': '2022-12-31 23:59',
+                             },
+                         }).get_end_date())
 
         self.assertEqual(3, len(self.pm.purge_all_past_programmations(
             from_date=datetime.fromisoformat('2022-12-03 01:00'))))
         self.assertEqual(4, len(self.pm.get_all_programmations()))
 
+        self.assertEqual(datetime.fromisoformat('2022-12-20 13:02:00'),
+                         Programmation(programmation={
+                             'url': "a valid url",
+                             'planning': {
+                                 'recurrence_cron': '*/15 * * * *',
+                                 'recording_duration': 2,
+                                 'recurrence_start_date': '2022-12-01 00:00',
+                                 'recurrence_end_date': '2022-12-20 13:00',
+                             },
+                         }).get_end_date())
+
     def test_restart(self):
-        self.assertIsNone(self.pm.must_be_restarted(
-            from_date=datetime.fromisoformat('2022-12-01 12:00'),
+        self.assertIsNone(Programmation(
             programmation={
                 'url': "a valid url",
                 'planning': {
                     'recording_start_date': '2022-12-01 00:00',
                     'recording_duration': 120,
                 },
-            }))
+            }).must_be_restarted(from_date=datetime.fromisoformat('2022-12-01 12:00')))
 
-        self.assertEqual(60, self.pm.must_be_restarted(
-            from_date=datetime.fromisoformat('2022-12-01 01:00'),
+        self.assertEqual(60, Programmation(
             programmation={
                 'url': "a valid url",
                 'planning': {
                     'recording_start_date': '2022-12-01 00:00',
                     'recording_duration': 120,
                 },
-            }))
+            }).must_be_restarted(from_date=datetime.fromisoformat('2022-12-01 01:00'), ))
 
-        self.assertIsNone(self.pm.must_be_restarted(
-            from_date=datetime.fromisoformat('2022-12-01 15:00'),
+        self.assertIsNone(Programmation(
             programmation={
                 'url': "a valid url",
                 'planning': {
@@ -692,10 +679,9 @@ class TestProgrammation(unittest.TestCase):
                     'recurrence_start_date': '2022-12-01 00:00',
                     'recording_duration': 120,
                 },
-            }))
+            }).must_be_restarted(from_date=datetime.fromisoformat('2022-12-01 15:00')))
 
-        self.assertEqual(60, self.pm.must_be_restarted(
-            from_date=datetime.fromisoformat('2022-12-01 13:00'),
+        self.assertEqual(60, Programmation(
             programmation={
                 'url': "a valid url",
                 'planning': {
@@ -703,17 +689,15 @@ class TestProgrammation(unittest.TestCase):
                     'recurrence_start_date': '2022-12-01 00:00',
                     'recording_duration': 120,
                 },
-            }))
+            }).must_be_restarted(from_date=datetime.fromisoformat('2022-12-01 13:00')))
 
-        self.assertIsNone(self.pm.must_be_restarted(
-            from_date=datetime.fromisoformat('2022-12-01 13:00'),
+        self.assertIsNone(Programmation(
             programmation={
                 'url': "a valid url",
                 'planning': {},
-            }))
+            }).must_be_restarted(from_date=datetime.fromisoformat('2022-12-01 13:00')))
 
-        self.assertIsNone(self.pm.must_be_restarted(
-            from_date=datetime.fromisoformat('2022-12-02 15:00'),
+        self.assertIsNone(Programmation(
             programmation={
                 'url': "a valid url",
                 'planning': {
@@ -722,10 +706,9 @@ class TestProgrammation(unittest.TestCase):
                     'recurrence_end_date': '2022-12-02 23:00',
                     'recording_duration': 120,
                 },
-            }))
+            }).must_be_restarted(from_date=datetime.fromisoformat('2022-12-02 15:00')))
 
-        self.assertEqual(45, self.pm.must_be_restarted(
-            from_date=datetime.fromisoformat('2022-12-02 13:15'),
+        self.assertEqual(45, Programmation(
             programmation={
                 'url': "a valid url",
                 'planning': {
@@ -734,7 +717,7 @@ class TestProgrammation(unittest.TestCase):
                     'recurrence_end_date': '2022-12-02 23:00',
                     'recording_duration': 120,
                 },
-            }))
+            }).must_be_restarted(from_date=datetime.fromisoformat('2022-12-02 13:15')))
 
 
 if __name__ == '__main__':

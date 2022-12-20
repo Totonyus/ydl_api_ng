@@ -5,12 +5,12 @@ import config_manager
 import download_manager
 import process_utils
 
-import programmation_manager
+import programmation_persistence_manager
 import logging
 
 __cm = config_manager.ConfigManager()
 __pu = process_utils.ProcessUtils(__cm)
-__pm = programmation_manager.ProgrammationManager()
+__pm = programmation_persistence_manager.ProgrammationPersistenceManager()
 
 programmation_interval = __cm.get_app_params().get('_programmation_interval')
 
@@ -37,6 +37,11 @@ def run():
                 __pu.terminate_redis_active_download(job.get('id'))
 
     for programmation in all_programmations:
+        planning = programmation.get('planning')
+
+        recording_duration = planning.get('recording_duration')
+        recording_stops_at_end = planning.get('recording_stops_at_end')
+
         found_job = __pu.find_job_by_programmation_id(programmation_id=programmation.get('id'))
 
         must_be_restarted = __pm.must_be_restarted(programmation=programmation)
@@ -45,10 +50,10 @@ def run():
             next_execution = __pm.get_next_execution(programmation=programmation)
 
             effective_duration = must_be_restarted
-            if effective_duration is None and programmation.get('planning').get('recording_duration'):
-                effective_duration = programmation.get('planning').get('recording_duration')
+            if effective_duration is None and recording_duration:
+                effective_duration = recording_duration
 
-            if effective_duration is not None and programmation.get('planning').get('recording_stops_at_end'):
+            if effective_duration is not None and recording_stops_at_end:
                 programmation_end_date = datetime.now().replace(second=0, microsecond=0) + timedelta(
                     minutes=effective_duration + 1)
             else:

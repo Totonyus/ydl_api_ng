@@ -9,13 +9,14 @@ import download_manager
 import process_utils
 import os
 
-import programmation_manager
+import programmation_persistence_manager
 import programmation_daemon
 from datetime import datetime, timedelta
+from programmation_class import Programmation
 
 __cm = config_manager.ConfigManager()
 __pu = process_utils.ProcessUtils(__cm)
-__pm = programmation_manager.ProgrammationManager()
+__pm = programmation_persistence_manager.ProgrammationPersistenceManager()
 
 __cm.init_logger(file_name='api.log')
 
@@ -113,18 +114,18 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
         programmation_object['user_token'] = token
         programmation_object['not_stored'] = True
 
-        generated_programmation = __pm.generate_programmation(programmation=programmation_object)
-        validation_result = __pm.validate_programmation(programmation=generated_programmation)
+        generated_programmation = Programmation(programmation=programmation_object)
 
-        if len(validation_result) != 0:
+        if len(generated_programmation.errors) != 0:
             response.status_code = 400
-            return validation_result
+            return generated_programmation.errors
 
         planning = generated_programmation.get('planning')
 
         if planning.get('recording_duration') is not None:
             planning['recording_stops_at_end'] = True
-            programmation_end_date = datetime.now().replace(second=0, microsecond=0) + timedelta(minutes=1 + planning.get('recording_duration'))
+            programmation_end_date = datetime.now().replace(second=0, microsecond=0) + timedelta(
+                minutes=1 + planning.get('recording_duration'))
 
     if generated_programmation is None:
         dm = download_manager.DownloadManager(__cm, param_url, None, param_token, body)
@@ -133,7 +134,7 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
                                               programmation_id=generated_programmation.get('id'),
                                               programmation_end_date=programmation_end_date,
                                               programmation_date=datetime.now(),
-                                              programmation=generated_programmation)
+                                              programmation=generated_programmation.get())
 
     response.status_code = dm.get_api_status_code()
 
@@ -319,7 +320,7 @@ async def get_all_active_programmations(response: Response, token=None):
     programmations = __pm.get_all_programmations()
 
     for programmation in programmations:
-        programmation['user_token'] = 'censored'
+        programmation['user_token'] = ''
 
     return programmations
 
@@ -349,13 +350,13 @@ async def add_programmation(response: Response, background_tasks: BackgroundTask
     programmation_object['url'] = param_url
     programmation_object['user_token'] = token
 
-    validation_result, added_programmation = __pm.add_programmation(programmation=programmation_object)
+    prog = Programmation(programmation=programmation_object)
 
-    if added_programmation is None:
+    if len(prog.errors) != 0:
         response.status_code = 400
-        return validation_result
-
-    return added_programmation
+        return prog.errors
+    else:
+        return __pm.add_programmation(programmation=prog)
 
 
 @app.delete(f"{__cm.get_app_params().get('_api_route_programmation')}/{'{id}'}")
@@ -377,8 +378,7 @@ async def delete_programmation_by_id(response: Response, id, token=None):
     deleted_programmation = __pm.delete_programmation_by_id(id=id)
 
     if deleted_programmation is not None:
-        for programmation in deleted_programmation:
-            programmation['user_token'] = 'censored'
+        deleted_programmation['user_token'] = ''
     else:
         response.status_code = 404
         return
@@ -407,19 +407,19 @@ async def delete_programmation_by_url(response: Response, url, token=None):
         response.status_code = 400
         return {'status_code': response.status_code}
 
-    deleted_programmation = __pm.delete_programmation_by_url(url=url)
+    deleted_programmations = __pm.delete_programmation_by_url(url=url)
 
-    if deleted_programmation is not None:
-        for programmation in deleted_programmation:
-            programmation['user_token'] = 'censored'
+    if deleted_programmations is not None:
+        for programmation in deleted_programmations:
+            programmation['user_token'] = ''
     else:
         return []
 
-    return deleted_programmation
+    return deleted_programmations
 
 
 @app.put(f"{__cm.get_app_params().get('_api_route_programmation')}/{'{id}'}")
-async def delete_programmation_by_id(response: Response, id, body=Body(...), token=None):
+async def update_programmation_by_id(response: Response, id, body=Body(...), token=None):
     if not enable_redis:
         response.status_code = 409
         return "Redis management is disabled"
@@ -434,13 +434,17 @@ async def delete_programmation_by_id(response: Response, id, body=Body(...), tok
         response.status_code = 401
         return
 
-    validation_result, updated_programmation = __pm.update_programmation_by_id(id=id, programmation=body)
+    updated_programmation = __pm.update_programmation_by_id(id=id, programmation=body)
 
     if updated_programmation is None:
-        response.status_code = 400
-        return validation_result
+        response.status_code = 404
+        return
 
-    return updated_programmation
+    if len(updated_programmation.errors) != 0:
+        response.status_code = 400
+        return updated_programmation.errors
+
+    return updated_programmation.get()
 
 
 uvicorn.run(app, host=__cm.get_app_params().get('_listen_ip'), port=__cm.get_app_params().get('_listen_port'),
