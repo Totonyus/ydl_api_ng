@@ -1,3 +1,4 @@
+import logging
 from urllib.parse import unquote
 
 import uvicorn
@@ -119,18 +120,16 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
             response.status_code = 400
             return generated_programmation.errors
 
-        planning = generated_programmation.get('planning')
-
-        if planning.get('recording_duration') is not None:
-            planning['recording_stops_at_end'] = True
+        if generated_programmation.recording_duration is not None:
+            generated_programmation.recording_stops_at_end = True
             programmation_end_date = datetime.now().replace(second=0, microsecond=0) + timedelta(
-                minutes=1 + planning.get('recording_duration'))
+                minutes=1 + generated_programmation.recording_duration)
 
     if generated_programmation is None:
         dm = download_manager.DownloadManager(__cm, param_url, None, param_token, body)
     else:
         dm = download_manager.DownloadManager(__cm, param_url, None, param_token, body,
-                                              programmation_id=generated_programmation.get('id'),
+                                              programmation_id=generated_programmation.id,
                                               programmation_end_date=programmation_end_date,
                                               programmation_date=datetime.now(),
                                               programmation=generated_programmation.get())
