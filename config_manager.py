@@ -4,7 +4,6 @@ import json
 import logging
 import logging.handlers as handlers
 import os
-from redis import Redis
 import defaults
 
 
@@ -79,23 +78,29 @@ class ConfigManager:
 
         self.__config.read(params_file if params_file is not None else 'params/params.ini')
 
-        self.log_level = self.__config['app'].getint('_log_level') if self.__config['app'].getint('_log_level') is not None else 20
-        self.log_backups = self.__config['app'].getint('_log_backups') if self.__config['app'].getint('_log_backups') is not None else 7
+        self.log_level = self.__config['app'].getint('_log_level') if self.__config['app'].getint(
+            '_log_level') is not None else 20
+        self.log_backups = self.__config['app'].getint('_log_backups') if self.__config['app'].getint(
+            '_log_backups') is not None else 7
 
         self.__dispatch_configs()
         self.__load_metadata()
         self.__set_config_objects()
 
     def init_logger(self, file_name='ydl_api_ng.log'):
-        logging.basicConfig(level=self.log_level, format='[%(asctime)s][%(name)s][%(levelname)s] %(message)s', datefmt='%d-%m-%y %H:%M:%S')
+        logging.basicConfig(level=self.log_level, format='[%(asctime)s][%(name)s][%(levelname)s] %(message)s',
+                            datefmt='%d-%m-%y %H:%M:%S')
 
-        time_handler = handlers.TimedRotatingFileHandler(f'logs/{file_name}', when='midnight', interval=1, backupCount=self.log_backups)
+        time_handler = handlers.TimedRotatingFileHandler(f'logs/{file_name}', when='midnight', interval=1,
+                                                         backupCount=self.log_backups)
         time_handler.setLevel(self.log_level)
-        time_handler.setFormatter(logging.Formatter('[%(asctime)s][%(name)s][%(levelname)s] %(message)s', datefmt='%d-%m-%y %H:%M:%S'))
+        time_handler.setFormatter(
+            logging.Formatter('[%(asctime)s][%(name)s][%(levelname)s] %(message)s', datefmt='%d-%m-%y %H:%M:%S'))
         logging.getLogger().addHandler(time_handler)
 
         logging.getLogger('config_manager').info('Logger initialized')
-        logging.info(f"Container build date : {os.environ.get('DATE')}, git revision : {os.environ.get('GIT_BRANCH')} - {os.environ.get('GIT_REVISION')}")
+        logging.info(
+            f"Container build date : {os.environ.get('DATE')}, git revision : {os.environ.get('GIT_BRANCH')} - {os.environ.get('GIT_REVISION')}")
 
     # Send configs to the right objects
     def __dispatch_configs(self):
@@ -156,7 +161,8 @@ class ConfigManager:
     @staticmethod
     def merge_configs_object(user_object, preset_object, override=True):
         if user_object is not None:
-            logging.getLogger('config_manager').debug(f'Merging preset {preset_object.get("_name")} in user {user_object.get("_name")}')
+            logging.getLogger('config_manager').debug(
+                f'Merging preset {preset_object.get("_name")} in user {user_object.get("_name")}')
 
             for option in user_object.get_all():
                 if option != '_name':

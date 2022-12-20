@@ -10,7 +10,6 @@ import process_utils
 import os
 
 import programmation_persistence_manager
-import programmation_daemon
 from datetime import datetime, timedelta
 from programmation_class import Programmation
 

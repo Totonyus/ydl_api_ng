@@ -1,8 +1,5 @@
-import copy
-
 import defaults
 import uuid
-from tinydb import TinyDB, Query
 from cronsim import CronSim
 from datetime import datetime, timedelta
 

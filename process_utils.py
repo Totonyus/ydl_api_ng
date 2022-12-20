@@ -10,7 +10,6 @@ import psutil
 import re
 import pathlib
 import inspect
-import ffmpeg
 
 import download_manager
 from params import ydl_api_hooks
