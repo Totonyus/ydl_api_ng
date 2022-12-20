@@ -180,6 +180,8 @@ class Programmation:
             return None
 
     def get_next_execution(self, from_date=None, *args, **kwargs):
+        from_date = datetime.now() if from_date is None else from_date
+
         next_iteration = None
         if self.recording_start_date is not None:
             next_iteration = self.recording_start_date
