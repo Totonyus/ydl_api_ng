@@ -377,7 +377,7 @@ async def add_programmation(response: Response, background_tasks: BackgroundTask
     programmation_object['url'] = param_url
     programmation_object['user_token'] = token
 
-    prog = Programmation(programmation=programmation_object)
+    prog = Programmation(programmation=programmation_object, stored_object = False)
 
     if len(prog.errors) != 0:
         response.status_code = 400

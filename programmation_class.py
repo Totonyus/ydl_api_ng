@@ -5,11 +5,15 @@ from datetime import datetime, timedelta
 from mergedeep import merge
 
 class Programmation:
-    def __init__(self, programmation=None, source_programmation=defaults.programmation_object_default, *args, **kwargs):
+    def __init__(self, programmation=None, source_programmation=defaults.programmation_object_default, stored_object = True, *args, **kwargs):
         merged_programmation = merge({}, source_programmation, programmation)
         merged_planning = merged_programmation.get('planning')
 
-        self.id = source_programmation.get('id') if source_programmation.get('id') is not None else f'{uuid.uuid4()}'
+        if stored_object and (not stored_object or source_programmation.get('id') is not None):
+            self.id = source_programmation.get('id')
+        else:
+            self.id = f'{uuid.uuid4()}'
+
         self.url = merged_programmation.get('url')
         self.user_token = merged_programmation.get('user_token')
         self.enabled = merged_programmation.get('enabled')
