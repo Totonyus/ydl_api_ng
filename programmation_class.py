@@ -2,50 +2,25 @@ import defaults
 import uuid
 from cronsim import CronSim
 from datetime import datetime, timedelta
-
+from mergedeep import merge
 
 class Programmation:
     def __init__(self, programmation=None, source_programmation=defaults.programmation_object_default, *args, **kwargs):
+        merged_programmation = merge({}, source_programmation, programmation)
+        merged_planning = merged_programmation.get('planning')
+
         self.id = source_programmation.get('id') if source_programmation.get('id') is not None else f'{uuid.uuid4()}'
-        self.url = programmation.get('url') if programmation.get(
-            'url') is not None else source_programmation.get('url')
-        self.user_token = programmation.get('user_token') if programmation.get(
-            'user_token') is not None else source_programmation.get('user_token')
-        self.enabled = programmation.get('enabled') if programmation.get(
-            'enabled') is not None else source_programmation.get('enabled')
+        self.url = merged_programmation.get('url')
+        self.user_token = merged_programmation.get('user_token')
+        self.enabled = merged_programmation.get('enabled')
+        self.presets = merged_programmation.get('presets')
 
-        self.presets = programmation.get('presets') if programmation.get(
-            'presets') is not None else source_programmation.get('presets')
-
-        planning = programmation.get('planning')
-        source_planning = source_programmation.get('planning')
-
-        if planning is None:
-            self.recording_start_date = source_planning.get('recording_start_date')
-            self.recording_duration = source_planning.get('recording_duration')
-            self.recording_stops_at_end = source_planning.get('recording_stops_at_end')
-            self.recurrence_cron = source_planning.get('recurrence_cron')
-            self.recurrence_start_date = source_planning.get('recurrence_start_date')
-            self.recurrence_end_date = source_planning.get('recurrence_end_date')
-        else:
-            self.recording_start_date = planning.get('recording_start_date') \
-                if planning.get('recording_start_date') is not None \
-                else source_planning.get('recording_start_date')
-            self.recording_duration = planning.get('recording_duration') \
-                if planning.get('recording_duration') is not None \
-                else source_planning.get('recording_duration')
-            self.recording_stops_at_end = planning.get('recording_stops_at_end') \
-                if planning.get('recording_stops_at_end') is not None \
-                else source_planning.get('recording_stops_at_end')
-            self.recurrence_cron = planning.get('recurrence_cron') \
-                if planning.get('recurrence_cron') is not None \
-                else source_planning.get('recurrence_cron')
-            self.recurrence_start_date = planning.get('recurrence_start_date') \
-                if planning.get('recurrence_start_date') is not None \
-                else source_planning.get('recurrence_start_date')
-            self.recurrence_end_date = planning.get('recurrence_end_date') \
-                if planning.get('recurrence_end_date') is not None \
-                else source_planning.get('recurrence_end_date')
+        self.recording_start_date = merged_planning.get('recording_start_date')
+        self.recording_duration = merged_planning.get('recording_duration')
+        self.recording_stops_at_end = merged_planning.get('recording_stops_at_end')
+        self.recurrence_cron = merged_planning.get('recurrence_cron')
+        self.recurrence_start_date = merged_planning.get('recurrence_start_date')
+        self.recurrence_end_date = merged_planning.get('recurrence_end_date')
 
         self.planning = {
             "recording_start_date": self.recording_start_date,

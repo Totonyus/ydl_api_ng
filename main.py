@@ -383,7 +383,8 @@ async def add_programmation(response: Response, background_tasks: BackgroundTask
         response.status_code = 400
         return prog.errors
     else:
-        return __pm.add_programmation(programmation=prog)
+        added = __pm.add_programmation(programmation=prog)
+        return added.get()
 
 
 @app.delete(f"{__cm.get_app_params().get('_api_route_programmation')}/{'{id}'}")
