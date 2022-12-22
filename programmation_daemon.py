@@ -18,6 +18,17 @@ programmation_interval = __cm.get_app_params().get('_programmation_interval')
 
 enable_redis = False if __cm.get_app_params().get('_enable_redis') is not True else True
 
+def is_job_to_terminate(job=None):
+    job_end_date = job.get('job').meta.get('programmation_end_date')
+
+    if type(job_end_date) != datetime:
+        try:
+            job_end_date = datetime.fromisoformat(job_end_date)
+        except Exception:
+            return False
+
+    return job_end_date < datetime.now()
+
 
 def run():
     logging.getLogger('programmation').info(f'New iteration : {datetime.now()}')
@@ -32,10 +43,9 @@ def run():
     jobs_to_check = __pu.find_job_with_programmation_end_date()
 
     for job in jobs_to_check:
-        if job is not None and job.get('job').meta.get('programmation_end_date') < datetime.now():
-            if job.get('job').meta.get('programmation_end_date') < datetime.now():
-                logging.getLogger('programmation').info(
-                    f"Programmation {job.get('job').meta.get('programmation_id')} stopped by daemon")
+        if job is not None :
+            if is_job_to_terminate(job=job):
+                logging.getLogger('programmation').info(f"Programmation {job.get('job').meta.get('programmation_id')} stopped by daemon")
                 __pu.terminate_redis_active_download(job.get('id'))
 
     for programmation in all_programmations:

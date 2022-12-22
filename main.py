@@ -279,6 +279,35 @@ async def clear_registries(response: Response, token=None):
     return __pu.clear_all_but_pending_and_started()
 
 
+@app.put(f"{__cm.get_app_params().get('_api_route_queue')}/{'{pid}'}")
+async def update_active_download_download_metadata(response: Response, pid, body=Body(...), token=None):
+    if not enable_redis:
+        response.status_code = 409
+        return "Redis management is disabled"
+
+    param_token = unquote(token) if token is not None else None
+    user = __cm.is_user_permitted_by_token(param_token)
+
+    for entry in ['downloaded_files', 'error_files', 'files', 'filename_info']:
+        try:
+            del body[entry]
+            logging.getLogger("api").warning(f'Entry {entry} removed from metadata')
+        except KeyError:
+            pass
+
+    if user is False:
+        response.status_code = 401
+        return
+
+    updated_job = __pu.update_active_download_metadata(id=unquote(pid), metadata=body)
+
+    if updated_job is None:
+        response.status_code = 404
+        return
+
+    return updated_job
+
+
 @app.get(f"{__cm.get_app_params().get('_api_route_queue')}/{'{registry}'}")
 async def active_downloads_request(response: Response, registry, token=None):
     if not enable_redis:

@@ -10,6 +10,7 @@ import psutil
 import re
 import pathlib
 import inspect
+from mergedeep import merge
 
 import download_manager
 from params import ydl_api_hooks
@@ -462,6 +463,14 @@ class ProcessUtils:
         filename_stem = pathlib.Path(filename).stem
         extension = pathlib.Path(filename).suffix
 
+        try:
+            file_size = os.path.getsize(part_filename)
+        except FileNotFoundError:
+            try:
+                file_size = os.path.getsize(filename)
+            except FileNotFoundError:
+                file_size = 0
+
         return {
             'part_filename': part_filename,
             'filename': filename,
@@ -469,7 +478,7 @@ class ProcessUtils:
             'filename_stem': filename_stem,
             'extension': extension,
             'full_filename': f'{filename_stem}{extension}',
-            'file_size': os.path.getsize(part_filename)
+            'file_size': file_size
         }
 
     def get_queue_content(self, registry):
@@ -537,10 +546,27 @@ class ProcessUtils:
 
         return dm.get_api_status_code(), dm.get_api_return_object()
 
-    def ffmpeg_terminated_file(self,filename_info=None, *args, **kwargs):
+    def ffmpeg_terminated_file(self, filename_info=None, *args, **kwargs):
         try:
             os.rename(filename_info.get('part_filename'), filename_info.get('filename'))
         except Exception as e:
             logging.getLogger('process_utils').error(f'{filename_info.get("part_filename")} : {e}')
 
         return filename_info
+
+    def update_active_download_metadata(self, id=None, metadata=None, *args, **kwargs):
+        found_job = self.find_in_running(search_job_id=id)
+
+        if found_job is None:
+            return None
+
+        try:
+            job = Job.fetch(found_job.get('id'), connection=self.redis)
+        except rq.exceptions.NoSuchJobError:
+            return None
+
+        job.meta = merge(job.meta, metadata)
+        job.save()
+        job.refresh()
+
+        return self.sanitize_job(self.find_job_by_id(searched_job_id=id))
