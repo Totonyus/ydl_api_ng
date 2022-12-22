@@ -1,3 +1,5 @@
+import logging
+
 import defaults
 import uuid
 from cronsim import CronSim
@@ -5,14 +7,14 @@ from datetime import datetime, timedelta
 from mergedeep import merge
 
 class Programmation:
-    def __init__(self, programmation=None, source_programmation=defaults.programmation_object_default, stored_object = True, *args, **kwargs):
+    def __init__(self, programmation=None, source_programmation=defaults.programmation_object_default, id=None, *args, **kwargs):
         merged_programmation = merge({}, source_programmation, programmation)
         merged_planning = merged_programmation.get('planning')
 
-        if stored_object and (not stored_object or source_programmation.get('id') is not None):
-            self.id = source_programmation.get('id')
-        else:
+        if id is None:
             self.id = f'{uuid.uuid4()}'
+        else:
+            self.id = id
 
         self.url = merged_programmation.get('url')
         self.user_token = merged_programmation.get('user_token')

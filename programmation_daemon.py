@@ -49,7 +49,7 @@ def run():
                 __pu.terminate_redis_active_download(job.get('id'))
 
     for programmation in all_programmations:
-        prog = Programmation(programmation=programmation)
+        prog = Programmation(programmation=programmation, id=programmation.get('id'))
 
         found_job = __pu.find_job_by_programmation_id(prog.id)
 

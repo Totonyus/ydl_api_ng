@@ -29,7 +29,7 @@ class ProgrammationPersistenceManager:
         if json:
             ret = result[0] if len(result) != 0 else None
         else:
-            ret = Programmation(programmation=result[0]) if len(result) != 0 else None
+            ret = Programmation(programmation=result[0], id=result[0].get('id')) if len(result) != 0 else None
 
         return ret
 
@@ -55,7 +55,7 @@ class ProgrammationPersistenceManager:
         programmations = []
 
         for programmation in all_programmations:
-            programmation_object = Programmation(programmation=programmation)
+            programmation_object = Programmation(programmation=programmation, id=programmation.get('id'))
 
             end_date = programmation_object.get_end_date()
             if end_date is not None and from_date > end_date:
@@ -70,7 +70,7 @@ class ProgrammationPersistenceManager:
             return None
 
         changed_programmation = Programmation(source_programmation=stored_programmation,
-                                              programmation=programmation)
+                                              programmation=programmation, id=stored_programmation.get('id'))
         validation_result = changed_programmation.errors
 
         if len(validation_result) == 0:

@@ -513,6 +513,19 @@ class TestProgrammation(unittest.TestCase):
 
         prog = Programmation(programmation={
             'url': "a valid url",
+            'enabled': False,
+            'planning': {
+                'recording_start_date': '2022-12-01 00:00',
+                'recording_duration': 120,
+            },
+        }, id='0')
+
+        self.assertEqual(0, len(prog.errors))
+        self.assertFalse(prog.enabled)
+        self.assertEqual('0', prog.id)
+
+        prog = Programmation(programmation={
+            'url': "a valid url",
             'planning': {
                 'recurrence_cron': '00 12 * * *',
                 'recording_duration': 60,
