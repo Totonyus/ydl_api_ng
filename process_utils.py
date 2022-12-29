@@ -10,6 +10,7 @@ import psutil
 import re
 import pathlib
 import inspect
+from mergedeep import merge
 
 import download_manager
 from params import ydl_api_hooks
@@ -19,8 +20,10 @@ class ProcessUtils:
     def __init__(self, config_manager):
         self.__cm = config_manager
 
-        if self.__cm.get_app_params().get('_enable_redis') is not None and self.__cm.get_app_params().get('_enable_redis') is True:
-            self.redis = Redis(host=self.__cm.get_app_params().get('_redis_host'), port=self.__cm.get_app_params().get('_redis_port'))
+        if self.__cm.get_app_params().get('_enable_redis') is not None and self.__cm.get_app_params().get(
+                '_enable_redis') is True:
+            self.redis = Redis(host=self.__cm.get_app_params().get('_redis_host'),
+                               port=self.__cm.get_app_params().get('_redis_port'))
             self.queue = Queue('ydl_api_ng', connection=self.redis)
             self.registries = {'pending_job': self.queue,
                                'started_job': self.queue.started_job_registry,
@@ -30,18 +33,23 @@ class ProcessUtils:
                                'scheduled_job': self.queue.scheduled_job_registry,
                                'canceled_job': self.queue.canceled_job_registry,
                                }
+            self.programmation_registries = {
+                'pending_job': self.queue,
+                'started_job': self.queue.started_job_registry,
+            }
+
         else:
             self.redis = None
             self.queue = None
             self.registries = None
 
-    def terminate_active_download(self, id):
-        if self.redis is None:
-            return self.terminate_basic_active_download(id)
+    def terminate_active_download(self, id, background_tasks=None):
+        if self.redis is None or (self.redis is not None and self.redis is False):
+            return self.terminate_basic_active_download(id, background_tasks=background_tasks)
         else:
-            return self.terminate_redis_active_download(id)
+            return self.terminate_redis_active_download(id, background_tasks=background_tasks)
 
-    def terminate_basic_active_download(self, pid):
+    def terminate_basic_active_download(self, pid, background_tasks=None):
         child = self.get_child_object(int(pid))
 
         if child is not None:
@@ -50,7 +58,10 @@ class ProcessUtils:
             child.terminate()
             filename_info = self.get_current_download_file_destination(child.cmdline())
 
-            os.rename(filename_info.get('part_filename'), filename_info.get('filename'))  # renaming file to remove the .part
+            if background_tasks is not None:
+                background_tasks.add_task(self.ffmpeg_terminated_file, filename_info=filename_info)
+            else:
+                self.ffmpeg_terminated_file(filename_info=filename_info)
 
             if callable(getattr(ydl_api_hooks, 'post_termination_handler', None)):
                 ydl_api_hooks.post_termination_handler(self.__cm, filename_info)
@@ -81,7 +92,11 @@ class ProcessUtils:
 
         return None, None
 
-    def terminate_redis_active_download(self, search_job_id):
+    def terminate_redis_download_by_programmation_id(self, programmation_id=None, *args, **kwargs):
+        found_job = self.find_job_by_programmation_id(programmation_id)
+        self.terminate_redis_active_download(found_job.get('id'))
+
+    def terminate_redis_active_download(self, search_job_id, background_tasks=None):
         job = self.find_in_running(search_job_id)
 
         if job is not None:
@@ -101,15 +116,22 @@ class ProcessUtils:
                 os.kill(process_pid, signal.SIGINT)
 
                 try:
-                    os.rename(filename_info.get('part_filename'), filename_info.get('filename'))  # renaming file to remove the .part
-
                     job.get('job').meta['filename_info'] = filename_info
+                    job.get('job').meta['terminated'] = True
                     job.get('job').save()
                     job.get('job').refresh()
 
+                    if background_tasks is not None:
+                        background_tasks.add_task(self.ffmpeg_terminated_file, filename_info=filename_info)
+                    else:
+                        self.ffmpeg_terminated_file(filename_info=filename_info)
+
                     if callable(getattr(ydl_api_hooks, 'post_redis_termination_handler', None)):
                         ydl_api_hooks.post_redis_termination_handler(job_object.get('download_manager'), filename_info)
-                except FileNotFoundError:
+
+
+                except FileNotFoundError as e:
+                    logging.getLogger('process_utils').error(e)
                     pass
 
                 logging.getLogger('process_utils').info(f'ffmpeg process killed : {process_pid}')
@@ -123,9 +145,13 @@ class ProcessUtils:
                 logging.getLogger('process_utils').info(f"Job stopped on worker {job.get('worker').name}")
 
                 if inspect.getfullargspec(ydl_api_hooks.post_download_handler).varkw is not None:
-                    ydl_api_hooks.post_download_handler(job.get('preset'), job.get('download_manager'), job.get('download_manager').get_current_config_manager(), job.get('job').meta.get('downloaded_files'), job=job)
+                    ydl_api_hooks.post_download_handler(job.get('preset'), job.get('download_manager'),
+                                                        job.get('download_manager').get_current_config_manager(),
+                                                        job.get('job').meta.get('downloaded_files'), job=job)
                 else:
-                    ydl_api_hooks.post_download_handler(job.get('preset'), job.get('download_manager'), job.get('download_manager').get_current_config_manager(), job.get('job').meta.get('downloaded_files'))
+                    ydl_api_hooks.post_download_handler(job.get('preset'), job.get('download_manager'),
+                                                        job.get('download_manager').get_current_config_manager(),
+                                                        job.get('job').meta.get('downloaded_files'))
 
             return self.sanitize_job(job_object)
         else:
@@ -142,28 +168,28 @@ class ProcessUtils:
 
             return self.sanitize_job(job)
 
-    def terminate_all_active_downloads(self):
+    def terminate_all_active_downloads(self, background_tasks=None):
         if self.redis is None:
-            return self.terminate_all_basic_active_downloads()
+            return self.terminate_all_basic_active_downloads(background_tasks=background_tasks)
         else:
-            return self.terminate_all_redis_active_downloads()
+            return self.terminate_all_redis_active_downloads(background_tasks=background_tasks)
 
-    def terminate_all_basic_active_downloads(self):
+    def terminate_all_basic_active_downloads(self, background_tasks=None):
         logging.getLogger('process_utils').info('All active downloads are being terminated')
 
         informations = []
         for download in self.get_active_downloads_list():
             pid = download.get('pid')
-            informations.append(self.terminate_active_download(pid))
+            informations.append(self.terminate_active_download(pid, background_tasks=background_tasks))
 
         return informations
 
-    def terminate_all_redis_active_downloads(self):
+    def terminate_all_redis_active_downloads(self, background_tasks=None):
         stopped = []
         for worker in self.get_workers_info():
             if worker.get('job') is not None:
                 job = worker.get('job').get('job')
-                stopped.append(self.terminate_redis_active_download(job.id))
+                stopped.append(self.terminate_redis_active_download(job.id, background_tasks=background_tasks))
         return stopped
 
     def get_active_downloads_list(self):
@@ -285,6 +311,7 @@ class ProcessUtils:
         for job_id in self.registries.get(registry).get_job_ids():
             try:
                 job = Job.fetch(job_id, connection=self.redis)
+
                 jobs.append({
                     'id': job.id,
                     'registry': registry,
@@ -377,6 +404,40 @@ class ProcessUtils:
                         return None
         return None
 
+    def find_job_with_programmation_end_date(self):
+        jobs = []
+        for registry in ["pending_job", "started_job"]:
+            for job_id in self.registries.get(registry).get_job_ids():
+                try:
+                    job = Job.fetch(job_id, connection=self.redis)
+
+                    if job.meta.get('programmation_end_date') is not None:
+                        jobs.append({
+                            'id': job.id,
+                            'registry': registry,
+                            'preset': job.args[0],
+                            'download_manager': job.args[1],
+                            'job': job
+                        })
+                except rq.exceptions.NoSuchJobError:
+                    return None
+        return jobs
+
+    def find_job_by_programmation_id(self, programmation_id=None, *args, **kwargs):
+        for registry, content in self.programmation_registries.items():
+            for job_id in content.get_job_ids():
+                job = Job.fetch(job_id, connection=self.redis)
+
+                if job.meta.get('programmation_id') == programmation_id:
+                    return {
+                        'id': job.id,
+                        'registry': registry,
+                        'preset': job.args[0],
+                        'download_manager': job.args[1],
+                        'job': job
+                    }
+        return None
+
     def find_in_running(self, search_job_id):
         for worker in Worker.all(self.redis):
             current_job = worker.get_current_job()
@@ -402,6 +463,14 @@ class ProcessUtils:
         filename_stem = pathlib.Path(filename).stem
         extension = pathlib.Path(filename).suffix
 
+        try:
+            file_size = os.path.getsize(part_filename)
+        except FileNotFoundError:
+            try:
+                file_size = os.path.getsize(filename)
+            except FileNotFoundError:
+                file_size = 0
+
         return {
             'part_filename': part_filename,
             'filename': filename,
@@ -409,7 +478,7 @@ class ProcessUtils:
             'filename_stem': filename_stem,
             'extension': extension,
             'full_filename': f'{filename_stem}{extension}',
-            'file_size': os.path.getsize(part_filename)
+            'file_size': file_size
         }
 
     def get_queue_content(self, registry):
@@ -444,14 +513,16 @@ class ProcessUtils:
 
         downloaded_files = job.meta.get('downloaded_files')
         if downloaded_files is not None:
-            downloads_state = download_manager.DownloadManager.get_downloaded_files_info(job.meta.get('downloaded_files'))
+            downloads_state = download_manager.DownloadManager.get_downloaded_files_info(
+                job.meta.get('downloaded_files'))
 
         for video_id in downloads_state:
             download_object = downloads_state.get(video_id)
             if download_object.get('error_downloads') > 0:
                 url = download_object.get('downloads')[0].get('info_dict').get('webpage_url')
 
-                dm = download_manager.DownloadManager(self.__cm, url, None, user_token, {'presets': [preset]}, ignore_post_security=True, relaunch_failed_mode=True)
+                dm = download_manager.DownloadManager(self.__cm, url, None, user_token, {'presets': [preset]},
+                                                      ignore_post_security=True, relaunch_failed_mode=True)
                 dm.process_downloads()
 
                 launched_downloads.append(dm.get_api_return_object())
@@ -467,9 +538,35 @@ class ProcessUtils:
         preset = job.args[0].get_all()
         dm = job.args[1]
 
-        dm = download_manager.DownloadManager(self.__cm, dm.url, None, user_token, {'presets': [preset]}, ignore_post_security=True)
+        dm = download_manager.DownloadManager(self.__cm, dm.url, None, user_token, {'presets': [preset]},
+                                              ignore_post_security=True)
 
         if dm.get_api_status_code() != 400:
             dm.process_downloads()
 
         return dm.get_api_status_code(), dm.get_api_return_object()
+
+    def ffmpeg_terminated_file(self, filename_info=None, *args, **kwargs):
+        try:
+            os.rename(filename_info.get('part_filename'), filename_info.get('filename'))
+        except Exception as e:
+            logging.getLogger('process_utils').error(f'{filename_info.get("part_filename")} : {e}')
+
+        return filename_info
+
+    def update_active_download_metadata(self, id=None, metadata=None, *args, **kwargs):
+        found_job = self.find_in_running(search_job_id=id)
+
+        if found_job is None:
+            return None
+
+        try:
+            job = Job.fetch(found_job.get('id'), connection=self.redis)
+        except rq.exceptions.NoSuchJobError:
+            return None
+
+        job.meta = merge(job.meta, metadata)
+        job.save()
+        job.refresh()
+
+        return self.sanitize_job(self.find_job_by_id(searched_job_id=id))

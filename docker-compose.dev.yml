@@ -14,6 +14,8 @@ services:
       - ./test/params:/app/params
       - ./test/logs:/app/logs
       - ./test/downloads:/app/downloads
+      - ./test/data:/app/data
+      - /etc/localtime:/etc/localtime:ro
     environment:
       - UID=1000
       - GID=1000
@@ -28,6 +30,7 @@ services:
     restart: unless-stopped
     networks:
       - ydl_api_ng
-
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
 networks:
   ydl_api_ng:

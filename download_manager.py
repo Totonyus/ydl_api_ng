@@ -17,8 +17,17 @@ import inspect
 class DownloadManager:
     __cm = None
 
-    def __init__(self, config_manager, url, presets_string, user_token, post_body=None, ignore_post_security=False, **kwargs):
-        logging.getLogger('download_manager').info(f'Init download - user_token: {user_token} - presets: {presets_string} - url :{url} ')
+    def __init__(self, config_manager, url, presets_string, user_token, post_body=None, ignore_post_security=False,
+                 **kwargs):
+        logging.getLogger('download_manager').info(
+            f'Init download - user_token: {user_token} - presets: {presets_string} - url :{url} ')
+
+        self.programmation = None if kwargs.get('programmation') is None else kwargs.get('programmation')
+        self.programmation_id = None if kwargs.get('programmation_id') is None else kwargs.get('programmation_id')
+        self.programmation_date = None if kwargs.get('programmation_date') is None else kwargs.get('programmation_date')
+        self.programmation_end_date = None if kwargs.get('programmation_end_date') is None else kwargs.get(
+            'programmation_end_date')
+
         self.presets_string = presets_string
         self.presets = []
 
@@ -52,7 +61,8 @@ class DownloadManager:
 
         self.ignore_post_security = ignore_post_security
 
-        self.relaunch_failed_mode = kwargs.get('relaunch_failed_mode') if kwargs.get('relaunch_failed_mode') is not None else None
+        self.relaunch_failed_mode = kwargs.get('relaunch_failed_mode') if kwargs.get(
+            'relaunch_failed_mode') is not None else None
 
         if post_body is not None and post_body.get('presets') is not None and len(post_body.get('presets')) > 0:
             self.get_presets_from_post_request(post_body.get('presets'))
@@ -66,10 +76,16 @@ class DownloadManager:
             check_result = self.simulate_download(preset)
             if check_result is False:
                 self.failed_checks = self.failed_checks + 1
-                logging.getLogger('download_manager').error(f'Checking url with preset {preset.get("_name")} => check failed')
+                logging.getLogger('download_manager').error(
+                    f'Checking url with preset {preset.get("_name")} => check failed')
+            elif check_result is None:
+                self.passed_checks = self.passed_checks + 1
+                logging.getLogger('download_manager').info(
+                    f'Checking url with preset {preset.get("_name")} => check ignored')
             else:
                 self.passed_checks = self.passed_checks + 1
-                logging.getLogger('download_manager').info(f'Checking url with preset {preset.get("_name")} => check passed')
+                logging.getLogger('download_manager').info(
+                    f'Checking url with preset {preset.get("_name")} => check passed')
 
             preset.append('__is_video', self.is_video)
             preset.append('__is_playlist', self.is_from_playlist)
@@ -110,23 +126,31 @@ class DownloadManager:
 
             for param in preset:
                 if param in config_objects_mapping:
-                    self.__cm.merge_configs_object(config_objects_mapping.get(param)(preset.get(param)), preset_object, override=False)
+                    self.__cm.merge_configs_object(config_objects_mapping.get(param)(preset.get(param)), preset_object,
+                                                   override=False)
 
             if self.ignore_post_security is False:
-                if preset_object.get('_ignore_default_preset') is None or (preset_object.get('_ignore_default_preset') is not None and not preset_object.get('_ignore_default_preset')):
-                    self.__cm.merge_configs_object(self.__cm.get_preset_params('DEFAULT'), preset_object, override=False)
+                if preset_object.get('_ignore_default_preset') is None or (
+                        preset_object.get('_ignore_default_preset') is not None and not preset_object.get(
+                    '_ignore_default_preset')):
+                    self.__cm.merge_configs_object(self.__cm.get_preset_params('DEFAULT'), preset_object,
+                                                   override=False)
 
                 self.__cm.merge_configs_object(self.user, preset_object, override=True)
 
-                if preset_object.get('_ignore_site_config') is None or (preset_object.get('_ignore_site_config') is not None and not preset_object.get('_ignore_site_config')):
+                if preset_object.get('_ignore_site_config') is None or (
+                        preset_object.get('_ignore_site_config') is not None and not preset_object.get(
+                    '_ignore_site_config')):
                     self.__cm.merge_configs_object(self.site, preset_object, override=True)
 
                 if preset_object.get('paths') is None:
                     preset_object.append('paths', {'home': './downloads'})
-                    self.__cm.merge_configs_object(self.__cm.get_location_params('DEFAULT'), preset_object, override=True)
+                    self.__cm.merge_configs_object(self.__cm.get_location_params('DEFAULT'), preset_object,
+                                                   override=True)
 
                 if preset_object.get('outtmpl') is None:
-                    self.__cm.merge_configs_object(self.__cm.get_template_params('DEFAULT'), preset_object, override=True)
+                    self.__cm.merge_configs_object(self.__cm.get_template_params('DEFAULT'), preset_object,
+                                                   override=True)
 
             self.presets.append(preset_object)
 
@@ -192,7 +216,8 @@ class DownloadManager:
         return not self.is_from_playlist or (noplaylist_param and self.is_video)
 
     def is_user_permitted(self, users_management=None):
-        manage_user = self.__cm.get_app_params().get('_enable_users_management') if users_management is None else users_management
+        manage_user = self.__cm.get_app_params().get(
+            '_enable_users_management') if users_management is None else users_management
 
         if manage_user:
             if self.user is None:
@@ -271,20 +296,37 @@ class DownloadManager:
 
     def process_download(self, preset):
         if self.__cm.get_app_params().get('_dev_mode'):
-            logging.getLogger('download_manager').critical("server in DEV mode, set the _dev_mode at false in the [app] parameters")
+            logging.getLogger('download_manager').critical(
+                "server in DEV mode, set the _dev_mode at false in the [app] parameters")
             return
 
         ydl_opts = copy.deepcopy(preset)
 
-        ydl_opts.append('progress_hooks', [functools.partial(progress_hooks.handler, ydl_opts, self, self.get_current_config_manager()), functools.partial(self.progress_hooks_proxy)])
-        ydl_opts.append('postprocessor_hooks', [functools.partial(postprocessor_hooks.handler, ydl_opts, self, self.get_current_config_manager())])
+        ydl_opts.append('progress_hooks',
+                        [functools.partial(progress_hooks.handler, ydl_opts, self, self.get_current_config_manager()),
+                         functools.partial(self.progress_hooks_proxy)])
+        ydl_opts.append('postprocessor_hooks', [
+            functools.partial(postprocessor_hooks.handler, ydl_opts, self, self.get_current_config_manager())])
         ydl_opts.append('logger', logging.getLogger('youtube-dlp'))
 
         ydl_api_hooks.pre_download_handler(ydl_opts, self, self.get_current_config_manager())
 
         if self.enable_redis is not None and self.enable_redis is True:
-            queue = Queue('ydl_api_ng', connection=Redis(host=self.__cm.get_app_params().get('_redis_host'), port=self.__cm.get_app_params().get('_redis_port')))
-            redis_id = queue.enqueue(self.send_download_order, args=[ydl_opts, self], job_timeout=-1, result_ttl=self.__cm.get_app_params().get('_redis_ttl')).id
+            queue = Queue('ydl_api_ng', connection=Redis(host=self.__cm.get_app_params().get('_redis_host'),
+                                                         port=self.__cm.get_app_params().get('_redis_port')))
+
+            redis_meta = {
+                'programmation_id': self.programmation_id,
+                'programmation_date': self.programmation_date,
+                'programmation_end_date': self.programmation_end_date
+            }
+
+            redis_id = queue.enqueue(self.send_download_order,
+                                     args=[ydl_opts, self],
+                                     job_timeout=-1,
+                                     result_ttl=self.__cm.get_app_params().get('_redis_ttl'),
+                                     meta=redis_meta).id
+
             preset.append('_redis_id', redis_id)
         else:
             preset.append('_redis_id', None)
@@ -292,7 +334,7 @@ class DownloadManager:
 
     def send_download_order(self, ydl_opts, dm):
         if self.enable_redis:
-            self.get_current_config_manager().init_logger()
+            self.get_current_config_manager().init_logger(file_name='downloader.log')
 
         try:
             with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
@@ -304,13 +346,16 @@ class DownloadManager:
         filename_info = None
 
         if self.enable_redis:
-            job = Job.fetch(get_current_job().id, connection=Redis(host=self.__cm.get_app_params().get('_redis_host'), port=self.__cm.get_app_params().get('_redis_port')))
+            job = Job.fetch(get_current_job().id, connection=Redis(host=self.__cm.get_app_params().get('_redis_host'),
+                                                                   port=self.__cm.get_app_params().get('_redis_port')))
             filename_info = job.meta.get('filename_info')
 
         if 'filename_info' in inspect.getfullargspec(ydl_api_hooks.post_download_handler).args:
-            ydl_api_hooks.post_download_handler(ydl_opts, self, self.get_current_config_manager(), self.downloaded_files, filename_info=filename_info)
-        else: # retrocompatibility
-            ydl_api_hooks.post_download_handler(ydl_opts, self, self.get_current_config_manager(), self.downloaded_files)
+            ydl_api_hooks.post_download_handler(ydl_opts, self, self.get_current_config_manager(),
+                                                self.downloaded_files, filename_info=filename_info)
+        else:  # retrocompatibility
+            ydl_api_hooks.post_download_handler(ydl_opts, self, self.get_current_config_manager(),
+                                                self.downloaded_files)
 
     def process_downloads(self):
         for preset in self.presets:
@@ -357,7 +402,7 @@ class DownloadManager:
 
         # No video can be downloaded
         if self.failed_checks == self.downloads_can_be_checked and self.downloads_cannot_be_checked == 0:
-            logging.getLogger('api').error(f'Not downloadable with presets : {self.presets_string} : {self.url}')
+            logging.getLogger('download_manager').error(f'Not downloadable with presets : {self.presets_string} : {self.url}')
             return 400
 
         return 200
@@ -366,6 +411,9 @@ class DownloadManager:
         presets_display = []
         for preset in self.presets:
             presets_display.append(self.__cm.sanitize_config_object_section(preset).get_all())
+
+        if self.programmation is not None:
+            self.programmation['user_token'] = 'censored'
 
         return {
             'status_code': self.get_api_status_code(),
@@ -379,9 +427,10 @@ class DownloadManager:
             'failed_checks': self.failed_checks,
             'downloads_can_be_checked': self.downloads_can_be_checked,
             'downloads_cannot_be_checked': self.downloads_cannot_be_checked,
-            'ignore_post_security' : self.ignore_post_security,
-            'relaunch_failed_mode' : self.relaunch_failed_mode,
+            'ignore_post_security': self.ignore_post_security,
+            'relaunch_failed_mode': self.relaunch_failed_mode,
             'downloads': presets_display,
+            'programmation' : self.programmation
         }
 
     def get_current_config_manager(self):
@@ -403,10 +452,13 @@ class DownloadManager:
                 }
 
             if download.get('status') == 'finished':
-                downloads_state.get(video_id)['finished_downloads'] = downloads_state.get(video_id).get('finished_downloads') + 1
-                downloads_state.get(video_id)['file_size'] = downloads_state.get(video_id).get('file_size') + download.get('total_bytes')
+                downloads_state.get(video_id)['finished_downloads'] = downloads_state.get(video_id).get(
+                    'finished_downloads') + 1
+                downloads_state.get(video_id)['file_size'] = downloads_state.get(video_id).get(
+                    'file_size') + download.get('total_bytes')
             else:
-                downloads_state.get(video_id)['error_downloads'] = downloads_state.get(video_id).get('error_downloads') + 1
+                downloads_state.get(video_id)['error_downloads'] = downloads_state.get(video_id).get(
+                    'error_downloads') + 1
 
             downloads_state.get(video_id).get('downloads').append(download)
         return downloads_state
