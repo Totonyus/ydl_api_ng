@@ -28,6 +28,7 @@ programmation_object_default = {
         'recording_start_date': None,
         'recording_duration': None,
         'recording_stops_at_end': False,
+        'recording_restarts_during_duration': True,
 
         'recurrence_cron': None,
         'recurrence_start_date': None,

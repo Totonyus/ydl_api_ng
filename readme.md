@@ -52,6 +52,13 @@ docker-compose up # to start the container
 docker-compose down # to stop the container
 ```
 
+## Force yt-dlp version:
+Add the version of `yt-dlp` you want in docker environment :
+
+```
+FORCE_YTDLP_VERSION=2022.11.11
+```
+
 ### By command line
 
 ```shell
@@ -250,18 +257,19 @@ Three usecases:
 Here what a programmation object looks like in database :
 ```json
 {
-"id": "string",
+"id": "string (generated)",
 "url": "string",
-"user_token": "string",
-"enabled": "bool",
+"user_token": "string (null)",
+"enabled": "bool (true)",
 "planning": {
-    "recording_start_date": "string date : YYYY-MM-DD hh:mm",
-    "recording_duration": "int > 0",
-    "recording_stops_at_end": "bool",
+    "recording_start_date": "string date : YYYY-MM-DD hh:mm (null)",
+    "recording_duration": "int > 0 (null)",
+    "recording_stops_at_end": "bool (false)",
+    "recording_restarts_during_duration" : "bool (true)",
 
-    "recurrence_cron": "string",
-    "recurrence_start_date": "string date : YYYY-MM-DD hh:mm",
-    "recurrence_end_date": "string date : YYYY-MM-DD hh:mm"
+    "recurrence_cron": "string (null)",
+    "recurrence_start_date": "string date : YYYY-MM-DD hh:mm (null)",
+    "recurrence_end_date": "string date : YYYY-MM-DD hh:mm (null)"
     },
 "presets": ["string"]
 }
@@ -275,6 +283,7 @@ Fields:
 - `recording_start_date`
 - `recording_duration` : how many minutes recording is supposed to long
 - `recording_stops_at_end` : if true, the download will be force stopped when `recording_duration` is reached
+- `recording_restarts_during_duration` : if False, the download will not be restarted if stopped before `recording_duration`
 - `recurrence_cron` : same cron as linux
 - `recurrence_start_date` : useful only if `recurrence_cron` is used
 - `recurrence_end_date` : useful only if `recurrence_cron` is used

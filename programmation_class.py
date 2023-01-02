@@ -24,6 +24,7 @@ class Programmation:
         self.recording_start_date = merged_planning.get('recording_start_date')
         self.recording_duration = merged_planning.get('recording_duration')
         self.recording_stops_at_end = merged_planning.get('recording_stops_at_end')
+        self.recording_restarts_during_duration = merged_planning.get('recording_restarts_during_duration')
         self.recurrence_cron = merged_planning.get('recurrence_cron')
         self.recurrence_start_date = merged_planning.get('recurrence_start_date')
         self.recurrence_end_date = merged_planning.get('recurrence_end_date')
@@ -32,6 +33,7 @@ class Programmation:
             "recording_start_date": self.recording_start_date,
             "recording_duration": self.recording_duration,
             "recording_stops_at_end": self.recording_stops_at_end,
+            "recording_restarts_during_duration": self.recording_restarts_during_duration,
             "recurrence_cron": self.recurrence_cron,
             "recurrence_start_date": self.recurrence_start_date,
             "recurrence_end_date": self.recurrence_end_date,
@@ -74,6 +76,9 @@ class Programmation:
 
         if type(self.recording_stops_at_end) != bool:
             errors_list.append({'field': 'recording_stops_at_end', 'error': 'must be a boolean'})
+
+        if type(self.recording_restarts_during_duration) != bool:
+            errors_list.append({'field': 'recording_restarts_during_duration', 'error': 'must be a boolean'})
 
         if type(self.enabled) != bool:
             errors_list.append({'field': 'enabled', 'error': 'must be a boolean'})
@@ -146,7 +151,7 @@ class Programmation:
     def must_be_restarted(self, from_date=None, *args, **kwargs):
         from_date = datetime.now() if from_date is None else from_date
 
-        if self.recording_duration is None:
+        if self.recording_duration is None or self.recording_restarts_during_duration is False:
             return None
         elif self.recording_start_date is not None:
             start_date = self.recording_start_date

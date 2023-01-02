@@ -732,6 +732,33 @@ class TestProgrammation(unittest.TestCase):
                 },
             }).must_be_restarted(from_date=datetime.fromisoformat('2022-12-02 13:15')))
 
+        prog = Programmation(programmation={
+            'url': "a valid url",
+            'planning': {
+                'recording_start_date': '2022-12-01 00:00',
+                'recording_duration': 120,
+                'recording_restarts_during_duration': False
+            },
+        })
+
+        self.assertIsNone(prog.must_be_restarted(from_date=datetime.fromisoformat('2022-12-01 01:00')))
+
+        prog = Programmation(programmation={
+            'url': "a valid url",
+            'planning': {
+                'recurrence_cron': '00 12 * * *',
+                'recording_duration': 120,
+                'recording_restarts_during_duration': False,
+                'recurrence_start_date': '2022-11-01 00:00'
+            },
+        })
+
+        self.assertIsNone(prog.must_be_restarted(from_date=datetime.fromisoformat('2022-12-01 13:00')))
+        self.assertEqual(datetime.fromisoformat('2022-12-02 12:00'),
+                         prog.get_next_execution(from_date=datetime.fromisoformat('2022-12-01 13:00')))
+        self.assertEqual(datetime.fromisoformat('2022-12-01 12:00'),
+                         prog.get_next_execution(from_date=datetime.fromisoformat('2022-12-01 11:00')))
+
 
 if __name__ == '__main__':
     unittest.main()
