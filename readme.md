@@ -52,6 +52,13 @@ docker-compose up # to start the container
 docker-compose down # to stop the container
 ```
 
+## Force yt-dlp version:
+Add the version of `yt-dlp` you want in docker environment :
+
+```
+FORCE_YTDLP_VERSION=2022.11.11
+```
+
 ### By command line
 
 ```shell

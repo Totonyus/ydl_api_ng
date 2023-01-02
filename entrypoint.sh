@@ -9,16 +9,23 @@ cp -n /app/setup/* /app/params/
 touch /app/data/database.json
 ln -s /app/data/database.json ./database.json
 
+if [ "$FORCE_YTDLP_VERSION" == "" ]; then
+  echo --- Upgrade yt-dlp to the latest version ---
+  pip3 install yt-dlp --upgrade
+else
+  echo --- Force yt-dlp version $FORCE_YTDLP_VERSION ---
+  pip3 install yt-dlp==$FORCE_YTDLP_VERSION --force-reinstall
+fi
 
-pip3 install yt-dlp --upgrade
 pip3 install -r /app/params/hooks_requirements
 
 addgroup --gid $GID ydl_api_ng && useradd --uid $UID --gid ydl_api_ng ydl_api_ng
 
 chown $UID:$GID /app/logs /app/downloads /home/ydl_api_ng /app/tmp /app/data /app/data/database.json /root/yt-dlp-plugins
+chmod a+x /root/
 
 if [ "$DISABLE_REDIS" == "false" ]; then
-cat <<EOT >> /app/supervisord_workers.conf
+  cat <<EOT >>/app/supervisord_workers.conf
 [supervisord]
 
 [program:worker]
@@ -32,9 +39,9 @@ autorestart=true
 user=$UID
 EOT
 
-supervisord -c /app/supervisord_workers.conf -l /app/logs/supervisord_workers.log -j /app/tmp/pid_api -u ydl_api_ng -e $LOG_LEVEL
+  supervisord -c /app/supervisord_workers.conf -l /app/logs/supervisord_workers.log -j /app/tmp/pid_api -u ydl_api_ng -e $LOG_LEVEL
 
-cat <<EOT >> /app/supervisord_programmation.conf
+  cat <<EOT >>/app/supervisord_programmation.conf
 [supervisord]
 
 [program:programmation]
@@ -48,7 +55,7 @@ autorestart=true
 user=$UID
 EOT
 
-supervisord -c /app/supervisord_programmation.conf -l /app/logs/supervisord_programmation.log -j /app/tmp/pid_programmation -u ydl_api_ng -e $LOG_LEVEL
+  supervisord -c /app/supervisord_programmation.conf -l /app/logs/supervisord_programmation.log -j /app/tmp/pid_programmation -u ydl_api_ng -e $LOG_LEVEL
 fi
 
 su ydl_api_ng -c "python3 main.py"
