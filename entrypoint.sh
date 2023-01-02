@@ -4,7 +4,7 @@ echo ~~~ ydl_api_ng
 echo ~~~ Revision : $GIT_BRANCH - $GIT_REVISION
 echo ~~~ Docker image generated : $DATE
 
-mkdir -p /app/logs /app/downloads /app/params /app/tmp /home/ydl_api_ng /app/data
+mkdir -p /app/logs /app/downloads /app/params /app/tmp /home/ydl_api_ng /app/data /root/yt-dlp-plugins
 cp -n /app/setup/* /app/params/
 touch /app/data/database.json
 ln -s /app/data/database.json ./database.json
@@ -15,7 +15,7 @@ pip3 install -r /app/params/hooks_requirements
 
 addgroup --gid $GID ydl_api_ng && useradd --uid $UID --gid ydl_api_ng ydl_api_ng
 
-chown $UID:$GID /app/logs /app/downloads /home/ydl_api_ng /app/tmp /app/data /app/data/database.json
+chown $UID:$GID /app/logs /app/downloads /home/ydl_api_ng /app/tmp /app/data /app/data/database.json /root/yt-dlp-plugins
 
 if [ "$DISABLE_REDIS" == "false" ]; then
 cat <<EOT >> /app/supervisord_workers.conf
