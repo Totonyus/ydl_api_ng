@@ -22,7 +22,7 @@ pip3 install -r /app/params/hooks_requirements
 addgroup --gid $GID ydl_api_ng && useradd --uid $UID --gid ydl_api_ng ydl_api_ng
 
 chown $UID:$GID /app/logs /app/downloads /home/ydl_api_ng /app/tmp /app/data /app/data/database.json /root/yt-dlp-plugins
-chmod a+x /root/
+chmod a+x /root/ entrypoint.sh
 
 if [ "$DISABLE_REDIS" == "false" ]; then
   cat <<EOT >>/app/supervisord_workers.conf
