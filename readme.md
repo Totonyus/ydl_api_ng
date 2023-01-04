@@ -62,8 +62,12 @@ FORCE_YTDLP_VERSION=2022.11.11
 ### By command line
 
 ```shell
-docker run -p 5011:80 totonyus/ydl_api # don't forget to map the folders
+docker run -p 5011:80 totonyus/ydl_api_ng # don't forget to map the folders
 ```
+
+Note : the standard image comes with redis enabled. Please view on the queue management documentation to know how to disable it.
+
+You can also find the `docker-compose.yml` file.
 
 ### UID and GID
 
@@ -246,7 +250,7 @@ You must disable redis in the `params.ini` file : `_enable_redis = false`
 You can also pass the `DISABLE_REDIS` environment parameter in the docker-compose file to avoid workers launching.
 
 ## Programmation
-A new feature allow you to schedule ydl_dlp executions
+A new feature allow you to schedule ydl_dlp executions. This feature needs `redis`.
 
 Three usecases:
 - Continuously download a livestream when it's available
