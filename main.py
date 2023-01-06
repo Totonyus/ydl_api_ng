@@ -114,7 +114,7 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
         programmation_object['user_token'] = token
         programmation_object['not_stored'] = True
 
-        generated_programmation = Programmation(programmation=programmation_object)
+        generated_programmation = Programmation(programmation=programmation_object, id=programmation_object.get('id'))
 
         if len(generated_programmation.errors) != 0:
             response.status_code = 400
@@ -377,13 +377,13 @@ async def add_programmation(response: Response, background_tasks: BackgroundTask
     programmation_object['url'] = param_url
     programmation_object['user_token'] = token
 
-    prog = Programmation(programmation=programmation_object)
+    prog = Programmation(programmation=programmation_object, id=programmation_object.get('id'))
+    added = __pm.add_programmation(programmation=prog)
 
     if len(prog.errors) != 0:
         response.status_code = 400
         return prog.errors
     else:
-        added = __pm.add_programmation(programmation=prog)
         return added.get()
 
 

@@ -511,6 +511,17 @@ class TestProgrammation(unittest.TestCase):
         self.assertFalse(prog.enabled)
         self.assertNotEqual('0', prog.id)
 
+        prog = Programmation(id="0", programmation={
+            'url': "a valid url",
+            'enabled': False,
+            'planning': {
+                'recording_start_date': '2022-12-15 00:00',
+                'recording_duration': 120,
+            },
+        })
+
+        self.assertEqual('0', prog.id)
+
         prog = Programmation(programmation={
             'url': "a valid url",
             'enabled': False,
@@ -520,8 +531,8 @@ class TestProgrammation(unittest.TestCase):
             },
         }, id='0')
 
-        self.assertEqual(0, len(prog.errors))
-        self.assertFalse(prog.enabled)
+        self.assertIsNotNone(self.pm.add_programmation(programmation=prog))
+        self.assertIsNone(self.pm.add_programmation(programmation=prog))
         self.assertEqual('0', prog.id)
 
         prog = Programmation(programmation={
@@ -582,14 +593,12 @@ class TestProgrammation(unittest.TestCase):
         self.assertEqual(1, len(prog.errors))
 
         ### ACCESS
-        self.assertEqual(8, len(self.pm.get_all_programmations()))
+        self.assertEqual(9, len(self.pm.get_all_programmations()))
         self.assertEqual(6, len(self.pm.get_all_enabled_programmations()))
 
         latest_created_programmation = self.pm.get_programmation_by_id(id=self.last_added_id)
         self.assertIsNotNone(latest_created_programmation)
         self.assertFalse(latest_created_programmation.enabled)
-
-        self.assertIsNone(self.pm.get_programmation_by_id('0'))
 
         self.assertIsNotNone(self.pm.delete_programmation_by_id(id=self.last_added_id))
         self.assertEqual(6, len(self.pm.get_all_enabled_programmations()))
@@ -650,7 +659,7 @@ class TestProgrammation(unittest.TestCase):
                              },
                          }).get_end_date())
 
-        self.assertEqual(3, len(self.pm.purge_all_past_programmations(
+        self.assertEqual(4, len(self.pm.purge_all_past_programmations(
             from_date=datetime.fromisoformat('2022-12-03 01:00'))))
         self.assertEqual(4, len(self.pm.get_all_programmations()))
 

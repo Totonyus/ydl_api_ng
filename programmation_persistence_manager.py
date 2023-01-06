@@ -11,6 +11,9 @@ class ProgrammationPersistenceManager:
         self.__scheduled_jobs_table = self.__db.table('scheduled_jobs', cache_size=0)
 
     def add_programmation(self, programmation=None, *args, **kwargs):
+        if self.get_programmation_by_id(id=programmation.id) is not None:
+            programmation.errors.append({'field': 'id', 'error': 'a programmation with this id aleady exists'})
+
         if len(programmation.errors) != 0:
             return None
 
@@ -69,9 +72,17 @@ class ProgrammationPersistenceManager:
         if stored_programmation is None:
             return None
 
+        effective_id = programmation.get('id')
+
+        if effective_id is None:
+            effective_id = stored_programmation.get('id')
+
         changed_programmation = Programmation(source_programmation=stored_programmation,
-                                              programmation=programmation, id=stored_programmation.get('id'))
+                                              programmation=programmation, id=effective_id)
         validation_result = changed_programmation.errors
+
+        if effective_id != stored_programmation.get('id') and self.get_programmation_by_id(id=changed_programmation.id) is not None:
+            validation_result.append({'field': 'id', 'error': 'a programmation with this id aleady exists'})
 
         if len(validation_result) == 0:
             self.__scheduled_jobs_table.update(changed_programmation.get(),
