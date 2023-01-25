@@ -1,5 +1,3 @@
-import logging
-
 import defaults
 import uuid
 from cronsim import CronSim
@@ -100,10 +98,12 @@ class Programmation:
 
         try:
             if self.recurrence_cron is not None:
-                cron = CronSim(self.recurrence_cron, datetime.now())
+                # Just to validate it's a correct cron format
+                CronSim(self.recurrence_cron, datetime.now())
 
                 if self.recurrence_start_date is None:
-                    self.recurrence_start_date = datetime.isoformat(next(cron), sep=' ')
+                    self.recurrence_start_date = datetime.isoformat(datetime.now(), sep= ' ')
+                    self.planning['recurrence_start_date'] = self.recurrence_start_date
 
         except Exception as e:
             errors_list.append({'field': 'recurrence_cron',
@@ -123,22 +123,6 @@ class Programmation:
 
         elif self.recurrence_end_date is None and self.recording_start_date is not None:
             end_date = self.recording_start_date
-
-        elif self.recurrence_end_date is not None and self.recurrence_cron is not None:
-            end_date = self.recurrence_start_date
-
-            cron = CronSim(self.recurrence_cron, self.recurrence_start_date)
-            next_iteration = next(cron)
-
-            while next_iteration < self.recurrence_end_date:
-                end_date = next_iteration
-                next_iteration = next(cron)
-
-                if next_iteration == self.recurrence_end_date:
-                    end_date = next_iteration
-
-            if self.recording_duration is not None:
-                end_date = end_date + timedelta(minutes=self.recording_duration)
 
         elif self.recurrence_end_date is not None and self.recording_duration is not None:
             end_date = self.recurrence_end_date + timedelta(minutes=self.recording_duration)

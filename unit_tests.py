@@ -638,7 +638,7 @@ class TestProgrammation(unittest.TestCase):
                              },
                          }).get_end_date())
 
-        self.assertEqual(datetime.fromisoformat('2022-12-31 12:15'),
+        self.assertEqual(datetime.fromisoformat('2022-12-31 23:59'),
                          Programmation(programmation={
                              'url': "a valid url",
                              'planning': {
@@ -648,7 +648,7 @@ class TestProgrammation(unittest.TestCase):
                              },
                          }).get_end_date())
 
-        self.assertEqual(datetime.fromisoformat('2022-12-31 13:15'),
+        self.assertEqual(datetime.fromisoformat('2023-01-01 00:59'),
                          Programmation(programmation={
                              'url': "a valid url",
                              'planning': {
