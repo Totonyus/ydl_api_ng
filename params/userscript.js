@@ -170,7 +170,7 @@
         }
     }
 
-    const presets = {
+    const presets_mapping = {
         'default': {name: 'Default', route: routes.download},
         'best': {name: 'Best', route: routes.download, query_params: {presets: 'BEST'}},
         '720p': {name: '720p', route: routes.download, query_params: {presets: 'HD'}},
@@ -197,17 +197,20 @@
                 return {};
             },
         },
-        '1hour': {
-            name: '1 hour', route: routes.download, method: 'POST', body: () => {
-                return {
-                    programmation: {
-                        planning: {
-                            recording_duration: 60,
+        'time_limit': (minutes = 60) => {
+            return {
+                name: `${minutes} minutes`, route: routes.download, method: 'POST', body: () => {
+                    return {
+                        programmation: {
+                            planning: {
+                                recording_duration: minutes,
+                            },
                         },
-                    },
-                };
-            },
-        },
+                    }
+                }
+            }
+        }
+
     };
 
     const site_mapping = [
@@ -215,18 +218,30 @@
             url: ['youtube.com', 'youtu.be'],
             presets: ['best', '720p', 'audio', 'best+audio'],
         },
+        {
+            url: ['twitch.tv'],
+            presets: ['best', '720p', presets_mapping['time_limit'](60), presets_mapping['time_limit'](30), presets_mapping['time_limit'](15), 'spy', 'samples'],
+        },
     ];
     // STOP COSTUMIZE HERE
 
     let effective_presets = find_url_in_mapping(site_mapping);
     if (effective_presets == null) {
-        effective_presets = Object.keys(presets);
+        effective_presets = Object.keys(presets_mapping);
     }
 
     effective_presets.forEach((preset, index) => {
-        const preset_object = presets[preset];
+        let preset_object = null;
 
-        if (preset_object !== undefined) {
+        if (typeof preset == 'object') {
+            preset_object = preset;
+        } else if (typeof preset == 'string') {
+            preset_object = presets_mapping[preset];
+        } else if (typeof preset == 'function'){
+            preset_object = preset()
+        }
+
+        if (preset_object !== undefined && preset_object !== null) {
             let key = null;
 
             if (index < key_mapping.length) {
