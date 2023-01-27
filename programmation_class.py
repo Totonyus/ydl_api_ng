@@ -101,10 +101,6 @@ class Programmation:
                 # Just to validate it's a correct cron format
                 CronSim(self.recurrence_cron, datetime.now())
 
-                if self.recurrence_start_date is None:
-                    self.recurrence_start_date = datetime.isoformat(datetime.now(), sep= ' ')
-                    self.planning['recurrence_start_date'] = self.recurrence_start_date
-
         except Exception as e:
             errors_list.append({'field': 'recurrence_cron',
                                 'value': self.recurrence_cron,

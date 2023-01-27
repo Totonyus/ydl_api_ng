@@ -476,7 +476,6 @@ class TestProgrammation(unittest.TestCase):
 
         self.assertEqual(0, len(prog.errors))
         self.assertIsNotNone(self.pm.add_programmation(programmation=prog))
-        self.assertIsNotNone(prog.recurrence_start_date)
 
         prog = Programmation(programmation={
             'url': "a valid url",
