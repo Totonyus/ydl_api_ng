@@ -148,19 +148,18 @@ class Programmation:
     def get_next_execution(self, from_date=None, *args, **kwargs):
         from_date = datetime.now() if from_date is None else from_date
 
-        next_iteration = None
         if self.recording_start_date is not None:
-            next_iteration = self.recording_start_date
+            return self.recording_start_date
 
         if self.recurrence_cron is not None:
-            cron = CronSim(self.recurrence_cron, from_date - timedelta(minutes=1))
+            if self.recurrence_start_date is not None and self.recurrence_start_date > from_date:
+                start_date = self.recurrence_start_date
+            else:
+                start_date = from_date
 
-            next_iteration = next(cron)
+            return next(CronSim(self.recurrence_cron, start_date - timedelta(minutes=1)))
 
-            while next_iteration < self.recurrence_start_date:
-                next_iteration = next(cron)
-
-        return next_iteration
+        return None
 
     def set_id(self, id=None):
         self.id = id

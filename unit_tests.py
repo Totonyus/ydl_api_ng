@@ -602,6 +602,23 @@ class TestProgrammation(unittest.TestCase):
         self.assertIsNotNone(self.pm.delete_programmation_by_id(id=self.last_added_id))
         self.assertEqual(6, len(self.pm.get_all_enabled_programmations()))
 
+        prog = Programmation(programmation=(
+            {
+                'url': "a valid url",
+                'planning': {
+                    'recurrence_cron': '00 00 * * *',
+                    'recurrence_start_date': '2022-12-01 00:00',
+                },
+            }
+        ))
+
+        self.assertEqual(datetime.fromisoformat('2022-12-01 00:00:00'),
+                         prog.get_next_execution(from_date=datetime.fromisoformat('2022-11-30 12:00')))
+        self.assertEqual(datetime.fromisoformat('2022-12-01 00:00:00'),
+                         prog.get_next_execution(from_date=datetime.fromisoformat('2022-12-01 00:00')))
+        self.assertEqual(datetime.fromisoformat('2022-12-02 00:00:00'),
+                         prog.get_next_execution(from_date=datetime.fromisoformat('2022-12-01 00:01')))
+
     def test_end_dates_manipulation(self):
         self.assertEqual(datetime.fromisoformat('2022-12-01 02:00'), Programmation(programmation={
             'url': "a valid url",
