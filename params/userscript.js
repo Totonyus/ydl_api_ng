@@ -170,47 +170,103 @@
         }
     }
 
+    const programmation_id = new URL(document.URL).pathname.replaceAll('/', '')
     const presets_mapping = {
         'default': {name: 'Default', route: routes.download},
         'best': {name: 'Best', route: routes.download, query_params: {presets: 'BEST'}},
         '720p': {name: '720p', route: routes.download, query_params: {presets: 'HD'}},
         'audio': {name: 'Audio', route: routes.download, query_params: {presets: 'AUDIO'}},
         'best+audio': {name: 'Best + Audio', route: routes.download, query_params: {presets: 'BEST,AUDIO'}},
-        'samples': {
-            name: 'Samples', route: routes.programmation, body: () => {
-                const end_date = new Date();
-                end_date.setMonth(end_date.getMonth() + 1);
+        'samples': (days = 15, presets = null) => {
+            let preset_name = 'Samples'
+            let recurrence_end_date = null
 
-                return {
-                    planning: {
-                        recurrence_cron: `${Math.floor(Math.random() * 15)}/15 * * * *`,
-                        recording_duration: 2,
-                        recording_stops_at_end: true,
-                        recording_restarts_during_duration: false,
-                        recurrence_end_date: format_date(end_date)
-                    },
-                };
-            },
+            if (days !== null) {
+                const end_date = new Date();
+                end_date.setDate(end_date.getDate() + days)
+                recurrence_end_date = format_date(end_date)
+                preset_name = `Samples (${days} days)`
+            }
+
+            return {
+                name: preset_name, route: routes.programmation, body: () => {
+                    const end_date = new Date();
+                    end_date.setDate(end_date.getDate() + days)
+
+                    return {
+                        id: new URL(document.URL).pathname.replaceAll('/', ''),
+                        planning: {
+                            recurrence_cron: `${Math.floor(Math.random() * 15)}/15 * * * *`,
+                            recording_duration: 2,
+                            recording_stops_at_end: true,
+                            recording_restarts_during_duration: false,
+                            recurrence_end_date: recurrence_end_date
+                        },
+                        presets: presets
+                    }
+                }
+            }
         },
-        'spy': {
-            name: 'Spy', route: routes.programmation, body: () => {
-                return {};
-            },
+        'spy': (days = null, presets = null) => {
+            let planning = {}
+            let preset_name = 'Spy'
+
+            if (days !== null) {
+                const end_date = new Date();
+                end_date.setDate(end_date.getDate() + days)
+                planning = {
+                    recurrence_end_date: format_date(end_date)
+                }
+
+                preset_name = `Spy (${days} days)`
+            }
+
+            return {
+                name: preset_name, route: routes.programmation, body: () => {
+                    return {
+                        id: programmation_id,
+                        presets: presets,
+                        planning: planning
+                    }
+                }
+            }
         },
-        'time_limit': (minutes = 60) => {
+        'prog_id': (name = 'DEFAULT', preset = null) => {
+            return {
+                name: name, route: routes.download, method: 'POST', body: () => {
+                    return {
+                        programmation: {
+                            id: programmation_id
+                        },
+                        presets: [{
+                            "_preset": preset
+                        }]
+                    }
+                }
+            }
+        },
+        'time_limit': (minutes = 60, preset = 'DEFAULT') => {
             return {
                 name: `${minutes} minutes`, route: routes.download, method: 'POST', body: () => {
                     return {
                         programmation: {
+                            id: programmation_id,
                             planning: {
                                 recording_duration: minutes,
                             },
                         },
+                        presets: [{
+                            "_preset": preset
+                        }]
                     }
                 }
             }
-        }
-
+        },
+        'delete_prog': (id) => {
+            return {
+                name: 'Delete programmation', route: routes.programmation, method: 'DELETE', route_path: `/${id}`
+            }
+        },
     };
 
     const site_mapping = [
@@ -220,7 +276,13 @@
         },
         {
             url: ['twitch.tv'],
-            presets: ['best', '720p', presets_mapping['time_limit'](60), presets_mapping['time_limit'](30), presets_mapping['time_limit'](15), 'spy', 'samples'],
+            presets: [
+                presets_mapping['prog_id']('Best', 'BEST'),
+                presets_mapping['prog_id']('720p', 'HD'),
+                presets_mapping['time_limit'](60),
+                presets_mapping['time_limit'](30),
+                presets_mapping['time_limit'](15),
+                'spy', 'samples'],
         },
     ];
     // STOP COSTUMIZE HERE
@@ -236,9 +298,14 @@
         if (typeof preset == 'object') {
             preset_object = preset;
         } else if (typeof preset == 'string') {
-            preset_object = presets_mapping[preset];
-        } else if (typeof preset == 'function'){
-            preset_object = preset()
+            if (typeof presets_mapping[preset] == 'function') {
+                preset_object = presets_mapping[preset]();
+            } else {
+                preset_object = presets_mapping[preset];
+            }
+
+        } else if (typeof preset == 'function') {
+            preset_object = preset();
         }
 
         if (preset_object !== undefined && preset_object !== null) {
