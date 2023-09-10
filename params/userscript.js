@@ -14,7 +14,7 @@
     const default_host = 'http://localhost:5011';
     const notificationTimeout = 5000;
     const userToken = null;
-    // STOP COSTUMIZE HERE
+    // STOP CUSTOMIZE HERE
 
     const format_date = function (date) {
         const year = date.getFullYear();
@@ -285,7 +285,7 @@
                 'spy', 'samples'],
         },
     ];
-    // STOP COSTUMIZE HERE
+    // STOP CUSTOMIZE HERE
 
     let effective_presets = find_url_in_mapping(site_mapping);
     if (effective_presets == null) {
