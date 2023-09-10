@@ -211,6 +211,29 @@ async def extract_info_request(response: Response, url, token=None):
 
     return download_manager.DownloadManager.extract_info(param_url)
 
+@app.post(__cm.get_app_params().get('_api_route_extract_info'))
+async def download_request(response: Response, background_tasks: BackgroundTasks, url, body=Body(...), token=None):
+    request_id = uuid.uuid4()
+
+    param_url = unquote(url)
+    param_token = unquote(token) if token is not None else None
+
+    user = __cm.is_user_permitted_by_token(param_token)
+
+    if user is False:
+        response.status_code = 401
+        return
+
+    if param_url == '':
+        response.status_code = 400
+        return {'status_code': response.status_code}
+
+    if body.get('cookies') is not None:
+        cookies_files = open(f'/app/cookies/{request_id}.txt', 'w')
+        cookies_files.write(unquote(body.get('cookies')))
+        cookies_files.close()
+
+    return download_manager.DownloadManager.extract_info(param_url, request_id=request_id)
 
 ###
 # Process

@@ -399,14 +399,22 @@ class DownloadManager:
         self.passed_checks = 0
 
     @staticmethod
-    def extract_info(url):
+    def extract_info(url, **kwargs):
+        request_id = None if kwargs.get('request_id') is None else kwargs.get('request_id')
+
         ydl_opts = {
             'ignoreerrors': True,
-            'quiet': True
+            'quiet': True,
+            'cookiefile' : f'/app/cookies/{request_id}.txt' if request_id is not None else None
         }
 
         with ydl.YoutubeDL(ydl_opts) as dl:
             informations = dl.extract_info(url, download=False)
+
+        try:
+            os.remove(f'/app/cookies/{request_id}.txt')
+        except FileNotFoundError:
+            pass
 
         return informations
 
