@@ -457,7 +457,7 @@ class ProcessUtils:
         match = re.search(regex, f'{cmdline}')
 
         part_filename = f'{match.group(1)}{match.group(2)}'
-        filename = part_filename.rstrip('.part')
+        filename = part_filename.removesuffix('.part')
 
         path = match.group(1)
         filename_stem = pathlib.Path(filename).stem

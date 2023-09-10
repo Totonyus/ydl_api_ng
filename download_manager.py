@@ -2,6 +2,7 @@ import copy
 import functools
 import logging
 from urllib.parse import urlparse
+import os
 
 import yt_dlp as ydl
 from redis import Redis
@@ -21,6 +22,8 @@ class DownloadManager:
                  **kwargs):
         logging.getLogger('download_manager').info(
             f'Init download - user_token: {user_token} - presets: {presets_string} - url :{url} ')
+
+        self.request_id = None if kwargs.get('request_id') is None else kwargs.get('request_id')
 
         self.programmation = None if kwargs.get('programmation') is None else kwargs.get('programmation')
         self.programmation_id = None if kwargs.get('programmation_id') is None else kwargs.get('programmation_id')
@@ -262,11 +265,19 @@ class DownloadManager:
         ydl_opts.append('simulate', True)
         ydl_opts.append('logger', logging.getLogger('youtube-dlp'))
 
+        if self.request_id is not None:
+            ydl_opts.append('cookiefile', f'/app/cookies/{self.request_id}.txt')
+
         try:
             with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
                 simulation_result = dl.download([self.url]) == 0
                 preset.append('__check_exception_message', None)
         except Exception as error:
+            try:
+                os.remove(f'/app/cookies/{self.request_id}.txt')
+            except FileNotFoundError:
+                pass
+
             simulation_result = False
             preset.append('__check_exception_message', str(error))
 
@@ -309,6 +320,9 @@ class DownloadManager:
             functools.partial(postprocessor_hooks.handler, ydl_opts, self, self.get_current_config_manager())])
         ydl_opts.append('logger', logging.getLogger('youtube-dlp'))
 
+        if self.request_id is not None:
+            ydl_opts.append('cookiefile', f'/app/cookies/{self.request_id}.txt')
+
         ydl_api_hooks.pre_download_handler(ydl_opts, self, self.get_current_config_manager())
 
         if self.enable_redis is not None and self.enable_redis is True:
@@ -342,6 +356,11 @@ class DownloadManager:
                 ydl_opts.append('__download_exception_message', None)
         except Exception as error:
             ydl_opts.append('__download_exception_message', str(error))
+
+        try:
+            os.remove(f'/app/cookies/{self.request_id}.txt')
+        except FileNotFoundError:
+            pass
 
         filename_info = None
 

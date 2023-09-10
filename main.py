@@ -4,6 +4,7 @@ from urllib.parse import unquote
 import uvicorn
 import yt_dlp.version
 from fastapi import BackgroundTasks, FastAPI, Response, Body
+import uuid
 
 import config_manager
 import download_manager
@@ -92,6 +93,8 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
 
 @app.post(__cm.get_app_params().get('_api_route_download'))
 async def download_request(response: Response, background_tasks: BackgroundTasks, url, body=Body(...), token=None):
+    request_id = uuid.uuid4()
+
     param_url = unquote(url)
     param_token = unquote(token) if token is not None else None
 
@@ -104,6 +107,11 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
     if param_url == '':
         response.status_code = 400
         return {'status_code': response.status_code}
+
+    if body.get('cookies') is not None:
+        cookies_files = open(f'/app/cookies/{request_id}.txt', 'w')
+        cookies_files.write(unquote(body.get('cookies')))
+        cookies_files.close()
 
     programmation_object = body.get('programmation')
     generated_programmation = None
@@ -126,13 +134,15 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
                 minutes=1 + generated_programmation.recording_duration)
 
     if generated_programmation is None:
-        dm = download_manager.DownloadManager(__cm, param_url, None, param_token, body)
+        dm = download_manager.DownloadManager(__cm, param_url, None, param_token, body, request_id = request_id)
     else:
         dm = download_manager.DownloadManager(__cm, param_url, None, param_token, body,
                                               programmation_id=generated_programmation.id,
                                               programmation_end_date=programmation_end_date,
                                               programmation_date=datetime.now(),
-                                              programmation=generated_programmation.get())
+                                              programmation=generated_programmation.get(),
+                                              request_id = request_id)
+
 
     response.status_code = dm.get_api_status_code()
 

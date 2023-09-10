@@ -382,22 +382,25 @@ GET http://localhost:5011/download?url=https://www.youtube.com/watch?v=wV4wepiuc
 You can download the video you want by providing the parameters directly in a post request
 
 ```shell
-POST http://localhost:5011/download?url=https://www.youtube.com/watch?v=wV4wepiucf4&token=dad_super_password
+POST http://localhost:5011/download?url=https://www.youtube.com/watch?v=wV4wepiucf4 &
+token=dad_super_password
 Content-Type: application/json
 
 {
+  "cookies" : "URL encoded (RFC3986 format) netscape cookies format",
   "presets": [
-    {
-      "_ignore_site_config": false, # (optional, default : false) if true, will not load parameters from site detection
-      "_ignore_default_preset": false, # (optional, default : false) if true, will not expand default preset
-      # You can expand parameters
-      "_preset" : "AUDIO"
-      "_location" : "AUDIO"
-      # just put below your standard youtube-dlp options
-      "format" : "best[height=360]/bestvideo[height=360]+bestaudio/best"
-    }
+  {
+    "_ignore_site_config": false,    # (optional, default : false) if true, will not load parameters from site detection
+    "_ignore_default_preset": false, # (optional, default : false) if true, will not expand default preset
+    # You can expand parameters
+    "_preset" : "AUDIO",
+    "_location" : "AUDIO",
+    # just put below your standard youtube-dlp options
+    "format" : "best[height=360]/bestvideo[height=360]+bestaudio/best"
+  }
   ]
 }
+
 ```
 
 It is possible to add a timer to stop the download (`recording_stops_at_end` will be automatically set on `True`) :

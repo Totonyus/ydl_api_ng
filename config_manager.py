@@ -145,7 +145,7 @@ class ConfigManager:
             if key in expendable_fields:
                 merged = True
                 config_set.remove_option(section.name, key)
-                self.__merge_configs(self.__config[f'{key.lstrip("_")}:{value}'], section, config_set)
+                self.__merge_configs(self.__config[f'{key.removeprefix("_")}:{value}'], section, config_set)
 
         if merged:
             self.__expand_section(section, config_set)

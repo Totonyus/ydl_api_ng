@@ -16,6 +16,12 @@ services:
       - ./test/downloads:/app/downloads
       - ./test/data:/app/data
       - /etc/localtime:/etc/localtime:ro
+      - ./main.py:/app/main.py
+      - ./programmation_persistence_manager.py:/app/programmation_persistence_manager.py
+      - ./programmation_daemon.py:/app/programmation_daemon.py
+      - ./programmation_class.py:/app/programmation_class.py
+      - ./download_manager.py:/app/download_manager.py
+      - ./process_utils.py:/app/process_utils.py
     environment:
       - UID=1000
       - GID=1000
