@@ -15,6 +15,12 @@ import programmation_persistence_manager
 from datetime import datetime, timedelta
 from programmation_class import Programmation
 
+try:
+    os.mkdir('cookies')
+    os.mkdir('logs')
+except FileExistsError:
+    pass
+
 __cm = config_manager.ConfigManager()
 __pu = process_utils.ProcessUtils(__cm)
 __pm = programmation_persistence_manager.ProgrammationPersistenceManager()
@@ -109,7 +115,7 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
         return {'status_code': response.status_code}
 
     if body.get('cookies') is not None:
-        cookies_files = open(f'/app/cookies/{request_id}.txt', 'w')
+        cookies_files = open(f'cookies/{request_id}.txt', 'w')
         cookies_files.write(unquote(body.get('cookies')))
         cookies_files.close()
 
@@ -229,7 +235,7 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
         return {'status_code': response.status_code}
 
     if body.get('cookies') is not None:
-        cookies_files = open(f'/app/cookies/{request_id}.txt', 'w')
+        cookies_files = open(f'cookies/{request_id}.txt', 'w')
         cookies_files.write(unquote(body.get('cookies')))
         cookies_files.close()
 

@@ -266,7 +266,7 @@ class DownloadManager:
         ydl_opts.append('logger', logging.getLogger('youtube-dlp'))
 
         if self.request_id is not None:
-            ydl_opts.append('cookiefile', f'/app/cookies/{self.request_id}.txt')
+            ydl_opts.append('cookiefile', f'cookies/{self.request_id}.txt')
 
         try:
             with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
@@ -274,7 +274,7 @@ class DownloadManager:
                 preset.append('__check_exception_message', None)
         except Exception as error:
             try:
-                os.remove(f'/app/cookies/{self.request_id}.txt')
+                os.remove(f'cookies/{self.request_id}.txt')
             except FileNotFoundError:
                 pass
 
@@ -283,6 +283,12 @@ class DownloadManager:
 
         preset.append('__can_be_checked', True)
         preset.append('__check_result', simulation_result)
+
+        if simulation_result is False:
+            try:
+                os.remove(f'cookies/{self.request_id}.txt')
+            except FileNotFoundError:
+                pass
 
         return simulation_result
 
@@ -321,7 +327,7 @@ class DownloadManager:
         ydl_opts.append('logger', logging.getLogger('youtube-dlp'))
 
         if self.request_id is not None:
-            ydl_opts.append('cookiefile', f'/app/cookies/{self.request_id}.txt')
+            ydl_opts.append('cookiefile', f'cookies/{self.request_id}.txt')
 
         ydl_api_hooks.pre_download_handler(ydl_opts, self, self.get_current_config_manager())
 
@@ -358,7 +364,7 @@ class DownloadManager:
             ydl_opts.append('__download_exception_message', str(error))
 
         try:
-            os.remove(f'/app/cookies/{self.request_id}.txt')
+            os.remove(f'cookies/{self.request_id}.txt')
         except FileNotFoundError:
             pass
 
