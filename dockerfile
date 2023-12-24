@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM python:3.9-slim-buster
+FROM python:3.12.1-slim-bullseye
 WORKDIR /app
 
 ARG GIT_BRANCH=unknown GIT_REVISION=unknown DATE=unknown
