@@ -58,6 +58,9 @@ EOT
   supervisord -c /app/supervisord_programmation.conf -l /app/logs/supervisord_programmation.log -j /app/tmp/pid_programmation -u ydl_api_ng -e $LOG_LEVEL
 fi
 
-su ydl_api_ng -c "python3 main.py"
-#su ydl_api_ng -c "uvicorn main:app --reload --port 80 --host 0.0.0.0" # For debugging purpose
-
+if [ "$DEBUG" == "DEBUG" ]; then
+  echo ~~~ Launching DEBUG mode ~~~
+  su ydl_api_ng -c "uvicorn main:app --reload --port 80 --host 0.0.0.0"
+else
+  su ydl_api_ng -c "python3 main.py"
+fi

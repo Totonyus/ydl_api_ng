@@ -27,6 +27,7 @@ services:
       - GID=1000
       - NB_WORKERS=5
       - LOG_LEVEL=trace
+      - DEBUG=DEBUG
     networks:
       - ydl_api_ng
 

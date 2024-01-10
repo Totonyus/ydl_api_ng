@@ -236,6 +236,9 @@ class ProcessUtils:
         if job is None:
             return None
 
+        # Delete useless attribute that cause problems to json serializer
+        job.meta.pop('unserialized', None)
+
         sanitize_object = {
             'status': job.get_status(refresh=True),
             'result': job.result,

@@ -513,6 +513,6 @@ async def update_programmation_by_id(response: Response, id, body=Body(...), tok
 
     return updated_programmation.get()
 
-
-uvicorn.run(app, host=__cm.get_app_params().get('_listen_ip'), port=__cm.get_app_params().get('_listen_port'),
-            log_config=None)
+if __name__ == '__main__':
+    uvicorn.run(app, host=__cm.get_app_params().get('_listen_ip'), port=__cm.get_app_params().get('_listen_port'),
+                log_config=None)
