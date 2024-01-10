@@ -3,6 +3,10 @@ import uuid
 from cronsim import CronSim
 from datetime import datetime, timedelta
 from mergedeep import merge
+import config_manager
+
+__cm = config_manager.ConfigManager()
+programmation_interval = __cm.get_app_params().get('_programmation_interval')
 
 class Programmation:
     def __init__(self, programmation=None, source_programmation=defaults.programmation_object_default, id=None, *args, **kwargs):
@@ -157,7 +161,7 @@ class Programmation:
             else:
                 start_date = from_date
 
-            return next(CronSim(self.recurrence_cron, start_date - timedelta(minutes=1)))
+            return next(CronSim(self.recurrence_cron, start_date - timedelta(seconds=programmation_interval)))
 
         return None
 
