@@ -69,7 +69,7 @@ def run():
                 programmation_end_date = None
 
             if next_execution is not None:
-                will_be_executed = next_execution < datetime.now() + timedelta(seconds=programmation_interval)
+                will_be_executed = next_execution < datetime.now()
             else:
                 will_be_executed = True
 
