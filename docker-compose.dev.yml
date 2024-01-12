@@ -39,5 +39,8 @@ services:
       - ydl_api_ng
     volumes:
       - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 6379:6379
+
 networks:
   ydl_api_ng:

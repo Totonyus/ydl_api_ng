@@ -14,6 +14,7 @@ from params import progress_hooks, postprocessor_hooks, ydl_api_hooks
 from rq import get_current_job
 import inspect
 
+import json
 
 class DownloadManager:
     __cm = None
@@ -307,7 +308,8 @@ class DownloadManager:
             self.downloaded_files[is_in_list] = download
 
         if self.enable_redis is not None and self.enable_redis is True:
-            get_current_job().meta['downloaded_files'] = self.downloaded_files
+            # Weird behavior, erase all meta if passed directly
+            get_current_job().meta['downloaded_files'] = json.loads(json.dumps(self.downloaded_files))
             get_current_job().save_meta()
 
     def process_download(self, preset):

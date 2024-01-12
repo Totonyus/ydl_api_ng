@@ -247,7 +247,7 @@ class ProcessUtils:
             'exc_info': job.exc_info,
             'last_heartbeat': job.last_heartbeat,
             'worker_name': job.worker_name,
-            'meta': job.get_meta(refresh=True)
+            'meta': job.meta
         }
 
         return sanitize_object
@@ -568,6 +568,7 @@ class ProcessUtils:
             return None
 
         job.meta = merge(job.meta, metadata)
-        job.save_meta()
+        job.save()
+        job.refresh()
 
         return self.sanitize_job(self.find_job_by_id(searched_job_id=id))
