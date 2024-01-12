@@ -308,8 +308,7 @@ class DownloadManager:
 
         if self.enable_redis is not None and self.enable_redis is True:
             get_current_job().meta['downloaded_files'] = self.downloaded_files
-            get_current_job().save()
-            get_current_job().refresh()
+            get_current_job().save_meta()
 
     def process_download(self, preset):
         if self.__cm.get_app_params().get('_dev_mode'):
