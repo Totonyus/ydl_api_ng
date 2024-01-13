@@ -302,14 +302,26 @@ class DownloadManager:
     def progress_hooks_proxy(self, download):
         is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
 
+        # Those attributes makes redis go crazy, dunno why
+        download.get('info_dict').pop('http_headers', None)
+        for dl_format in download.get('info_dict').get('formats'):
+            dl_format.pop('http_headers', None)
+
         if is_in_list is None:
             self.downloaded_files.append(download)
         else:
             self.downloaded_files[is_in_list] = download
 
         if self.enable_redis is not None and self.enable_redis is True:
-            # Weird behavior, erase all meta if passed directly
-            get_current_job().meta['downloaded_files'] = json.loads(json.dumps(self.downloaded_files))
+            get_current_job().meta['downloaded_files'] = []
+
+            for file in self.downloaded_files:
+                reduced_file = copy.deepcopy(file)
+                if self.__cm.get_app_params().get('_skip_info_dict'):
+                    reduced_file.pop('info_dict', None)
+
+                get_current_job().meta['downloaded_files'].append(reduced_file)
+
             get_current_job().save_meta()
 
     def process_download(self, preset):

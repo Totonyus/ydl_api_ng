@@ -15,8 +15,9 @@ app_defaults = {
     '_unit_test': True,
     '_enable_redis': True,
     '_redis_ttl': 3600,
-    '_redis_host': 'ydl_api_ng',
-    '_redis_port': 6379
+    '_redis_host': 'ydl_api_ng_redis',
+    '_redis_port': 6379,
+    '_skip_info_dict' : False
 }
 
 programmation_object_default = {
