@@ -565,7 +565,6 @@ class ProcessUtils:
             return None
 
         job.meta = merge(job.meta, metadata)
-        job.save()
-        job.refresh()
+        job.save_meta()
 
         return self.sanitize_job(self.find_job_by_id(searched_job_id=id))

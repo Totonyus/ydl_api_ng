@@ -1,5 +1,6 @@
 import copy
 import functools
+import http.cookiejar
 import logging
 from urllib.parse import urlparse
 import os
@@ -427,15 +428,18 @@ class DownloadManager:
             'cookiefile' : f'/app/cookies/{request_id}.txt' if request_id is not None else None
         }
 
-        with ydl.YoutubeDL(ydl_opts) as dl:
-            informations = dl.extract_info(url, download=False)
+        try:
+            with ydl.YoutubeDL(ydl_opts) as dl:
+                info = dl.extract_info(url, download=False)
+        except http.cookiejar.LoadError as error:
+            return str(error), True
 
         try:
             os.remove(f'/app/cookies/{request_id}.txt')
         except FileNotFoundError:
             pass
 
-        return informations
+        return info, False
 
     def get_api_status_code(self):
         # Some presets were not found
