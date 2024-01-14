@@ -64,8 +64,8 @@ Content-Type: application/json
 {
   "presets": [
     {
-      "_cli" : "-f bestaudio --embed-metadata --embed-thumbnail -o '%(playlist)s/%(playlist_index)s - %(artist)s - %(title)s.%(ext)s'",
-      "_preset" : "FULLHD"
+      "_cli" : "-f bestaudio --embed-metadata --embed-thumbnail --extract-audio --audio-format mp3 --split-chapters",
+      "_template" : "AUDIO"
     }
   ]
 }

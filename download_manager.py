@@ -123,15 +123,23 @@ class DownloadManager:
 
         for preset in presets:
             cli_preset = self.transform_post_preset_as_object(ydl_utils.cli_to_api(preset.get('_cli'))) if preset.get('_cli') is not None else None
+
             preset_object = self.transform_post_preset_as_object(preset)
 
             if not self.__cm.get_app_params().get('_allow_dangerous_post_requests') and not self.ignore_post_security:
+                if cli_preset is not None:
+                    cli_preset.delete('paths')
+                    cli_preset.delete('outtmpl')
                 preset_object.delete('paths')
                 preset_object.delete('outtmpl')
 
             for param in preset:
                 if param in config_objects_mapping:
                     self.__cm.merge_configs_object(config_objects_mapping.get(param)(preset.get(param)), preset_object,
+                                                   override=False)
+
+                if param == '_cli':
+                    self.__cm.merge_configs_object(cli_preset, preset_object,
                                                    override=False)
 
             if self.ignore_post_security is False:
