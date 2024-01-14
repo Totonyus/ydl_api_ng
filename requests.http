@@ -40,6 +40,23 @@ Content-Type: application/json
     client.global.set('redis_id', response.body.downloads[0]._redis_id)
 %}
 
+### Download with CLI (POST)
+POST {{host}}/download?url=https://www.youtube.com/watch?v=a0sxBO9HZ-M
+Content-Type: application/json
+
+{
+  "presets": [
+    {
+      "_cli" : "-f bestaudio --embed-metadata --embed-thumbnail -o '%(playlist)s/%(playlist_index)s - %(artist)s - %(title)s.%(ext)s'",
+      "_preset" : "FULLHD"
+    }
+  ]
+}
+
+> {%
+    client.global.set('redis_id', response.body.downloads[0]._redis_id)
+%}
+
 ### Extract informations (GET)
 GET {{host}}/extract_info?url=https://www.youtube.com/watch?v=a0sxBO9HZ-M
 
