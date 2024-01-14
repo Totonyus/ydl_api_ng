@@ -480,7 +480,9 @@ class DownloadManager:
             'ignore_post_security': self.ignore_post_security,
             'relaunch_failed_mode': self.relaunch_failed_mode,
             'downloads': presets_display,
-            'programmation' : self.programmation
+            'programmation' : self.programmation,
+            'programmation_date' : self.programmation_date,
+            'programmation_end_date' : self.programmation_end_date
         }
 
     def get_current_config_manager(self):
