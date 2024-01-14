@@ -36,6 +36,23 @@ Content-Type: application/json
   ]
 }
 
+### Video download with a programmation (POST)
+POST {{host}}/download?url=https://www.youtube.com/watch?v=W6OOnrx8g58
+Content-Type: application/json
+
+{
+  "programmation": {
+    "planning": {
+      "recording_duration": 1
+    }
+  },
+  "presets": [
+    {
+      "_preset": "SD"
+    }
+  ]
+}
+
 > {%
     client.global.set('redis_id', response.body.downloads[0]._redis_id)
 %}
@@ -86,7 +103,7 @@ GET {{host}}/active_downloads/terminate/{{redis_id}}
 GET {{host}}/queue
 
 ### Redis registry content (GET)
-GET {{host}}/queue/finished_job
+GET {{host}}/queue/started_job
 
 ### Clear redis registries (DELETE)
 DELETE {{host}}/queue
