@@ -149,8 +149,8 @@ class ConfigManager:
                 if key == '_cli':
                     self.__merge_configs(ydl_utils.cli_to_api(value), section, config_set)
                 else:
-                    self.__merge_configs(self.__config[f'{key.removeprefix("_")}:{value}'], section, config_set)
-
+                    if self.__config.has_section(f'{key.removeprefix("_")}:{value}'):
+                        self.__merge_configs(self.__config[f'{key.removeprefix("_")}:{value}'], section, config_set)
         if merged:
             self.__expand_section(section, config_set)
 
