@@ -67,6 +67,7 @@ class TestConfig(unittest.TestCase):
                             self.config_manager.get_preset_params('DEFAULT').get('outtmpl').get('default'))
         self.assertFalse(self.config_manager.get_preset_params('playlist').get('noplaylist'))
         self.assertTrue(self.config_manager.get_preset_params('DEFAULT').get('noplaylist'))
+        self.assertEqual('mp3', self.config_manager.get_preset_params('AUDIO_CLI').get('final_ext'))
 
     def test_app(self):
         self.assertEqual('/download', self.config_manager.get_app_params().get('_api_route_download'))
@@ -145,6 +146,41 @@ class TestUtils(unittest.TestCase):
         dm.flush_presets()
         dm.get_presets_objects(['8K', '4K', 'AUDIO'])
         self.assertFalse(dm.no_preset_found)
+
+        dm.flush_presets()
+        dm.get_presets_objects(['AUDIO_CLI'])
+        self.assertEqual('mp3', dm.presets[0].get('final_ext'))
+
+    def test_post_presets(self):
+        body = {
+            'cookies': 'no',
+            'presets': [{
+                "_preset": "SD"
+            }],
+        }
+
+        dm = download_manager.DownloadManager(self.config_manager, 'https://www.youtube.com/watch?v=OWCK3413Wuk', None,
+                                              None, body, request_id="UNIT_TEST")
+
+        preset_result = dm.get_api_return_object().get('downloads')[0]
+        self.assertEqual('POST_REQUEST', preset_result.get('_name'))
+        self.assertEqual('SD', preset_result.get('_preset'))
+        self.assertIsNotNone(preset_result.get('__check_exception_message'))
+
+        body = {
+            'presets': [{
+                "_cli": "-f bestaudio --embed-metadata --embed-thumbnail --extract-audio --audio-format mp3 --split-chapters"
+            }]
+        }
+
+        dm = download_manager.DownloadManager(self.config_manager, 'https://www.youtube.com/watch?v=OWCK3413Wuk', None,
+                                              None, body)
+
+        preset_result = dm.get_api_return_object().get('downloads')[0]
+        self.assertEqual('POST_REQUEST', preset_result.get('_name'))
+        self.assertEqual('bestaudio', preset_result.get('format'))
+        self.assertIsNotNone(preset_result.get('postprocessors'))
+        self.assertNotEqual(0, len(preset_result.get('postprocessors')))
 
     def test_is_from_playlist(self):
         dm = download_manager.DownloadManager(self.config_manager,

@@ -136,8 +136,7 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
 
         if generated_programmation.recording_duration is not None:
             generated_programmation.recording_stops_at_end = True
-            programmation_end_date = datetime.now().replace(second=0, microsecond=0) + timedelta(
-                minutes=1 + generated_programmation.recording_duration)
+            programmation_end_date = datetime.now() + timedelta(minutes=generated_programmation.recording_duration)
 
     if generated_programmation is None:
         dm = download_manager.DownloadManager(__cm, param_url, None, param_token, body, request_id = request_id)

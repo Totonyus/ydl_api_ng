@@ -5,7 +5,7 @@ import logging
 import logging.handlers as handlers
 import os
 import defaults
-
+import ydl_api_ng_utils as ydl_utils
 
 class SectionConfig:
     def append(self, key, item, override=True):
@@ -139,14 +139,18 @@ class ConfigManager:
 
     def __expand_section(self, section, config_set):
         merged = False
-        expendable_fields = ['_preset', '_template', '_location', '_auth', '_site', '_user']
+        expendable_fields = ['_preset', '_template', '_location', '_auth', '_site', '_user', '_cli']
 
         for key, value in section.items():
             if key in expendable_fields:
                 merged = True
                 config_set.remove_option(section.name, key)
-                self.__merge_configs(self.__config[f'{key.removeprefix("_")}:{value}'], section, config_set)
 
+                if key == '_cli':
+                    self.__merge_configs(ydl_utils.cli_to_api(value), section, config_set)
+                else:
+                    if self.__config.has_section(f'{key.removeprefix("_")}:{value}'):
+                        self.__merge_configs(self.__config[f'{key.removeprefix("_")}:{value}'], section, config_set)
         if merged:
             self.__expand_section(section, config_set)
 
@@ -155,7 +159,10 @@ class ConfigManager:
     def __merge_configs(src, dest, config_set):
         for key, value in src.items():
             if not config_set.has_option(dest.name, key):
-                dest[key] = value
+                if type(value) != str:
+                    dest[key] = json.dumps(value)
+                else:
+                    dest[key] = value
 
     # Done on premise directly with objects, override values
     @staticmethod

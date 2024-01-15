@@ -14,8 +14,7 @@ import config_manager
 from params import progress_hooks, postprocessor_hooks, ydl_api_hooks
 from rq import get_current_job
 import inspect
-
-import json
+import ydl_api_ng_utils as ydl_utils
 
 class DownloadManager:
     __cm = None
@@ -123,15 +122,24 @@ class DownloadManager:
                                   '_user': None}
 
         for preset in presets:
+            cli_preset = self.transform_post_preset_as_object(ydl_utils.cli_to_api(preset.get('_cli'))) if preset.get('_cli') is not None else None
+
             preset_object = self.transform_post_preset_as_object(preset)
 
             if not self.__cm.get_app_params().get('_allow_dangerous_post_requests') and not self.ignore_post_security:
+                if cli_preset is not None:
+                    cli_preset.delete('paths')
+                    cli_preset.delete('outtmpl')
                 preset_object.delete('paths')
                 preset_object.delete('outtmpl')
 
             for param in preset:
                 if param in config_objects_mapping:
                     self.__cm.merge_configs_object(config_objects_mapping.get(param)(preset.get(param)), preset_object,
+                                                   override=False)
+
+                if param == '_cli':
+                    self.__cm.merge_configs_object(cli_preset, preset_object,
                                                    override=False)
 
             if self.ignore_post_security is False:
@@ -480,7 +488,9 @@ class DownloadManager:
             'ignore_post_security': self.ignore_post_security,
             'relaunch_failed_mode': self.relaunch_failed_mode,
             'downloads': presets_display,
-            'programmation' : self.programmation
+            'programmation' : self.programmation,
+            'programmation_date' : self.programmation_date,
+            'programmation_end_date' : self.programmation_end_date
         }
 
     def get_current_config_manager(self):
