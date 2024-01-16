@@ -201,6 +201,31 @@ You can also add your own parameters fields if you need it.
 
 This file is a complete working configuration file who is fully documented to help you to understand how it works.
 
+### The `_cli` parameter
+The `_cli` parameter allows the usage of a command line configuration to make `ydl_api_ng` even more simple than before.
+
+```
+[preset:AUDIO_CLI]
+_template = AUDIO
+_cli = -f bestaudio --embed-metadata --embed-thumbnail --extract-audio --audio-format mp3 --split-chapters
+```
+
+Is the same thing than:
+```
+[preset:AUDIO]
+_template = AUDIO
+format = bestaudio
+writethumbnail = true
+final_ext = mp3
+postprocessors: [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "5", "nopostoverwrites": false}, {"key": "FFmpegMetadata", "add_chapters": true, "add_metadata": true, "add_infojson": "if_exists"}, {"key": "EmbedThumbnail", "already_have_thumbnail": false}, {"key": "FFmpegSplitChapters", "force_keyframes": false}]}
+```
+
+To use a yt-dlp configuration file:
+```
+[preset:AUDIO]
+_cli = --config-location params/conf_audio.conf
+```
+
 ## User management
 
 If the user management is activated (disabled by default), each request must have the `&token` query parameter. You can
@@ -379,7 +404,7 @@ GET http://localhost:5011/download?url=https://www.youtube.com/watch?v=wV4wepiuc
 
 ## Post request
 
-You can download the video you want by providing the parameters directly in a post request
+You can download the video you want by providing the parameters directly in a post request. The order of the expandable attributes is important : each attribute will be expanded in this order. 
 
 ```shell
 POST http://localhost:5011/download?url=https://www.youtube.com/watch?v=wV4wepiucf4 &
@@ -400,7 +425,6 @@ Content-Type: application/json
   }
   ]
 }
-
 ```
 
 It is possible to add a timer to stop the download (`recording_stops_at_end` will be automatically set on `True`) :
@@ -423,8 +447,23 @@ Content-Type: application/json
 }
 ```
 
-Reminder if you want to expand a preset : all presets automatically expand the `DEFAULT` preset. Basically, expand a
+Reminder : if you want to expand a preset : all presets automatically expand the `DEFAULT` preset. Basically, expand a
 preset with `_preset` means `_ignore_default_preset`can't be true.
+
+You can use the `_cli` attribute here :
+```shell
+POST http://localhost:5011/download?url=https://www.youtube.com/watch?v=wV4wepiucf4
+Content-Type: application/json
+
+{
+  "presets": [
+    {
+      "_template": "AUDIO",
+      "_cli" : "-f bestaudio --embed-metadata --embed-thumbnail --extract-audio --audio-format mp3 --split-chapters",
+    }
+  ]
+}
+```
 
 ### Important notice
 

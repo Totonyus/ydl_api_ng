@@ -64,12 +64,12 @@ def run():
 
             if effective_duration is not None and prog.recording_stops_at_end:
                 programmation_end_date = datetime.now().replace(second=0, microsecond=0) + timedelta(
-                    minutes=effective_duration + 1)
+                    minutes=effective_duration)
             else:
                 programmation_end_date = None
 
             if next_execution is not None:
-                will_be_executed = next_execution < datetime.now() + timedelta(seconds=programmation_interval)
+                will_be_executed = next_execution < datetime.now()
             else:
                 will_be_executed = True
 

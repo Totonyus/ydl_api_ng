@@ -1,6 +1,8 @@
 import copy
 import functools
+import http.cookiejar
 import logging
+import optparse
 from urllib.parse import urlparse
 import os
 
@@ -13,7 +15,7 @@ import config_manager
 from params import progress_hooks, postprocessor_hooks, ydl_api_hooks
 from rq import get_current_job
 import inspect
-
+import ydl_api_ng_utils as ydl_utils
 
 class DownloadManager:
     __cm = None
@@ -123,13 +125,30 @@ class DownloadManager:
         for preset in presets:
             preset_object = self.transform_post_preset_as_object(preset)
 
+            try:
+                cli_preset = self.transform_post_preset_as_object(ydl_utils.cli_to_api(preset.get('_cli'))) if preset.get(
+                '_cli') is not None else None
+            except optparse.OptParseError as e:
+                cli_preset = None
+                error_message = ': '.join(e.msg.split(': ')[2:]).removesuffix('\n')
+                preset_object.append('_error', error_message)
+                logging.getLogger('download_manager').error(f'error during _cli expansion : {error_message}')
+
+
             if not self.__cm.get_app_params().get('_allow_dangerous_post_requests') and not self.ignore_post_security:
+                if cli_preset is not None:
+                    cli_preset.delete('paths')
+                    cli_preset.delete('outtmpl')
                 preset_object.delete('paths')
                 preset_object.delete('outtmpl')
 
             for param in preset:
                 if param in config_objects_mapping:
                     self.__cm.merge_configs_object(config_objects_mapping.get(param)(preset.get(param)), preset_object,
+                                                   override=False)
+
+                if param == '_cli':
+                    self.__cm.merge_configs_object(cli_preset, preset_object,
                                                    override=False)
 
             if self.ignore_post_security is False:
@@ -301,15 +320,27 @@ class DownloadManager:
     def progress_hooks_proxy(self, download):
         is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
 
+        # Those attributes makes redis go crazy, dunno why
+        download.get('info_dict').pop('http_headers', None)
+        for dl_format in download.get('info_dict').get('formats'):
+            dl_format.pop('http_headers', None)
+
         if is_in_list is None:
             self.downloaded_files.append(download)
         else:
             self.downloaded_files[is_in_list] = download
 
         if self.enable_redis is not None and self.enable_redis is True:
-            get_current_job().meta['downloaded_files'] = self.downloaded_files
-            get_current_job().save()
-            get_current_job().refresh()
+            get_current_job().meta['downloaded_files'] = []
+
+            for file in self.downloaded_files:
+                reduced_file = copy.deepcopy(file)
+                if self.__cm.get_app_params().get('_skip_info_dict'):
+                    reduced_file.pop('info_dict', None)
+
+                get_current_job().meta['downloaded_files'].append(reduced_file)
+
+            get_current_job().save_meta()
 
     def process_download(self, preset):
         if self.__cm.get_app_params().get('_dev_mode'):
@@ -414,15 +445,18 @@ class DownloadManager:
             'cookiefile' : f'/app/cookies/{request_id}.txt' if request_id is not None else None
         }
 
-        with ydl.YoutubeDL(ydl_opts) as dl:
-            informations = dl.extract_info(url, download=False)
+        try:
+            with ydl.YoutubeDL(ydl_opts) as dl:
+                info = dl.extract_info(url, download=False)
+        except http.cookiejar.LoadError as error:
+            return str(error), True
 
         try:
             os.remove(f'/app/cookies/{request_id}.txt')
         except FileNotFoundError:
             pass
 
-        return informations
+        return info, False
 
     def get_api_status_code(self):
         # Some presets were not found
@@ -463,7 +497,9 @@ class DownloadManager:
             'ignore_post_security': self.ignore_post_security,
             'relaunch_failed_mode': self.relaunch_failed_mode,
             'downloads': presets_display,
-            'programmation' : self.programmation
+            'programmation' : self.programmation,
+            'programmation_date' : self.programmation_date,
+            'programmation_end_date' : self.programmation_end_date
         }
 
     def get_current_config_manager(self):

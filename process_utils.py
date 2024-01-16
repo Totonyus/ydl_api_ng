@@ -118,8 +118,7 @@ class ProcessUtils:
                 try:
                     job.get('job').meta['filename_info'] = filename_info
                     job.get('job').meta['terminated'] = True
-                    job.get('job').save()
-                    job.get('job').refresh()
+                    job.get('job').save_meta()
 
                     if background_tasks is not None:
                         background_tasks.add_task(self.ffmpeg_terminated_file, filename_info=filename_info)
@@ -235,9 +234,6 @@ class ProcessUtils:
     def sanitize_job_object(self, job):
         if job is None:
             return None
-
-        # Delete useless attribute that cause problems to json serializer
-        job.meta.pop('unserialized', None)
 
         sanitize_object = {
             'status': job.get_status(refresh=True),
@@ -569,7 +565,6 @@ class ProcessUtils:
             return None
 
         job.meta = merge(job.meta, metadata)
-        job.save()
-        job.refresh()
+        job.save_meta()
 
         return self.sanitize_job(self.find_job_by_id(searched_job_id=id))

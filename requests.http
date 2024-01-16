@@ -1,0 +1,155 @@
+# #### #
+# MISC #
+# #### #
+
+### App information
+GET {{host}}/info
+
+# ############## #
+# Video download #
+# ############## #
+
+### Video download (GET)
+GET {{host}}/download?url=https://www.youtube.com/watch?v=a0sxBO9HZ-M&presets=SD
+
+> {%
+    client.global.set('redis_id', response.body.downloads[0]._redis_id)
+%}
+
+### Livestream download (GET)
+GET {{host}}/download?url=https://www.youtube.com/watch?v=W6OOnrx8g58&presets=SD
+
+> {%
+    client.global.set('redis_id', response.body.downloads[0]._redis_id)
+%}
+
+### Video download (POST)
+POST {{host}}/download?url=https://www.youtube.com/watch?v=a0sxBO9HZ-M
+Content-Type: application/json
+
+{
+  "cookies": "URL encoded (RFC3986 format) netscape cookies format",
+  "presets": [
+    {
+      "_preset": "AUDIO"
+    }
+  ]
+}
+
+### Video download with a programmation (POST)
+POST {{host}}/download?url=https://www.youtube.com/watch?v=W6OOnrx8g58
+Content-Type: application/json
+
+{
+  "programmation": {
+    "planning": {
+      "recording_duration": 1
+    }
+  },
+  "presets": [
+    {
+      "_preset": "SD"
+    }
+  ]
+}
+
+> {%
+    client.global.set('redis_id', response.body.downloads[0]._redis_id)
+%}
+
+### Download with CLI (POST)
+POST {{host}}/download?url=https://www.youtube.com/watch?v=a0sxBO9HZ-M
+Content-Type: application/json
+
+{
+  "presets": [
+    {
+      "_template" : "AUDIO",
+      "_cli" : "-f bestaudio --embed-metadata --embed-thumbnail --extract-audio --audio-format mp3 --split-chapters"
+    }
+  ]
+}
+
+> {%
+    client.global.set('redis_id', response.body.downloads[0]._redis_id)
+%}
+
+### Extract informations (GET)
+GET {{host}}/extract_info?url=https://www.youtube.com/watch?v=a0sxBO9HZ-M
+
+### Extract informations (POST)
+POST {{host}}/extract_info?url=https://www.youtube.com/watch?v=a0sxBO9HZ-M
+Content-Type: application/json
+
+{
+  "cookies": "URL encoded (RFC3986 format) netscape cookies format"
+}
+###
+
+# ################ #
+# Queue management #
+# ################ #
+
+### Active downloads (GET)
+GET {{host}}/active_downloads
+
+### Terminate all active downloads (GET)
+GET {{host}}/active_downloads/terminate
+
+### Terminate given download (GET)
+GET {{host}}/active_downloads/terminate/{{redis_id}}
+
+### Redis registries content (GET)
+GET {{host}}/queue
+
+### Redis registry content (GET)
+GET {{host}}/queue/started_job
+
+### Clear redis registries (DELETE)
+DELETE {{host}}/queue
+
+### Update download metadata (PUT)
+PUT {{host}}/queue/{{redis_id}}
+Content-Type: application/json
+
+{
+  "programmation_end_date": "2025-12-25T12:00:00"
+}
+###
+
+# ############# #
+# Programmation #
+# ############# #
+
+### All programmations (GET)
+GET {{host}}/programmation
+
+### Create programmation (POST)
+POST {{host}}/programmation?url=video_url
+Content-Type: application/json
+
+{
+"planning": {
+    "recurrence_cron": "00 13 * * *"
+    }
+}
+
+> {%
+    client.global.set('programmation_id', response.body.id)
+%}
+
+### Delete programmation by ID (DELETE)
+DELETE {{host}}/programmation/{{programmation_id}}
+
+### Delete programmation by URL (DELETE)
+DELETE {{host}}/programmation?url=video_url
+
+### Update programmation (PUT)
+PUT {{host}}/programmation/{{programmation_id}}
+Content-Type: application/json
+
+{
+  "planning": {
+    "recurrence_cron": "00 20 * * *"
+  }
+}

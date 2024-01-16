@@ -136,8 +136,7 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
 
         if generated_programmation.recording_duration is not None:
             generated_programmation.recording_stops_at_end = True
-            programmation_end_date = datetime.now().replace(second=0, microsecond=0) + timedelta(
-                minutes=1 + generated_programmation.recording_duration)
+            programmation_end_date = datetime.now() + timedelta(minutes=generated_programmation.recording_duration)
 
     if generated_programmation is None:
         dm = download_manager.DownloadManager(__cm, param_url, None, param_token, body, request_id = request_id)
@@ -215,7 +214,12 @@ async def extract_info_request(response: Response, url, token=None):
         response.status_code = 400
         return {'status_code': response.status_code}
 
-    return download_manager.DownloadManager.extract_info(param_url)
+    info, is_error = download_manager.DownloadManager.extract_info(param_url)
+
+    if is_error:
+        response.status_code = 400
+
+    return info
 
 @app.post(__cm.get_app_params().get('_api_route_extract_info'))
 async def download_request(response: Response, background_tasks: BackgroundTasks, url, body=Body(...), token=None):
@@ -239,7 +243,12 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
         cookies_files.write(unquote(body.get('cookies')))
         cookies_files.close()
 
-    return download_manager.DownloadManager.extract_info(param_url, request_id=request_id)
+    info, is_error = download_manager.DownloadManager.extract_info(param_url, request_id=request_id)
+
+    if is_error:
+        response.status_code = 400
+
+    return info
 
 ###
 # Process
@@ -337,6 +346,13 @@ async def update_active_download_download_metadata(response: Response, pid, body
     if user is False:
         response.status_code = 401
         return
+
+    if body.get('programmation_end_date') is not None:
+        try:
+            datetime.fromisoformat(body.get('programmation_end_date'))
+        except Exception as error:
+            response.status_code = 400
+            return str(error)
 
     updated_job = __pu.update_active_download_metadata(id=unquote(pid), metadata=body)
 
