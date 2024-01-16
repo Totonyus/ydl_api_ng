@@ -220,6 +220,12 @@ final_ext = mp3
 postprocessors: [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "5", "nopostoverwrites": false}, {"key": "FFmpegMetadata", "add_chapters": true, "add_metadata": true, "add_infojson": "if_exists"}, {"key": "EmbedThumbnail", "already_have_thumbnail": false}, {"key": "FFmpegSplitChapters", "force_keyframes": false}]}
 ```
 
+To use a yt-dlp configuration file:
+```
+[preset:AUDIO]
+_cli = --config-location params/conf_audio.conf
+```
+
 ## User management
 
 If the user management is activated (disabled by default), each request must have the `&token` query parameter. You can

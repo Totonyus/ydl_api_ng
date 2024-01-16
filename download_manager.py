@@ -2,6 +2,7 @@ import copy
 import functools
 import http.cookiejar
 import logging
+import optparse
 from urllib.parse import urlparse
 import os
 
@@ -122,9 +123,17 @@ class DownloadManager:
                                   '_user': None}
 
         for preset in presets:
-            cli_preset = self.transform_post_preset_as_object(ydl_utils.cli_to_api(preset.get('_cli'))) if preset.get('_cli') is not None else None
-
             preset_object = self.transform_post_preset_as_object(preset)
+
+            try:
+                cli_preset = self.transform_post_preset_as_object(ydl_utils.cli_to_api(preset.get('_cli'))) if preset.get(
+                '_cli') is not None else None
+            except optparse.OptParseError as e:
+                cli_preset = None
+                error_message = ': '.join(e.msg.split(': ')[2:]).removesuffix('\n')
+                preset_object.append('_error', error_message)
+                logging.getLogger('download_manager').error(f'error during _cli expansion : {error_message}')
+
 
             if not self.__cm.get_app_params().get('_allow_dangerous_post_requests') and not self.ignore_post_security:
                 if cli_preset is not None:

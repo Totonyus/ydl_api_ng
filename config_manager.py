@@ -3,6 +3,7 @@ import copy
 import json
 import logging
 import logging.handlers as handlers
+import optparse
 import os
 import defaults
 import ydl_api_ng_utils as ydl_utils
@@ -147,7 +148,11 @@ class ConfigManager:
                 config_set.remove_option(section.name, key)
 
                 if key == '_cli':
-                    self.__merge_configs(ydl_utils.cli_to_api(value), section, config_set)
+                    try:
+                        self.__merge_configs(ydl_utils.cli_to_api(value), section, config_set)
+                    except optparse.OptParseError as e :
+                        section['_error'] = ': '.join(e.msg.split(': ')[2:]).removesuffix('\n')
+                        logging.getLogger('config_manager').error(f'error during _cli expansion : {section.get("_error")}')
                 else:
                     if self.__config.has_section(f'{key.removeprefix("_")}:{value}'):
                         self.__merge_configs(self.__config[f'{key.removeprefix("_")}:{value}'], section, config_set)
