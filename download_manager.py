@@ -442,7 +442,7 @@ class DownloadManager:
         ydl_opts = {
             'ignoreerrors': True,
             'quiet': True,
-            'cookiefile' : f'/app/cookies/{request_id}.txt' if request_id is not None else None
+            'cookiefile' : f'cookies/{request_id}.txt' if request_id is not None else None
         }
 
         try:
@@ -452,7 +452,7 @@ class DownloadManager:
             return str(error), True
 
         try:
-            os.remove(f'/app/cookies/{request_id}.txt')
+            os.remove(f'cookies/{request_id}.txt')
         except FileNotFoundError:
             pass
 
