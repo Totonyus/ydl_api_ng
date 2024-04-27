@@ -300,7 +300,8 @@ Here what a programmation object looks like in database :
     "recurrence_start_date": "string date : YYYY-MM-DD hh:mm (null)",
     "recurrence_end_date": "string date : YYYY-MM-DD hh:mm (null)"
     },
-"presets": ["string"]
+"presets": ["string"], 
+"extra_parameters" : {}
 }
 ```
 
@@ -309,14 +310,15 @@ Fields:
 - `url` : url to download, it will not be checked
 - `user_token` : unused if the `_allow_programmation` is not explicitly set at true in the user config
 - `enabled` : if false, the programmation will be ignored
-- `recording_start_date`
-- `recording_duration` : how many minutes recording is supposed to long
-- `recording_stops_at_end` : if true, the download will be force stopped when `recording_duration` is reached
-- `recording_restarts_during_duration` : if False, the download will not be restarted if stopped before `recording_duration`
-- `recurrence_cron` : same cron as linux
-- `recurrence_start_date` : useful only if `recurrence_cron` is used
-- `recurrence_end_date` : useful only if `recurrence_cron` is used
+- `planning.recording_start_date`
+- `planning.recording_duration` : how many minutes recording is supposed to long
+- `planning.recording_stops_at_end` : if true, the download will be force stopped when `recording_duration` is reached
+- `planning.recording_restarts_during_duration` : if False, the download will not be restarted if stopped before `recording_duration`
+- `planning.recurrence_cron` : same cron as linux
+- `planning.recurrence_start_date` : useful only if `recurrence_cron` is used
+- `planning.recurrence_end_date` : useful only if `recurrence_cron` is used
 - `presets` : list of presets names
+- `extra_parameters` : an arbitrary object of parameters you can use to store informations or directives to use in hooks
 
 Notes:
 - `recording_start_date` and `recurrence_cron` cannot be used at the same type
@@ -369,6 +371,21 @@ Will last at least 4 hours
   "planning": {
     "recording_start_date" : "2022-12-31 22:00",
     "recording_duration": 240
+  }
+}
+```
+
+#### Programmation with extra parameters
+
+```json
+{
+  "url": "string",
+  "planning": {
+    "recurrence_cron": "00 * * * *"
+  },
+  "extra_parameters": {
+    "notification_level": "critical",
+    "video_description": "Josephine Ange Gardien - 25th anniversary epic trailer"
   }
 }
 ```

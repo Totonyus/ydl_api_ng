@@ -35,5 +35,6 @@ programmation_object_default = {
         'recurrence_start_date': None,
         'recurrence_end_date': None,
     },
+    'extra_parameters' : {},
     'presets': None
 }
