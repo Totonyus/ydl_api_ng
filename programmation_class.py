@@ -41,6 +41,8 @@ class Programmation:
             "recurrence_end_date": self.recurrence_end_date,
         }
 
+        self.extra_parameters = programmation.get('extra_parameters') if programmation is not None and programmation.get('extra_parameters') is not None else merged_programmation.get('extra_parameters')
+
         self.errors = self.validate_programmation()
 
         if len(self.errors) == 0:
@@ -59,6 +61,7 @@ class Programmation:
             "enabled": self.enabled,
             "presets": self.presets,
             "planning": self.planning,
+            "extra_parameters" : self.extra_parameters
         }
 
     def validate_programmation(self, *args, **kwargs):

@@ -538,7 +538,7 @@ class ProcessUtils:
         dm = job.args[1]
 
         dm = download_manager.DownloadManager(self.__cm, dm.url, None, user_token, {'presets': [preset]},
-                                              ignore_post_security=True)
+                                              ignore_post_security=True, programmation_id=dm.programmation_id)
 
         if dm.get_api_status_code() != 400:
             dm.process_downloads()

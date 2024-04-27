@@ -129,9 +129,12 @@ POST {{host}}/programmation?url=video_url
 Content-Type: application/json
 
 {
-"planning": {
-    "recurrence_cron": "00 13 * * *"
-    }
+  "planning": {
+    "recurrence_cron": "25 10 * * *"
+  },
+  "extra_parameters": {
+    "send_notification": false
+  }
 }
 
 > {%

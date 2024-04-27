@@ -20,6 +20,7 @@ services:
       - ./programmation_persistence_manager.py:/app/programmation_persistence_manager.py
       - ./programmation_daemon.py:/app/programmation_daemon.py
       - ./programmation_class.py:/app/programmation_class.py
+      - ./defaults.py:/app/defaults.py
       - ./config_manager.py:/app/config_manager.py
       - ./ydl_api_ng_utils.py:/app/ydl_api_ng_utils.py
       - ./download_manager.py:/app/download_manager.py

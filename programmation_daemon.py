@@ -100,6 +100,5 @@ if __name__ == '__main__':
         logging.getLogger('programmation').warning('Redis disabled, programmation daemon exited')
         exit()
 
-    while True:
-        run()
-        time.sleep(programmation_interval)
+    run()
+    time.sleep(programmation_interval)
