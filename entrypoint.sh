@@ -19,7 +19,19 @@ fi
 
 pip3 install -r /app/params/hooks_requirements
 
-addgroup --gid $GID ydl_api_ng && useradd --uid $UID --gid ydl_api_ng ydl_api_ng
+getent group $GID > /dev/null
+if [ $? -eq 0 ]; then
+  groupmod $(id --name --group $GID) -n ydl_api_ng
+else
+  addgroup --gid $GID ydl_api_ng
+fi
+
+getent passwd $UID > /dev/null
+if [ $? -eq 0 ]; then
+  usermod $(id --name --user $UID) -l ydl_api_ng
+else
+  useradd --uid $UID --gid ydl_api_ng ydl_api_ng
+fi
 
 chown $UID:$GID /app/logs /app/downloads /home/ydl_api_ng /app/tmp /app/data /app/data/database.json /app/cookies /root/yt-dlp-plugins
 chmod a+x /root/ entrypoint.sh
