@@ -5,7 +5,7 @@ from programmation_class import Programmation
 
 class ProgrammationPersistenceManager:
     def __init__(self, database_file=None, *args, **kwargs):
-        self.__database_file = database_file if database_file is not None else 'database.json'
+        self.__database_file = database_file if database_file is not None else 'data/database.json'
 
         self.__db = TinyDB(self.__database_file)
         self.__scheduled_jobs_table = self.__db.table('scheduled_jobs', cache_size=0)

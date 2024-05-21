@@ -4,25 +4,46 @@ echo ~~~ ydl_api_ng
 echo ~~~ Revision : $GIT_BRANCH - $GIT_REVISION
 echo ~~~ Docker image generated : $DATE
 
-mkdir -p /app/logs /app/downloads /app/params /app/tmp /home/ydl_api_ng /app/data /root/yt-dlp-plugins /app/cookies/
-cp -n /app/setup/* /app/params/
-touch /app/data/database.json
-ln -s /app/data/database.json ./database.json
+mkdir -p /app/logs /app/downloads /app/params /app/tmp /app/data /root/yt-dlp-plugins /app/cookies/
+
+getent group $GID > /dev/null
+if [ $? -eq 0 ]; then
+  groupmod $(id --name --group $GID) -n ydl_api_ng
+else
+  addgroup --gid $GID ydl_api_ng
+fi
+
+getent passwd $UID > /dev/null
+if [ $? -eq 0 ]; then
+  usermod $(id --name --user $UID) -l ydl_api_ng
+
+else
+  useradd -m --uid $UID --gid ydl_api_ng ydl_api_ng
+fi
+
+chown -R $UID:$GID /app
+chown $UID:$GID /home/ydl_api_ng /root/yt-dlp-plugins
+chmod a+x /root/ entrypoint.sh
+
+# If paraps.ini exists, assume setup has been run. Don't copy extra files the user may have removed.
+if [ ! -e '/app/params/params.ini' ]; then
+ cp -n /app/setup/* /app/params/
+fi
+
+# Just access the file from the correct place in the app
+if [ ! -e /app/data/database.json ]; then
+ touch /app/data/database.json
+fi
 
 if [ "$FORCE_YTDLP_VERSION" == "" ]; then
   echo --- Upgrade yt-dlp to the latest version ---
-  pip3 install yt-dlp --upgrade
+  pip3 install yt-dlp --upgrade --disable-pip-version-check -q --root-user-action=ignore
 else
   echo --- Force yt-dlp version $FORCE_YTDLP_VERSION ---
-  pip3 install yt-dlp==$FORCE_YTDLP_VERSION --force-reinstall
+  pip3 install --disable-pip-version-check -q --root-user-action=ignore yt-dlp==$FORCE_YTDLP_VERSION --force-reinstall
 fi
 
-pip3 install -r /app/params/hooks_requirements
-
-addgroup --gid $GID ydl_api_ng && useradd --uid $UID --gid ydl_api_ng ydl_api_ng
-
-chown $UID:$GID /app/logs /app/downloads /home/ydl_api_ng /app/tmp /app/data /app/data/database.json /app/cookies /root/yt-dlp-plugins
-chmod a+x /root/ entrypoint.sh
+pip3 install --disable-pip-version-check -q --root-user-action=ignore -r /app/params/hooks_requirements
 
 if [ "$DISABLE_REDIS" == "false" ]; then
   cat <<EOT >>/app/supervisord_workers.conf
