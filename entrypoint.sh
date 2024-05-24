@@ -4,18 +4,7 @@ echo ~~~ ydl_api_ng
 echo ~~~ Revision : $GIT_BRANCH - $GIT_REVISION
 echo ~~~ Docker image generated : $DATE
 
-mkdir -p /app/logs /app/downloads /app/params /app/tmp /app/data /root/yt-dlp-plugins /app/cookies/
-
-getent group $GID > /dev/null
-if [ $? -eq 0 ]; then
-  groupmod $(id --name --group $GID) -n ydl_api_ng
-else
-  addgroup --gid $GID ydl_api_ng
-fi
-
-getent passwd $UID > /dev/null
-if [ $? -eq 0 ]; then
-  usermod $(id --name --user $UID) -l ydl_api_ng
+mkdir -p /app/logs /app/downloads /app/params /app/tmp /app/data /root/yt-dlp-plugins /app/cookies/ /home/ydl_api_ng
 
 getent group $GID > /dev/null
 if [ $? -eq 0 ]; then
