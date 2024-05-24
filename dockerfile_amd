@@ -16,9 +16,6 @@ COPY *.py pip_requirements ./
 COPY params/*.py params/*.ini params/userscript.js params/hooks_requirements ./setup/
 COPY params/params_docker.ini ./setup/params.ini
 
-# Just write them properly in the first place.
-#RUN dos2unix * ./setup/*
-
-RUN pip3 install -r pip_requirements
+RUN pip3 install -r pip_requirements_amd
 
 ENTRYPOINT ["/app/entrypoint.sh"]

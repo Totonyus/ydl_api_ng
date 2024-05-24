@@ -1,0 +1,13 @@
+fastapi
+yt-dlp
+uvicorn
+psutil
+humanize
+requests
+redis
+rq
+supervisor
+tinydb
+cronsim
+ffmpeg-python
+mergedeep
