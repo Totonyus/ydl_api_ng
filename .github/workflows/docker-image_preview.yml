@@ -1,12 +1,19 @@
-name: Build single image
+name: Build docker image
 
 on:
   push:
-    branches-ignore:
-      - '**'
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'docker-compose*'
 
 jobs:
-  generate_docker_image:
+  unit_tests:
+    uses: ./.github/workflows/unit_tests.yml
+
+  generate_main_docker_image:
+    needs: unit_tests
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
@@ -38,29 +45,31 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
-    - name: Build and push Docker image (amd)
+    - name: Build docker image (amd)
       uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
       id: build_amd
       with:
         context: ${{ github.workspace }}
-        file: dockerfile_amd
         platforms: linux/amd64
         push: true
-        tags: totonyus/ydl_api_ng:${{ env.TAG_START }}amd
+        tags: |
+          totonyus/ydl_api_ng:latest_amd
+          totonyus/ydl_api_ng:preview_amd
         build-args: |
           GIT_BRANCH=${{ steps.extract_branch.outputs.BRANCH_NAME }}
           GIT_REVISION=${{ steps.commit.outputs.hash }}
           DATE=${{ steps.current-time.outputs.time }}
 
-    - name: Build and push Docker image (arm)
+    - name: Build docker image (arm)
       uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
       id: build_arm
       with:
         context: ${{ github.workspace }}
-        file: dockerfile_arm
-        platforms: linux/arm/v7,linux/arm64/v8
+        platforms: linux/amd64,linux/arm/v7,linux/arm64/v8
         push: true
-        tags: totonyus/ydl_api_ng:${{ env.TAG_START }}arm
+        tags: |
+          totonyus/ydl_api_ng:latest_arm
+          totonyus/ydl_api_ng:preview_arm
         build-args: |
           GIT_BRANCH=${{ steps.extract_branch.outputs.BRANCH_NAME }}
           GIT_REVISION=${{ steps.commit.outputs.hash }}
@@ -68,16 +77,9 @@ jobs:
 
     - uses: int128/docker-manifest-create-action@v2
       with:
-        tags: ${{ env.TAGS }}
+        tags: |
+          totonyus/ydl_api_ng:latest
+          totonyus/ydl_api_ng:preview
         sources: |
           totonyus/ydl_api_ng@${{ steps.build_amd.outputs.digest }}
           totonyus/ydl_api_ng@${{ steps.build_arm.outputs.digest }}
-
-    - name: Docker Hub Description
-      uses: peter-evans/dockerhub-description@v3.0.0
-      if: ${{ env.UPDATE_DOCKER_HUB_DESCRIPTION == 'true' }}
-      with:
-        username: ${{ secrets.DOCKER_HUB_LOGIN }}
-        password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-        repository: totonyus/ydl_api_ng
-        readme-filepath: ${{ github.workspace }}/readme.md
