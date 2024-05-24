@@ -12,7 +12,7 @@ jobs:
   unit_tests:
     uses: ./.github/workflows/unit_tests.yml
 
-  generate_main_docker_image:
+  generate_release_docker_image:
     needs: unit_tests
     runs-on: ubuntu-latest
     steps:
@@ -50,6 +50,7 @@ jobs:
       id: build_amd
       with:
         context: ${{ github.workspace }}
+        file: dockerfile_amd
         platforms: linux/amd64
         push: true
         tags: |
@@ -65,7 +66,8 @@ jobs:
       id: build_arm
       with:
         context: ${{ github.workspace }}
-        platforms: linux/amd64,linux/arm/v7,linux/arm64/v8
+        file: dockerfile_arm
+        platforms: linux/arm/v7,linux/arm64/v8
         push: true
         tags: |
           totonyus/ydl_api_ng:latest_arm
