@@ -12,7 +12,7 @@ EXPOSE 80
 RUN pip install static-ffmpeg
 
 COPY --chmod=755 entrypoint.sh ./
-COPY *.py pip_requirements ./
+COPY *.py pip_requirements_amd ./
 COPY params/*.py params/*.ini params/userscript.js params/hooks_requirements ./setup/
 COPY params/params_docker.ini ./setup/params.ini
 

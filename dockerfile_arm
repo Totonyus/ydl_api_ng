@@ -13,7 +13,7 @@ RUN pip install static-ffmpeg
 RUN apt update && apt install gcc python3-dev -y && apt-get autoremove && apt-get -y clean && rm -rf /var/lib/apt/lists/*
 
 COPY --chmod=755 entrypoint.sh ./
-COPY *.py pip_requirements ./
+COPY *.py pip_requirements_arm ./
 COPY params/*.py params/*.ini params/userscript.js params/hooks_requirements ./setup/
 COPY params/params_docker.ini ./setup/params.ini
 
