@@ -29,7 +29,7 @@ jobs:
       run: |
         mkdir ${{ github.workspace }}/logs
         python -m pip install --upgrade pip
-        pip install -r ${{ github.workspace }}/pip_requirements
+        pip install -r ${{ github.workspace }}/pip_requirements_amd
         pip install pytest
 
     - name: Run tests with pytest
