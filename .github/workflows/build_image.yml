@@ -9,6 +9,9 @@ jobs:
   generate_docker_image:
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
     - id: commit
       uses: pr-mpt/actions-commit-hash@v1
 
