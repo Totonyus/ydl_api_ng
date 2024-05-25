@@ -6,6 +6,9 @@ services:
     restart: unless-stopped
     build:
       context: .
+      dockerfile: dockerfile
+      args:
+        TARGET_ARCH: 'amd'
     depends_on:
       - ydl_api_ng_redis
     ports:

@@ -50,7 +50,6 @@ jobs:
       id: build_amd
       with:
         context: ${{ github.workspace }}
-        file: dockerfile_amd
         platforms: linux/amd64
         push: true
         tags: |
@@ -60,13 +59,13 @@ jobs:
           GIT_BRANCH=${{ steps.extract_branch.outputs.BRANCH_NAME }}
           GIT_REVISION=${{ steps.commit.outputs.hash }}
           DATE=${{ steps.current-time.outputs.time }}
+          TARGET_ARCH=amd
 
     - name: Build docker image (arm)
       uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
       id: build_arm
       with:
         context: ${{ github.workspace }}
-        file: dockerfile_arm
         platforms: linux/arm/v7,linux/arm64/v8
         push: true
         tags: |
@@ -76,6 +75,7 @@ jobs:
           GIT_BRANCH=${{ steps.extract_branch.outputs.BRANCH_NAME }}
           GIT_REVISION=${{ steps.commit.outputs.hash }}
           DATE=${{ steps.current-time.outputs.time }}
+          TARGET_ARCH=arm
 
     - uses: int128/docker-manifest-create-action@v2
       with:

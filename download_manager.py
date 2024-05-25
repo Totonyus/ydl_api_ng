@@ -12,7 +12,22 @@ from rq import Queue
 from rq.job import Job
 
 import config_manager
-from params import progress_hooks, postprocessor_hooks, ydl_api_hooks
+
+try:
+    from params import progress_hooks
+except ImportError:
+    from setup import progress_hooks
+
+try:
+    from params import postprocessor_hooks
+except ImportError:
+    from setup import postprocessor_hooks
+
+try:
+    from params import ydl_api_hooks
+except ImportError:
+    from setup import ydl_api_hooks
+
 from rq import get_current_job
 import inspect
 import ydl_api_ng_utils as ydl_utils

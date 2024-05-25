@@ -188,7 +188,11 @@ class ConfigManager:
         logging.getLogger('config_manager').debug(f'Loading parameters metadata')
 
         params_meta_parser = configparser.ConfigParser(interpolation=None)
-        params_meta_parser.read('params/params_metadata.ini')
+
+        if os.path.isfile('params/params_metadata.ini'):
+            params_meta_parser.read('params/params_metadata.ini')
+        else:
+            params_meta_parser.read('setup/params_metadata.ini')
 
         for key, value in params_meta_parser['meta'].items():
             # Retrocompatibility

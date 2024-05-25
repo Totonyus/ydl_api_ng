@@ -6,14 +6,14 @@ echo ~~~ Docker image generated : $DATE
 
 mkdir -p /app/logs /app/downloads /app/params /app/tmp /app/data /root/yt-dlp-plugins /app/cookies/ /home/ydl_api_ng
 
-getent group $GID > /dev/null
+getent group $GID >/dev/null
 if [ $? -eq 0 ]; then
   groupmod $(id --name --group $GID) -n ydl_api_ng
 else
   addgroup --gid $GID ydl_api_ng
 fi
 
-getent passwd $UID > /dev/null
+getent passwd $UID >/dev/null
 if [ $? -eq 0 ]; then
   usermod $(id --name --user $UID) -l ydl_api_ng
 else
@@ -26,12 +26,11 @@ chmod a+x /root/ entrypoint.sh
 
 # If params.ini exists, assume setup has been run. Don't copy extra files the user may have removed.
 if [ ! -e '/app/params/params.ini' ]; then
- cp -n /app/setup/* /app/params/
+  cp -n /app/setup/* /app/params/
 fi
 
-# Just access the file from the correct place in the app
 if [ ! -e /app/data/database.json ]; then
- touch /app/data/database.json
+  touch /app/data/database.json
 fi
 
 if [ "$FORCE_YTDLP_VERSION" == "" ]; then

@@ -13,8 +13,11 @@ import inspect
 from mergedeep import merge
 
 import download_manager
-from params import ydl_api_hooks
 
+try:
+    from params import ydl_api_hooks
+except ImportError:
+    from setup import ydl_api_hooks
 
 class ProcessUtils:
     def __init__(self, config_manager):
