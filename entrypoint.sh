@@ -60,6 +60,22 @@ EOT
 
   supervisord -c /app/supervisord_workers.conf -l /app/logs/supervisord_workers.log -j /app/tmp/pid_api -u ydl_api_ng -e $LOG_LEVEL
 
+  cat <<EOT >>/app/supervisord_slow_workers.conf
+[supervisord]
+
+[program:worker]
+command=rq worker ydl_api_ng_slow -u "redis://ydl_api_ng_redis:6379"
+process_name=%(program_name)s-%(process_num)s
+numprocs=1
+directory=.
+stopsignal=TERM
+autostart=true
+autorestart=true
+user=$UID
+EOT
+
+  supervisord -c /app/supervisord_slow_workers.conf -l /app/logs/supervisord_slow_workers.log -j /app/tmp/pid_api -u ydl_api_ng -e $LOG_LEVEL
+
   cat <<EOT >>/app/supervisord_programmation.conf
 [supervisord]
 

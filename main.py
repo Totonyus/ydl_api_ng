@@ -1,18 +1,18 @@
 import logging
+import os
+import uuid
+from datetime import datetime, timedelta
 from urllib.parse import unquote
 
 import uvicorn
 import yt_dlp.version
 from fastapi import BackgroundTasks, FastAPI, Response, Body
-import uuid
 
 import config_manager
 import download_manager
 import process_utils
-import os
-
 import programmation_persistence_manager
-from datetime import datetime, timedelta
+import ydl_api_ng_utils
 from programmation_class import Programmation
 
 try:
@@ -22,7 +22,12 @@ except FileExistsError:
     pass
 
 __cm = config_manager.ConfigManager()
-__pu = process_utils.ProcessUtils(__cm)
+
+__pu = {
+    'ydl_api_ng': process_utils.ProcessUtils(__cm),
+    'ydl_api_ng_slow': process_utils.ProcessUtils(__cm, queue_name="ydl_api_ng_slow"),
+}
+
 __pm = programmation_persistence_manager.ProgrammationPersistenceManager()
 
 __cm.init_logger(file_name='api.log')
@@ -139,15 +144,14 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
             programmation_end_date = datetime.now() + timedelta(minutes=generated_programmation.recording_duration)
 
     if generated_programmation is None:
-        dm = download_manager.DownloadManager(__cm, param_url, None, param_token, body, request_id = request_id)
+        dm = download_manager.DownloadManager(__cm, param_url, None, param_token, body, request_id=request_id)
     else:
         dm = download_manager.DownloadManager(__cm, param_url, None, param_token, body,
                                               programmation_id=generated_programmation.id,
                                               programmation_end_date=programmation_end_date,
                                               programmation_date=datetime.now(),
                                               programmation=generated_programmation.get(),
-                                              request_id = request_id)
-
+                                              request_id=request_id)
 
     response.status_code = dm.get_api_status_code()
 
@@ -174,7 +178,12 @@ async def relaunch_failed_download(response: Response, redis_id, token=None):
         response.status_code = 401
         return
 
-    response.status_code, return_object = __pu.relaunch_failed(redis_id, token)
+    for __sub_pu in __pu:
+        response.status_code, return_object = __pu.get(__sub_pu).relaunch_failed(redis_id, token)
+
+        if response.status_code != 404:
+            return return_object
+
     return return_object
 
 
@@ -192,7 +201,12 @@ async def relaunch_download(response: Response, redis_id, token=None):
         response.status_code = 401
         return
 
-    response.status_code, return_object = __pu.relaunch_job(redis_id, token)
+    for __sub_pu in __pu:
+        response.status_code, return_object = __pu.get(__sub_pu).relaunch_job(redis_id, token)
+
+        if response.status_code != 404:
+            return return_object
+
     return return_object
 
 
@@ -220,6 +234,7 @@ async def extract_info_request(response: Response, url, token=None):
         response.status_code = 400
 
     return info
+
 
 @app.post(__cm.get_app_params().get('_api_route_extract_info'))
 async def download_request(response: Response, background_tasks: BackgroundTasks, url, body=Body(...), token=None):
@@ -250,11 +265,12 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
 
     return info
 
+
 ###
 # Process
 ###
 @app.get(__cm.get_app_params().get('_api_route_active_downloads'))
-async def active_downloads_request(response: Response, token=None):
+async def active_downloads_request(response: Response, token=None, redis_queue=None):
     param_token = unquote(token) if token is not None else None
     user = __cm.is_user_permitted_by_token(param_token)
 
@@ -262,11 +278,23 @@ async def active_downloads_request(response: Response, token=None):
         response.status_code = 401
         return
 
-    return __pu.get_active_downloads_list()
+    if redis_queue is not None and __pu.get(redis_queue) is not None:
+        return __pu.get(redis_queue).get_active_downloads_list()
+    elif redis_queue is not None and __pu.get(redis_queue) is None:
+        response.status_code = 404
+        return f'Redis queue {redis_queue} does not exist'
+    else:
+        queue_content = {}
+        for __sub_pu in __pu:
+            queue_content = ydl_api_ng_utils.merge_redis_registries(queue_content,
+                                                                    __pu.get(__sub_pu).get_active_downloads_list())
+
+        return queue_content
 
 
 @app.get(f"{__cm.get_app_params().get('_api_route_active_downloads')}/terminate/{'{pid}'}")
-async def terminate_active_download_request(response: Response, background_tasks: BackgroundTasks, pid, token=None):
+async def terminate_active_download_request(response: Response, background_tasks: BackgroundTasks, pid, token=None,
+                                            redis_queue=None):
     param_token = unquote(token) if token is not None else None
     user = __cm.is_user_permitted_by_token(param_token)
 
@@ -274,7 +302,18 @@ async def terminate_active_download_request(response: Response, background_tasks
         response.status_code = 401
         return
 
-    return_status = __pu.terminate_active_download(unquote(pid), background_tasks=background_tasks)
+    if redis_queue is not None and __pu.get(redis_queue) is not None:
+        return_status = __pu.get(redis_queue).terminate_active_download(unquote(pid), background_tasks=background_tasks)
+    elif redis_queue is not None and __pu.get(redis_queue) is None:
+        response.status_code = 404
+        return f'Redis queue {redis_queue} does not exist'
+    else:
+        for __sub_pu in __pu:
+            return_status = __pu.get(__sub_pu).terminate_active_download(unquote(pid),
+                                                                         background_tasks=background_tasks)
+
+            if return_status is not None:
+                return return_status
 
     if return_status is None:
         response.status_code = 404
@@ -284,7 +323,8 @@ async def terminate_active_download_request(response: Response, background_tasks
 
 
 @app.get(f"{__cm.get_app_params().get('_api_route_active_downloads')}/terminate")
-async def terminate_all_active_downloads_request(response: Response, background_tasks: BackgroundTasks, token=None):
+async def terminate_all_active_downloads_request(response: Response, background_tasks: BackgroundTasks, token=None,
+                                                 redis_queue=None):
     param_token = unquote(token) if token is not None else None
     user = __cm.is_user_permitted_by_token(param_token)
 
@@ -292,11 +332,22 @@ async def terminate_all_active_downloads_request(response: Response, background_
         response.status_code = 401
         return
 
-    return __pu.terminate_all_active_downloads(background_tasks=background_tasks)
+    if redis_queue is not None and __pu.get(redis_queue) is not None:
+        return __pu.get(redis_queue).terminate_all_active_downloads(background_tasks=background_tasks)
+    elif redis_queue is not None and __pu.get(redis_queue) is None:
+        response.status_code = 404
+        return f'Redis queue {redis_queue} does not exist'
+    else:
+        terminated_jobs = []
+        for __sub_pu in __pu:
+            terminated_jobs = terminated_jobs + __pu.get(__sub_pu).terminate_all_active_downloads(
+                background_tasks=background_tasks)
+
+        return terminated_jobs
 
 
 @app.get(f"{__cm.get_app_params().get('_api_route_queue')}")
-async def active_downloads_request(response: Response, token=None):
+async def active_downloads_request(response: Response, token=None, redis_queue=None):
     if not enable_redis:
         response.status_code = 409
         return "Redis management is disabled"
@@ -308,11 +359,22 @@ async def active_downloads_request(response: Response, token=None):
         response.status_code = 401
         return
 
-    return __pu.get_queue_content('all')
+    if redis_queue is not None and __pu.get(redis_queue) is not None:
+        return __pu.get(redis_queue).get_queue_content('all')
+    elif redis_queue is not None and __pu.get(redis_queue) is None:
+        response.status_code = 404
+        return f'Redis queue {redis_queue} does not exist'
+    else:
+        queue_content = {}
+        for __sub_pu in __pu:
+            queue_content = ydl_api_ng_utils.merge_redis_registries(queue_content,
+                                                                    __pu.get(__sub_pu).get_queue_content('all'))
+
+        return queue_content
 
 
 @app.delete(f"{__cm.get_app_params().get('_api_route_queue')}")
-async def clear_registries(response: Response, token=None):
+async def clear_registries(response: Response, token=None, redis_queue=None):
     if not enable_redis:
         response.status_code = 409
         return "Redis management is disabled"
@@ -324,7 +386,16 @@ async def clear_registries(response: Response, token=None):
         response.status_code = 401
         return
 
-    return __pu.clear_all_but_pending_and_started()
+    if redis_queue is not None and __pu.get(redis_queue) is not None:
+        return __pu.get(redis_queue).clear_all_but_pending_and_started()
+    elif redis_queue is not None and __pu.get(redis_queue) is None:
+        response.status_code = 404
+        return f'Redis queue {redis_queue} does not exist'
+    else:
+        for __sub_pu in __pu:
+            __pu.get(__sub_pu).clear_all_but_pending_and_started()
+
+        return None
 
 
 @app.put(f"{__cm.get_app_params().get('_api_route_queue')}/{'{pid}'}")
@@ -354,17 +425,18 @@ async def update_active_download_download_metadata(response: Response, pid, body
             response.status_code = 400
             return str(error)
 
-    updated_job = __pu.update_active_download_metadata(id=unquote(pid), metadata=body)
+    for __sub_pu in __pu:
+        updated_job = __pu.get(__sub_pu).update_active_download_metadata(id=unquote(pid), metadata=body)
 
-    if updated_job is None:
-        response.status_code = 404
-        return
+        if updated_job is not None:
+            return updated_job
 
-    return updated_job
+    response.status_code = 404
+    return
 
 
 @app.get(f"{__cm.get_app_params().get('_api_route_queue')}/{'{registry}'}")
-async def active_downloads_request(response: Response, registry, token=None):
+async def active_downloads_request(response: Response, registry, token=None, redis_queue=None):
     if not enable_redis:
         response.status_code = 409
         return "Redis management is disabled"
@@ -376,7 +448,17 @@ async def active_downloads_request(response: Response, registry, token=None):
         response.status_code = 401
         return
 
-    return __pu.get_queue_content(registry)
+    if redis_queue is not None and __pu.get(redis_queue) is not None:
+        return __pu.get(redis_queue).get_queue_content(registry)
+    elif redis_queue is not None and __pu.get(redis_queue) is None:
+        response.status_code = 404
+        return f'Redis queue {redis_queue} does not exist'
+    else:
+        queue_content = {}
+        for __sub_pu in __pu:
+            queue_content = ydl_api_ng_utils.merge_redis_registries(queue_content,
+                                                                    __pu.get(__sub_pu).get_queue_content(registry))
+    return queue_content
 
 
 ###
