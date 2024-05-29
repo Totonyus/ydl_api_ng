@@ -582,6 +582,14 @@ The `ydl_api_ng_slow` is processed by an unique worker. It's designed to queue d
 - avoid throttle from websites 
 - don't overcharge your connection / disk
 
+You can add more redis queues or customize existing ones by editing the `params/workers.ini` file. All redis queues workers names must starts with `worker_`.
+
+```
+[program:worker_ydl_api_ng] -> Real redis queue name : ydl_api_ng
+```
+
+The first queue in the file will be the default.
+
 ## Usage in presets
 Example of preset : 
 ```

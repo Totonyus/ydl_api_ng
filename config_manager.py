@@ -67,6 +67,7 @@ class ConfigManager:
         self.__auth_config = configparser.ConfigParser(interpolation=None)
         self.__location_config = configparser.ConfigParser(interpolation=None)
         self.__template_config = configparser.ConfigParser(interpolation=None)
+        self.__workers_config = configparser.ConfigParser(interpolation=None)
         self.__presets_config_object = GlobalConfig()
         self.__site_config_object = GlobalConfig()
         self.__user_config_object = GlobalConfig()
@@ -75,6 +76,7 @@ class ConfigManager:
         self.__template_config_object = GlobalConfig()
         self.__location_config_object = GlobalConfig()
         self.__auth_config_object = GlobalConfig()
+        self.__workers_config_object = GlobalConfig()
         self.__keys_metadata = {}
 
         self.__config.read(params_file if params_file is not None else 'params/params.ini')
@@ -87,6 +89,20 @@ class ConfigManager:
         self.__dispatch_configs()
         self.__load_metadata()
         self.__set_config_objects()
+
+        self.redis_queues = []
+
+        if self.get_app_params().get('_enable_redis') is True:
+            if os.path.isfile('params/workers.ini'):
+                self.__workers_config.read('params/workers.ini')
+            else:
+                self.__workers_config.read('setup/workers.ini')
+
+            for key in self.__workers_config.sections():
+                if key.startswith('program:worker_'):
+                    self.redis_queues.append(key.removeprefix('program:worker_'))
+
+            self.__populate_config_object(self.__workers_config, self.__workers_config_object)
 
     def init_logger(self, file_name='ydl_api_ng.log'):
         logging.basicConfig(level=self.log_level, format='[%(asctime)s][%(name)s][%(levelname)s] %(message)s',
@@ -295,6 +311,9 @@ class ConfigManager:
 
     def get_all_templates_params(self):
         return self.__template_config_object
+
+    def get_all_workers_params(self):
+        return self.__workers_config_object
 
     def get_template_params(self, template_name):
         return self.__template_config_object.get(template_name)

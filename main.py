@@ -23,10 +23,9 @@ except FileExistsError:
 
 __cm = config_manager.ConfigManager()
 
-__pu = {
-    'ydl_api_ng': process_utils.ProcessUtils(__cm),
-    'ydl_api_ng_slow': process_utils.ProcessUtils(__cm, queue_name="ydl_api_ng_slow"),
-}
+__pu = {}
+for queue in __cm.redis_queues:
+    __pu[queue] = process_utils.ProcessUtils(__cm, queue_name=queue)
 
 __pm = programmation_persistence_manager.ProgrammationPersistenceManager()
 
@@ -65,6 +64,7 @@ async def info_request(response: Response, token=None):
             'auth_config': __cm.sanitize_config_object(__cm.get_all_auth_params()),
             'location_config': __cm.sanitize_config_object(__cm.get_all_locations_params()),
             'template_config': __cm.sanitize_config_object(__cm.get_all_templates_params()),
+            'workers_config': __cm.sanitize_config_object(__cm.get_all_workers_params()),
         }
     }
 

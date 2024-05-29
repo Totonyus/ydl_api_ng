@@ -48,10 +48,10 @@ else
 fi
 
 if [ "$DISABLE_REDIS" == "false" ]; then
-  if [ -e /app/params/workers.conf ]; then
-    supervisord -c /app/params/workers.conf
+  if [ -e /app/params/workers.ini ]; then
+    supervisord -c /app/params/workers.ini
   else
-    supervisord -c /app/setup/workers.conf
+    supervisord -c /app/setup/workers.ini
   fi
 fi
 

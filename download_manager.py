@@ -351,7 +351,12 @@ class DownloadManager:
             for file in self.downloaded_files:
                 reduced_file = copy.deepcopy(file)
                 if self.__cm.get_app_params().get('_skip_info_dict'):
-                    reduced_file.pop('info_dict', None)
+                    saved_info = {
+                        "id": reduced_file.get('info_dict').get('id'),
+                        "original_url": reduced_file.get('info_dict').get('original_url')
+                    }
+
+                    reduced_file['info_dict'] = saved_info
 
                 get_current_job().meta['downloaded_files'].append(reduced_file)
 

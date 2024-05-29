@@ -14,7 +14,7 @@ RUN if [ "$TARGET_ARCH" = "arm" ] ; then apt install gcc python3-dev -y && apt-g
 
 COPY --chmod=755 entrypoint.sh ./
 COPY *.py pip_requirements_$TARGET_ARCH ./
-COPY params/*.py params/*.conf params/*.ini params/userscript.js params/hooks_requirements ./setup/
+COPY params/*.py params/*.ini params/userscript.js params/hooks_requirements ./setup/
 COPY params/params_docker.ini ./setup/params.ini
 
 RUN pip3 install -r pip_requirements_$TARGET_ARCH
