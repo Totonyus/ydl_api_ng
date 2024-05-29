@@ -28,6 +28,7 @@ services:
       - ./ydl_api_ng_utils.py:/app/ydl_api_ng_utils.py
       - ./download_manager.py:/app/download_manager.py
       - ./process_utils.py:/app/process_utils.py
+      - ./entrypoint.sh:/app/entrypoint.sh
     environment:
       - UID=1000
       - GID=1000

@@ -26,7 +26,7 @@ chmod a+x /root/ entrypoint.sh
 
 # If params.ini exists, assume setup has been run. Don't copy extra files the user may have removed.
 if [ ! -e '/app/params/params.ini' ]; then
-  cp -n /app/setup/* /app/params/
+  cp -n /app/setup/params.ini /app/params/
 fi
 
 if [ ! -e /app/data/database.json ]; then
@@ -41,56 +41,18 @@ else
   pip3 install --disable-pip-version-check -q --root-user-action=ignore yt-dlp==$FORCE_YTDLP_VERSION --force-reinstall
 fi
 
-pip3 install --disable-pip-version-check -q --root-user-action=ignore -r /app/params/hooks_requirements
+if [ -e /app/params/hooks_requirements ]; then
+  pip3 install --disable-pip-version-check -q --root-user-action=ignore -r /app/params/hooks_requirements
+else
+  pip3 install --disable-pip-version-check -q --root-user-action=ignore -r /app/setup/hooks_requirements
+fi
 
 if [ "$DISABLE_REDIS" == "false" ]; then
-  cat <<EOT >>/app/supervisord_workers.conf
-[supervisord]
-
-[program:worker]
-command=rq worker ydl_api_ng -u "redis://ydl_api_ng_redis:6379"
-process_name=%(program_name)s-%(process_num)s
-numprocs=$NB_WORKERS
-directory=.
-stopsignal=TERM
-autostart=true
-autorestart=true
-user=$UID
-EOT
-
-  supervisord -c /app/supervisord_workers.conf -l /app/logs/supervisord_workers.log -j /app/tmp/pid_api -u ydl_api_ng -e $LOG_LEVEL
-
-  cat <<EOT >>/app/supervisord_slow_workers.conf
-[supervisord]
-
-[program:worker]
-command=rq worker ydl_api_ng_slow -u "redis://ydl_api_ng_redis:6379"
-process_name=%(program_name)s-%(process_num)s
-numprocs=1
-directory=.
-stopsignal=TERM
-autostart=true
-autorestart=true
-user=$UID
-EOT
-
-  supervisord -c /app/supervisord_slow_workers.conf -l /app/logs/supervisord_slow_workers.log -j /app/tmp/pid_api -u ydl_api_ng -e $LOG_LEVEL
-
-  cat <<EOT >>/app/supervisord_programmation.conf
-[supervisord]
-
-[program:programmation]
-command=python3 programmation_daemon.py
-process_name=%(program_name)s-%(process_num)s
-numprocs=1
-directory=.
-stopsignal=TERM
-autostart=true
-autorestart=true
-user=$UID
-EOT
-
-  supervisord -c /app/supervisord_programmation.conf -l /app/logs/supervisord_programmation.log -j /app/tmp/pid_programmation -u ydl_api_ng -e $LOG_LEVEL
+  if [ -e /app/params/workers.conf ]; then
+    supervisord -c /app/params/workers.conf
+  else
+    supervisord -c /app/setup/workers.conf
+  fi
 fi
 
 if [ "$DEBUG" == "DEBUG" ]; then
