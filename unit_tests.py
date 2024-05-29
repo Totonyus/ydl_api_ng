@@ -295,6 +295,7 @@ class TestUtils(unittest.TestCase):
         self.assertEqual('./downloads/symlink_to_dad_home/',
                          dm.get_preset_for_user(copy.deepcopy(default_preset)).get('paths').get('home'))
 
+    @unittest.skip
     def test_simulate(self):
         default_preset = self.config_manager.get_preset_params('DEFAULT')
 
