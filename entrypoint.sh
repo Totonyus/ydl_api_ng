@@ -44,7 +44,7 @@ fi
 breaking_changes=$(cat BREAKING_CHANGES_VERSION 2> /dev/null)
 
 # If BREAKING_CHANGES_VERSION not present or different from dockerfile, it means it's the container init. Install all dependencies
-if [ ! -e BREAKING_CHANGES_VERSION ] || [ ! $breaking_changes -eq "$BREAKING_CHANGES_VERSION" ]; then
+if [ ! -e BREAKING_CHANGES_VERSION ] || [ ! "$breaking_changes" -eq "$BREAKING_CHANGES_VERSION" ]; then
   echo --- Installing ydl_api_ng requirements ---
   pip3 install --disable-pip-version-check -q --root-user-action=ignore -r pip_requirements_$TARGET_ARCH
 

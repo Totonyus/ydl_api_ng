@@ -8,7 +8,7 @@ ENV UID=1000 GID=1000 GIT_BRANCH=$GIT_BRANCH GIT_REVISION=$GIT_REVISION DATE=$DA
 VOLUME ["/app/params", "/app/data", "/app/downloads", "/app/logs"]
 EXPOSE 80
 
-RUN if [ "$TARGET_ARCH" = "arm" ] ; then apt install gcc python3-dev -y && apt-get autoremove && apt-get -y clean && rm -rf /var/lib/apt/lists/*; fi
+RUN if [ "$TARGET_ARCH" = "arm" ] ; then apt update && apt install gcc python3-dev -y && apt-get autoremove && apt-get -y clean && rm -rf /var/lib/apt/lists/*; fi
 
 COPY --chmod=755 entrypoint.sh ./
 COPY *.py pip_requirements_$TARGET_ARCH ./
