@@ -41,10 +41,28 @@ else
   pip3 install --disable-pip-version-check -q --root-user-action=ignore yt-dlp==$FORCE_YTDLP_VERSION --force-reinstall
 fi
 
-if [ -e /app/params/hooks_requirements ]; then
-  pip3 install --disable-pip-version-check -q --root-user-action=ignore -r /app/params/hooks_requirements
-else
-  pip3 install --disable-pip-version-check -q --root-user-action=ignore -r /app/setup/hooks_requirements
+breaking_changes=$(cat BREAKING_CHANGES_VERSION 2> /dev/null)
+
+# If BREAKING_CHANGES_VERSION not present or different from dockerfile, it means it's the container init. Install all dependencies
+if [ ! -e BREAKING_CHANGES_VERSION ] || [ ! $breaking_changes -eq "$BREAKING_CHANGES_VERSION" ]; then
+  echo --- Installing ydl_api_ng requirements ---
+  pip3 install --disable-pip-version-check -q --root-user-action=ignore -r pip_requirements_$TARGET_ARCH
+
+  # Execute once to download the real ffmpeg binaries
+  echo --- Setup ffmpeg ---
+  2>/dev/null 1>&2 /usr/local/bin/static_ffmpeg
+  rm -f /usr/bin/ffmpeg /usr/bin/ffprobe
+  ln -s /usr/local/lib/python3.12/site-packages/static_ffmpeg/bin/linux/ffmpeg /usr/bin/ffmpeg
+  ln -s /usr/local/lib/python3.12/site-packages/static_ffmpeg/bin/linux/ffprobe /usr/bin/ffprobe
+
+  echo --- Installing hooks requirements ---
+  if [ -e /app/params/hooks_requirements ]; then
+    pip3 install --disable-pip-version-check -q --root-user-action=ignore -r /app/params/hooks_requirements
+  else
+    pip3 install --disable-pip-version-check -q --root-user-action=ignore -r /app/setup/hooks_requirements
+  fi
+
+  echo "$BREAKING_CHANGES_VERSION" > BREAKING_CHANGES_VERSION
 fi
 
 if [ "$DISABLE_REDIS" == "false" ]; then
