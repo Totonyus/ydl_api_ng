@@ -403,8 +403,12 @@ class DownloadManager:
                                      meta=redis_meta).id
 
             preset.append('_redis_id', redis_id)
+            preset.append('_redis_queue', redis_queue, override=True)
+            preset.append('_redis_ttl', redis_ttl, override=True)
         else:
             preset.append('_redis_id', None)
+            preset.append('_redis_queue', None, override=True)
+            preset.append('_redis_ttl', None, override=True)
             self.send_download_order(ydl_opts, self)
 
     def send_download_order(self, ydl_opts, dm):
