@@ -7,7 +7,6 @@ psutil
 redis
 requests
 rq
-static-ffmpeg
 supervisor
 tinydb
 uvicorn
