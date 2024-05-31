@@ -490,7 +490,7 @@ async def get_all_active_programmations(response: Response, token=None):
 
 
 @app.post(f"{__cm.get_app_params().get('_api_route_programmation')}")
-async def add_programmation(response: Response, background_tasks: BackgroundTasks, url, body=Body(...), token=None):
+async def add_programmation(response: Response, background_tasks: BackgroundTasks, url, override=None, body=Body(...), token=None):
     if not enable_redis:
         response.status_code = 409
         return "Redis management is disabled"
@@ -515,7 +515,8 @@ async def add_programmation(response: Response, background_tasks: BackgroundTask
     programmation_object['user_token'] = token
 
     prog = Programmation(programmation=programmation_object, id=programmation_object.get('id'))
-    added = __pm.add_programmation(programmation=prog)
+
+    added = __pm.add_programmation(programmation=prog, override=override=='true')
 
     if len(prog.errors) != 0:
         response.status_code = 400

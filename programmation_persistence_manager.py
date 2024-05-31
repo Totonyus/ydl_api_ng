@@ -11,11 +11,15 @@ class ProgrammationPersistenceManager:
         self.__scheduled_jobs_table = self.__db.table('scheduled_jobs', cache_size=0)
 
     def add_programmation(self, programmation=None, *args, **kwargs):
-        if self.get_programmation_by_id(id=programmation.id) is not None:
+        existing_programmation = self.get_programmation_by_id(id=programmation.id)
+        if existing_programmation is not None and kwargs.get('override') is False:
             programmation.errors.append({'field': 'id', 'error': 'a programmation with this id aleady exists'})
 
         if len(programmation.errors) != 0:
             return None
+
+        if existing_programmation is not None:
+            self.delete_programmation_by_id(programmation.id)
 
         self.__scheduled_jobs_table.insert(programmation.get())
         return programmation

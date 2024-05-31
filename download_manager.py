@@ -84,10 +84,15 @@ class DownloadManager:
         self.relaunch_failed_mode = kwargs.get('relaunch_failed_mode') if kwargs.get(
             'relaunch_failed_mode') is not None else None
 
-        if post_body is not None and post_body.get('presets') is not None and len(post_body.get('presets')) > 0:
-            self.get_presets_from_post_request(post_body.get('presets'))
-        else:
-            self.get_presets_objects(presets_string)
+        self.extra_parameters = None
+
+        if post_body is not None:
+            self.extra_parameters = post_body.get('extra_parameters')
+
+            if post_body.get('presets') is not None and len(post_body.get('presets')) > 0:
+                self.get_presets_from_post_request(post_body.get('presets'))
+            else:
+                self.get_presets_objects(presets_string)
 
         self.simulate_all_downloads()
 
@@ -527,7 +532,8 @@ class DownloadManager:
             'downloads': presets_display,
             'programmation' : self.programmation,
             'programmation_date' : self.programmation_date,
-            'programmation_end_date' : self.programmation_end_date
+            'programmation_end_date' : self.programmation_end_date,
+            'extra_parameters' : self.extra_parameters
         }
 
     def get_current_config_manager(self):
