@@ -12,7 +12,7 @@ class ProgrammationPersistenceManager:
 
     def add_programmation(self, programmation=None, *args, **kwargs):
         existing_programmation = self.get_programmation_by_id(id=programmation.id)
-        if existing_programmation is not None and kwargs.get('override') is False:
+        if existing_programmation is not None and kwargs.get('override') is not True:
             programmation.errors.append({'field': 'id', 'error': 'a programmation with this id aleady exists'})
 
         if len(programmation.errors) != 0:
