@@ -13,7 +13,7 @@ COPY *.py pip_requirements_$TARGET_ARCH ./
 COPY params/*.py params/*.ini params/userscript.js params/hooks_requirements ./setup/
 COPY params/params_docker.ini ./setup/params.ini
 
-RUN if [ "$TARGET_ARCH" = "arm" ] ; then apt update && apt install gcc python3-dev -y && apt-get autoremove && apt-get -y clean && rm -rf /var/lib/apt/lists/*; fi
+# RUN if [ "$TARGET_ARCH" = "arm" ] ; then apt update && apt install gcc python3-dev -y && apt-get autoremove && apt-get -y clean && rm -rf /var/lib/apt/lists/*; fi
 
 RUN apt update && apt install wget xz-utils -y
 

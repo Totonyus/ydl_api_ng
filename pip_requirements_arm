@@ -1,5 +1,5 @@
 cronsim
-fastapi==0.110.2
+fastapi
 ffmpeg-python
 humanize
 mergedeep

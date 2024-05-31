@@ -65,7 +65,7 @@ jobs:
       id: build_arm
       with:
         context: ${{ github.workspace }}
-        platforms: linux/arm/v7,linux/arm64/v8
+        platforms: linux/arm64/v8
         push: true
         tags: |
           totonyus/ydl_api_ng:preview_arm
