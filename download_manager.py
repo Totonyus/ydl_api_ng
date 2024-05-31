@@ -91,8 +91,8 @@ class DownloadManager:
 
             if post_body.get('presets') is not None and len(post_body.get('presets')) > 0:
                 self.get_presets_from_post_request(post_body.get('presets'))
-            else:
-                self.get_presets_objects(presets_string)
+        else:
+            self.get_presets_objects(presets_string)
 
         self.simulate_all_downloads()
 
