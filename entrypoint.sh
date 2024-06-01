@@ -7,17 +7,13 @@ echo ~~~ Docker image generated : $DATE
 mkdir -p /app/logs /app/downloads /app/params /app/tmp /app/data /root/yt-dlp-plugins /app/cookies/ /home/ydl_api_ng
 
 getent group $GID >/dev/null
-if [ $? -eq 0 ]; then
-  groupmod $(id --name --group $GID) -n ydl_api_ng
-else
+if [ ! $? -eq 0 ]; then
   addgroup --gid $GID ydl_api_ng
 fi
 
 getent passwd $UID >/dev/null
-if [ $? -eq 0 ]; then
-  usermod $(id --name --user $UID) -l ydl_api_ng
-else
-  useradd --uid $UID --gid ydl_api_ng ydl_api_ng
+if [ ! $? -eq 0 ]; then
+  useradd --uid $UID --gid $GID ydl_api_ng -b /home/ydl_api_ng
 fi
 
 # If params.ini exists, assume setup has been run. Don't copy extra files the user may have removed.
@@ -58,7 +54,7 @@ fi
 
 if [ "$DEBUG" == "DEBUG" ]; then
   echo ~~~ Launching DEBUG mode ~~~
-  su ydl_api_ng -c "uvicorn main:app --reload --port 80 --host 0.0.0.0"
+  su "$(id -un $UID)" -c "uvicorn main:app --reload --port 80 --host 0.0.0.0"
 else
-  su ydl_api_ng -c "python3 main.py"
+  su "$(id -un $UID)" -c "python3 main.py"
 fi

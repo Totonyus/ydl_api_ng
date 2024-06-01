@@ -9,20 +9,19 @@ VOLUME ["/app/params", "/app/data", "/app/downloads", "/app/logs"]
 EXPOSE 80
 
 COPY --chmod=755 entrypoint.sh ./
-COPY *.py pip_requirements_$TARGET_ARCH ./
+COPY *.py pip_requirements ./
 COPY params/*.py params/*.ini params/userscript.js params/hooks_requirements ./setup/
 COPY params/params_docker.ini ./setup/params.ini
 
-RUN if [ "$TARGET_ARCH" = "arm" ] ; then apt update && apt install gcc python3-dev -y && apt-get autoremove && apt-get -y clean && rm -rf /var/lib/apt/lists/*; fi
+RUN if [ "$TARGET_ARCH" = "arm" ] ; then apt update && apt install gcc python3-dev -y; fi
+RUN apt update && apt install wget xz-utils -y && apt-get autoremove && apt-get -y clean && rm -rf /var/lib/apt/lists/*
 
-RUN apt update && apt install wget xz-utils -y
-
-RUN ARCH=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) && \
-wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-${ARCH}-static.tar.xz -O /ffmpeg.tar.xz && \
+RUN ARCH=$(arch | sed s/aarch64/linuxarm64/ | sed s/x86_64/linux64/) && \
+wget https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-${ARCH}-gpl.tar.xz -O /ffmpeg.tar.xz && \
 tar -xf /ffmpeg.tar.xz -C /tmp && \
-install --mode=777 /tmp/ffmpeg-*-static/ffmpeg /usr/bin && \
-install --mode=777 /tmp/ffmpeg-*-static/ffprobe /usr/bin && \
-rm /ffmpeg.tar.xz /tmp/ffmpeg-*-static -rf && \
-pip3 install --disable-pip-version-check -q --root-user-action=ignore -r pip_requirements_$TARGET_ARCH
+install --mode=777 /tmp/ffmpeg-*/bin/ffmpeg /usr/bin && \
+install --mode=777 /tmp/ffmpeg-*/bin/ffprobe /usr/bin && \
+rm /ffmpeg.tar.xz /tmp/ffmpeg-* -rf && \
+pip3 install --disable-pip-version-check -q --root-user-action=ignore -r pip_requirements
 
 ENTRYPOINT ["/app/entrypoint.sh"]
