@@ -74,6 +74,9 @@ Content-Type: application/json
     client.global.set('redis_id', response.body.downloads[0]._redis_id)
 %}
 
+### Redownload failed (GET)
+GET {{host}}/download/{{ redis_id }}/failed
+
 ### Extract informations (GET)
 GET {{host}}/extract_info?url=https://www.youtube.com/watch?v=a0sxBO9HZ-M
 

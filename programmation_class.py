@@ -42,7 +42,6 @@ class Programmation:
         }
 
         self.extra_parameters = programmation.get('extra_parameters') if programmation is not None and programmation.get('extra_parameters') is not None else merged_programmation.get('extra_parameters')
-
         self.errors = self.validate_programmation()
 
         if len(self.errors) == 0:

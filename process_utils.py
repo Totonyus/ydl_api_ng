@@ -13,18 +13,22 @@ import inspect
 from mergedeep import merge
 
 import download_manager
-from params import ydl_api_hooks
 
+try:
+    from params import ydl_api_hooks
+except ImportError:
+    from setup import ydl_api_hooks
 
 class ProcessUtils:
-    def __init__(self, config_manager):
+    def __init__(self, config_manager, queue_name="ydl_api_ng"):
         self.__cm = config_manager
+        self.queue_name = queue_name
 
         if self.__cm.get_app_params().get('_enable_redis') is not None and self.__cm.get_app_params().get(
                 '_enable_redis') is True:
             self.redis = Redis(host=self.__cm.get_app_params().get('_redis_host'),
                                port=self.__cm.get_app_params().get('_redis_port'))
-            self.queue = Queue('ydl_api_ng', connection=self.redis)
+            self.queue = Queue(queue_name, connection=self.redis)
             self.registries = {'pending_job': self.queue,
                                'started_job': self.queue.started_job_registry,
                                'finished_job': self.queue.finished_job_registry,
@@ -238,6 +242,9 @@ class ProcessUtils:
         sanitize_object = {
             'status': job.get_status(refresh=True),
             'result': job.result,
+            'queue_name': job.origin,
+            'result_ttl': job.result_ttl,
+            'redis_id' : job.id,
             'enqueued_at': job.enqueued_at,
             'started_at': job.started_at,
             'ended_at': job.ended_at,
@@ -355,7 +362,7 @@ class ProcessUtils:
 
     def get_workers_info(self):
         workers = []
-        for worker in Worker.all(self.redis):
+        for worker in Worker.all(queue=self.queue):
             worker_object = {
                 'name': worker.name,
                 'hostname': worker.hostname,
@@ -438,7 +445,7 @@ class ProcessUtils:
         return None
 
     def find_in_running(self, search_job_id):
-        for worker in Worker.all(self.redis):
+        for worker in Worker.all(queue=self.queue):
             current_job = worker.get_current_job()
             if current_job is not None and current_job.id == search_job_id:
                 return {

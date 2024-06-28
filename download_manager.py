@@ -12,7 +12,22 @@ from rq import Queue
 from rq.job import Job
 
 import config_manager
-from params import progress_hooks, postprocessor_hooks, ydl_api_hooks
+
+try:
+    from params import progress_hooks
+except ImportError:
+    from setup import progress_hooks
+
+try:
+    from params import postprocessor_hooks
+except ImportError:
+    from setup import postprocessor_hooks
+
+try:
+    from params import ydl_api_hooks
+except ImportError:
+    from setup import ydl_api_hooks
+
 from rq import get_current_job
 import inspect
 import ydl_api_ng_utils as ydl_utils
@@ -69,8 +84,13 @@ class DownloadManager:
         self.relaunch_failed_mode = kwargs.get('relaunch_failed_mode') if kwargs.get(
             'relaunch_failed_mode') is not None else None
 
-        if post_body is not None and post_body.get('presets') is not None and len(post_body.get('presets')) > 0:
-            self.get_presets_from_post_request(post_body.get('presets'))
+        self.extra_parameters = None
+
+        if post_body is not None:
+            self.extra_parameters = post_body.get('extra_parameters')
+
+            if post_body.get('presets') is not None and len(post_body.get('presets')) > 0:
+                self.get_presets_from_post_request(post_body.get('presets'))
         else:
             self.get_presets_objects(presets_string)
 
@@ -336,7 +356,12 @@ class DownloadManager:
             for file in self.downloaded_files:
                 reduced_file = copy.deepcopy(file)
                 if self.__cm.get_app_params().get('_skip_info_dict'):
-                    reduced_file.pop('info_dict', None)
+                    saved_info = {
+                        "id": reduced_file.get('info_dict').get('id'),
+                        "original_url": reduced_file.get('info_dict').get('original_url')
+                    }
+
+                    reduced_file['info_dict'] = saved_info
 
                 get_current_job().meta['downloaded_files'].append(reduced_file)
 
@@ -363,7 +388,13 @@ class DownloadManager:
         ydl_api_hooks.pre_download_handler(ydl_opts, self, self.get_current_config_manager())
 
         if self.enable_redis is not None and self.enable_redis is True:
-            queue = Queue('ydl_api_ng', connection=Redis(host=self.__cm.get_app_params().get('_redis_host'),
+            redis_queue = self.__cm.redis_queues[0] if preset.get('_redis_queue') is None else preset.get('_redis_queue')
+
+            if redis_queue not in self.__cm.redis_queues:
+                logging.getLogger('download_manager').warning(f'Redis queue {redis_queue} doest not exists, fallback to {self.__cm.redis_queues[0]}')
+                redis_queue = self.__cm.redis_queues[0]
+
+            queue = Queue(redis_queue, connection=Redis(host=self.__cm.get_app_params().get('_redis_host'),
                                                          port=self.__cm.get_app_params().get('_redis_port')))
 
             redis_meta = {
@@ -372,15 +403,21 @@ class DownloadManager:
                 'programmation_end_date': self.programmation_end_date
             }
 
+            redis_ttl = preset.get('_redis_ttl') if preset.get('_redis_ttl') is not None else self.__cm.get_app_params().get('_redis_ttl')
+
             redis_id = queue.enqueue(self.send_download_order,
                                      args=[ydl_opts, self],
                                      job_timeout=-1,
-                                     result_ttl=self.__cm.get_app_params().get('_redis_ttl'),
+                                     result_ttl=redis_ttl,
                                      meta=redis_meta).id
 
             preset.append('_redis_id', redis_id)
+            preset.append('_redis_queue', redis_queue, override=True)
+            preset.append('_redis_ttl', redis_ttl, override=True)
         else:
             preset.append('_redis_id', None)
+            preset.append('_redis_queue', None, override=True)
+            preset.append('_redis_ttl', None, override=True)
             self.send_download_order(ydl_opts, self)
 
     def send_download_order(self, ydl_opts, dm):
@@ -499,7 +536,8 @@ class DownloadManager:
             'downloads': presets_display,
             'programmation' : self.programmation,
             'programmation_date' : self.programmation_date,
-            'programmation_end_date' : self.programmation_end_date
+            'programmation_end_date' : self.programmation_end_date,
+            'extra_parameters' : self.extra_parameters
         }
 
     def get_current_config_manager(self):

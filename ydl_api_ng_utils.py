@@ -32,3 +32,12 @@ def cli_to_api(opts_string, cli_defaults=False):
         diff['postprocessors'] = [pp for pp in diff['postprocessors']
                                   if pp not in default_opts['postprocessors']]
     return diff
+
+def merge_redis_registries(dest, source):
+    for key in source:
+        if key in dest:
+            dest[key] = dest.get(key) + source.get(key)
+        else:
+            dest[key] = source[key]
+
+    return dest

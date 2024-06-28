@@ -11,7 +11,11 @@ from programmation_class import Programmation
 import logging
 
 __cm = config_manager.ConfigManager()
-__pu = process_utils.ProcessUtils(__cm)
+
+__pu = {}
+for queue in __cm.redis_queues:
+    __pu[queue] = process_utils.ProcessUtils(__cm, queue_name=queue)
+
 __pm = programmation_persistence_manager.ProgrammationPersistenceManager()
 
 programmation_interval = __cm.get_app_params().get('_programmation_interval')
@@ -40,18 +44,24 @@ def run():
 
     all_programmations = __pm.get_all_enabled_programmations()
 
-    jobs_to_check = __pu.find_job_with_programmation_end_date()
+    jobs_to_check = []
+    for __sub_pu in __pu:
+        jobs_to_check = jobs_to_check + __pu.get(__sub_pu).find_job_with_programmation_end_date()
 
     for job in jobs_to_check:
         if job is not None :
             if is_job_to_terminate(job=job):
                 logging.getLogger('programmation').info(f"Programmation {job.get('job').meta.get('programmation_id')} stopped by daemon")
-                __pu.terminate_redis_active_download(job.get('id'))
+                for __sub_pu in __pu:
+                    __pu.get(__sub_pu).terminate_redis_active_download(job.get('id'))
 
     for programmation in all_programmations:
         prog = Programmation(programmation=programmation, id=programmation.get('id'))
 
-        found_job = __pu.find_job_by_programmation_id(prog.id)
+        for __sub_pu in __pu:
+            found_job = __pu.get(__sub_pu).find_job_by_programmation_id(prog.id)
+            if found_job is not None:
+                break
 
         must_be_restarted = prog.must_be_restarted()
 
