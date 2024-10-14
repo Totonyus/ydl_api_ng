@@ -62,7 +62,7 @@
 
         const effective_method = preset.method !== undefined ? preset.method : preset.route.method;
 
-        let data = {};
+        let data = null;
         let headers = {};
 
         if (preset.body !== undefined) {
