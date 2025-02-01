@@ -482,18 +482,25 @@ class DownloadManager:
             'cookiefile' : f'cookies/{request_id}.txt' if request_id is not None else None
         }
 
+        failed = False
+
         try:
             with ydl.YoutubeDL(ydl_opts) as dl:
                 info = dl.extract_info(url, download=False)
-        except http.cookiejar.LoadError as error:
-            return str(error), True
+
+            if info is None :
+                info = "Video unavailable"
+                failed = True
+        except Exception as error:
+            info = str(error)
+            failed = True
 
         try:
             os.remove(f'cookies/{request_id}.txt')
         except FileNotFoundError:
             pass
 
-        return info, False
+        return info, failed
 
     def get_api_status_code(self):
         # Some presets were not found
