@@ -54,7 +54,7 @@ fi
 
 if [ "$DEBUG" == "DEBUG" ]; then
   echo ~~~ Launching DEBUG mode ~~~
-  su "$(id -un $UID)" -c "uvicorn main:app --reload --port 80 --host 0.0.0.0"
+  su "$(id -un $UID)" -c "uvicorn main:app --reload --port $PORT --host 0.0.0.0"
 else
   su "$(id -un $UID)" -c "python3 main.py"
 fi

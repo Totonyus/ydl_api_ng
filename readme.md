@@ -40,7 +40,12 @@ Volumes you could want to map :
 
 ### Ports
 
-The internal port of the api is `80`
+The internal port of the API is configurable via the `PORT` environment variable (default is `80`)
+
+```shell
+docker run -p 5011:80 -e PORT=80 totonyus/ydl_api_ng # don't forget to map the folders
+```
+
 
 ### Docker-compose
 
