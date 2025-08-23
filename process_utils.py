@@ -240,20 +240,23 @@ class ProcessUtils:
         if job is None:
             return None
 
-        sanitize_object = {
-            'status': job.get_status(refresh=True),
-            'result': job.result,
-            'queue_name': job.origin,
-            'result_ttl': job.result_ttl,
-            'redis_id' : job.id,
-            'enqueued_at': job.enqueued_at,
-            'started_at': job.started_at,
-            'ended_at': job.ended_at,
-            'exc_info': job.exc_info,
-            'last_heartbeat': job.last_heartbeat,
-            'worker_name': job.worker_name,
-            'meta': job.meta
-        }
+        try:
+            sanitize_object = {
+                'status': job.get_status(refresh=True),
+                'result': job.result,
+                'queue_name': job.origin,
+                'result_ttl': job.result_ttl,
+                'redis_id' : job.id,
+                'enqueued_at': job.enqueued_at,
+                'started_at': job.started_at,
+                'ended_at': job.ended_at,
+                'exc_info': job.exc_info,
+                'last_heartbeat': job.last_heartbeat,
+                'worker_name': job.worker_name,
+                'meta': job.meta
+            }
+        except :
+            return None
 
         return sanitize_object
 
