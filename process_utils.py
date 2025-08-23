@@ -16,7 +16,8 @@ import download_manager
 
 try:
     from params import ydl_api_hooks
-except ImportError:
+except ImportError as e:
+    logging.warning(e)
     from setup import ydl_api_hooks
 
 class ProcessUtils:

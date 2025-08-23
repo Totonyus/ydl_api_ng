@@ -10,7 +10,7 @@ sys.path.insert(1, 'params/hooks_utils/')
 # ydl_opts contains all the informations of the selected preset
 # download_manager contains all the processed informations about the download
 # config_manager contains all the parameters of the application
-# download contains the standart youtube-dlp object for progress hooks
+# download contains the standard youtube-dlp object for progress hooks
 ###
 
 def handler(ydl_opts, download_manager, config_manager, download, **kwargs):

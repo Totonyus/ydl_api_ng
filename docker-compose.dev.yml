@@ -2,7 +2,7 @@ version: "3.1"
 services:
   ydl_api_ng:
     container_name: ydl_api_ng
-    image: ydl_api_ng
+#    image: ydl_api_ng
     restart: unless-stopped
     build:
       context: .

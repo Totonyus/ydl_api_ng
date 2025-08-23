@@ -15,17 +15,20 @@ import config_manager
 
 try:
     from params import progress_hooks
-except ImportError:
+except ImportError as e:
+    logging.warning(e)
     from setup import progress_hooks
 
 try:
     from params import postprocessor_hooks
-except ImportError:
+except ImportError as e:
+    logging.warning(e)
     from setup import postprocessor_hooks
 
 try:
     from params import ydl_api_hooks
-except ImportError:
+except ImportError as e:
+    logging.warning(e)
     from setup import ydl_api_hooks
 
 from rq import get_current_job
