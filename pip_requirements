@@ -11,3 +11,4 @@ supervisor
 tinydb
 uvicorn
 yt-dlp
+yt-dlp-ejs
