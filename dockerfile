@@ -16,6 +16,7 @@ COPY params/params_docker.ini ./setup/params.ini
 RUN if [ "$TARGET_ARCH" = "arm" ] ; then apt update && apt install gcc python3-dev -y; fi
 RUN apt update && apt install wget unzip xz-utils -y && apt-get autoremove && apt-get -y clean && rm -rf /var/lib/apt/lists/*
 
+# FFmpeg installation
 RUN ARCH=$(arch | sed s/aarch64/linuxarm64/ | sed s/x86_64/linux64/) && \
 wget https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-${ARCH}-gpl.tar.xz -O /ffmpeg.tar.xz && \
 tar -xf /ffmpeg.tar.xz -C /tmp && \
@@ -23,9 +24,15 @@ install --mode=777 /tmp/ffmpeg-*/bin/ffmpeg /usr/bin && \
 install --mode=777 /tmp/ffmpeg-*/bin/ffprobe /usr/bin && \
 rm /ffmpeg.tar.xz /tmp/ffmpeg-* -rf
 
+# Deno installation
 RUN wget https://github.com/denoland/deno/releases/latest/download/deno-x86_64-unknown-linux-gnu.zip -O /tmp/deno.zip && \
 unzip /tmp/deno.zip -d /tmp && install --mode 777 /tmp/deno /usr/bin && \
 rm /tmp/deno.zip -rf
+
+# Denort installation
+RUN wget https://github.com/denoland/deno/releases/latest/download/denort-aarch64-unknown-linux-gnu.zip -O /tmp/denort.zip && \
+unzip /tmp/denort.zip -d /tmp && install --mode 777 /tmp/denort /usr/bin && \
+rm /tmp/denort.zip -rf
 
 RUN pip3 install --disable-pip-version-check -q --root-user-action=ignore -r pip_requirements
 
