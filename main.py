@@ -104,8 +104,7 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
 
 @app.post(__cm.get_app_params().get('_api_route_download'))
 async def download_request(response: Response, background_tasks: BackgroundTasks, url, body=Body(...), token=None):
-    request_id = uuid.uuid4()
-
+    request_id = None
     param_url = unquote(url)
     param_token = unquote(token) if token is not None else None
 
@@ -120,6 +119,7 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
         return {'status_code': response.status_code}
 
     if body.get('cookies') is not None:
+        request_id = uuid.uuid4()
         cookies_files = open(f'cookies/{request_id}.txt', 'w')
         cookies_files.write(unquote(body.get('cookies')))
         cookies_files.close()
@@ -238,7 +238,7 @@ async def extract_info_request(response: Response, url, token=None):
 
 @app.post(__cm.get_app_params().get('_api_route_extract_info'))
 async def download_request(response: Response, background_tasks: BackgroundTasks, url, body=Body(...), token=None):
-    request_id = uuid.uuid4()
+    request_id = None
 
     param_url = unquote(url)
     param_token = unquote(token) if token is not None else None
@@ -254,6 +254,7 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
         return {'status_code': response.status_code}
 
     if body.get('cookies') is not None:
+        request_id = uuid.uuid4()
         cookies_files = open(f'cookies/{request_id}.txt', 'w')
         cookies_files.write(unquote(body.get('cookies')))
         cookies_files.close()
