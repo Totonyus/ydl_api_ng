@@ -10,5 +10,5 @@ rq
 supervisor
 tinydb
 uvicorn
-yt-dlp
+yt-dlp[curl-cffi]
 yt-dlp-ejs
