@@ -27,10 +27,10 @@ fi
 
 if [ "$FORCE_YTDLP_VERSION" == "" ]; then
   echo --- Upgrade yt-dlp to the latest version ---
-  pip3 install yt-dlp[curl-cffi] yt-dlp-ejs --upgrade --disable-pip-version-check -q --root-user-action=ignore
+  pip3 install yt-dlp[default,curl-cffi] yt-dlp-ejs --upgrade --disable-pip-version-check -q --root-user-action=ignore
 else
   echo --- Force yt-dlp version $FORCE_YTDLP_VERSION ---
-  pip3 install --disable-pip-version-check -q --root-user-action=ignore yt-dlp-ejs yt-dlp[curl-cffi]==$FORCE_YTDLP_VERSION --force-reinstall
+  pip3 install --disable-pip-version-check -q --root-user-action=ignore yt-dlp-ejs yt-dlp[default,curl-cffi]==$FORCE_YTDLP_VERSION --force-reinstall
 fi
 
 echo --- Installing hooks requirements ---
