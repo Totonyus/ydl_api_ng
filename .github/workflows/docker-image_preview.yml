@@ -1,9 +1,14 @@
 name: Build docker image
 
+# Permissions needed to push to GitHub Container Registry
+permissions:
+  contents: read
+  packages: write
+
 on:
   push:
     branches:
-      - main
+      - develop
     paths-ignore:
       - '**.md'
       - 'docker-compose*'
@@ -12,76 +17,91 @@ jobs:
   unit_tests:
     uses: ./.github/workflows/unit_tests.yml
 
-  generate_release_docker_image:
+  generate_preview_docker_image:
     needs: unit_tests
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - id: commit
-      uses: pr-mpt/actions-commit-hash@v1
+      - id: commit
+        uses: pr-mpt/actions-commit-hash@v1
 
-    - name: Extract branch name
-      shell: bash
-      id: extract_branch
-      run: echo ::set-output name=BRANCH_NAME::${GITHUB_REF#refs/*/}
+      - name: Extract branch name
+        shell: bash
+        id: extract_branch
+        run: echo ::set-output name=BRANCH_NAME::${GITHUB_REF#refs/*/}
 
-    - name: Get current time
-      uses: josStorer/get-current-time@v2
-      id: current-time
-      with:
-        format: readableTime
+      - name: Get current time
+        uses: josStorer/get-current-time@v2
+        id: current-time
+        with:
+          format: readableTime
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
-      with:
-        username: ${{ secrets.DOCKER_HUB_LOGIN }}
-        password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+      - name: Log in to Docker Hub
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          username: ${{ secrets.DOCKER_HUB_LOGIN }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
 
-    - name: Build docker image (amd)
-      uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
-      id: build_amd
-      with:
-        context: ${{ github.workspace }}
-        platforms: linux/amd64
-        push: true
-        tags: |
-          totonyus/ydl_api_ng:latest_amd
-          totonyus/ydl_api_ng:preview_amd
-        build-args: |
-          GIT_BRANCH=${{ steps.extract_branch.outputs.BRANCH_NAME }}
-          GIT_REVISION=${{ steps.commit.outputs.hash }}
-          DATE=${{ steps.current-time.outputs.time }}
-          TARGET_ARCH=amd
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-    - name: Build docker image (arm)
-      uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
-      id: build_arm
-      with:
-        context: ${{ github.workspace }}
-        platforms: linux/arm64/v8
-        push: true
-        tags: |
-          totonyus/ydl_api_ng:latest_arm
-          totonyus/ydl_api_ng:preview_arm
-        build-args: |
-          GIT_BRANCH=${{ steps.extract_branch.outputs.BRANCH_NAME }}
-          GIT_REVISION=${{ steps.commit.outputs.hash }}
-          DATE=${{ steps.current-time.outputs.time }}
-          TARGET_ARCH=arm
+      - name: Build docker image (amd)
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        id: build_amd
+        with:
+          context: ${{ github.workspace }}
+          platforms: linux/amd64
+          push: true
+          tags: |
+            totonyus/ydl_api_ng:preview_amd
+            ghcr.io/${{ github.repository }}:preview_amd
+          build-args: |
+            GIT_BRANCH=${{ steps.extract_branch.outputs.BRANCH_NAME }}
+            GIT_REVISION=${{ steps.commit.outputs.hash }}
+            DATE=${{ steps.current-time.outputs.time }}
+            TARGET_ARCH=amd
 
-    - uses: int128/docker-manifest-create-action@v2
-      with:
-        tags: |
-          totonyus/ydl_api_ng:latest
-          totonyus/ydl_api_ng:preview
-        sources: |
-          totonyus/ydl_api_ng@${{ steps.build_amd.outputs.digest }}
-          totonyus/ydl_api_ng@${{ steps.build_arm.outputs.digest }}
+      - name: Build docker image (arm)
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        id: build_arm
+        with:
+          context: ${{ github.workspace }}
+          platforms: linux/arm64/v8
+          push: true
+          tags: |
+            totonyus/ydl_api_ng:preview_arm
+            ghcr.io/${{ github.repository }}:preview_arm
+          build-args: |
+            GIT_BRANCH=${{ steps.extract_branch.outputs.BRANCH_NAME }}
+            GIT_REVISION=${{ steps.commit.outputs.hash }}
+            DATE=${{ steps.current-time.outputs.time }}
+            TARGET_ARCH=arm
+
+      - uses: int128/docker-manifest-create-action@v2
+        with:
+          tags: |
+            totonyus/ydl_api_ng:preview
+          sources: |
+            totonyus/ydl_api_ng@${{ steps.build_amd.outputs.digest }}
+            totonyus/ydl_api_ng@${{ steps.build_arm.outputs.digest }}
+
+      - uses: int128/docker-manifest-create-action@v2
+        name: Create GHCR manifest
+        with:
+          tags: |
+            ghcr.io/${{ github.repository }}:preview
+          sources: |
+            ghcr.io/${{ github.repository }}@${{ steps.build_amd.outputs.digest }}
+            ghcr.io/${{ github.repository }}@${{ steps.build_arm.outputs.digest }}
