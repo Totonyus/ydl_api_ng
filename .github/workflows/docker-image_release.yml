@@ -111,11 +111,3 @@ jobs:
           sources: |
             ghcr.io/totonyus/ydl_api_ng@${{ steps.build_amd.outputs.digest }}
             ghcr.io/totonyus/ydl_api_ng@${{ steps.build_arm.outputs.digest }}
-
-      - name: Docker Hub Description
-        uses: peter-evans/dockerhub-description@v3.0.0
-        with:
-          username: ${{ secrets.DOCKER_HUB_LOGIN }}
-          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-          repository: totonyus/ydl_api_ng
-          readme-filepath: ${{ github.workspace }}/readme.md
