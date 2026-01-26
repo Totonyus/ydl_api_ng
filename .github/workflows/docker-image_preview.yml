@@ -66,7 +66,7 @@ jobs:
           push: true
           tags: |
             totonyus/ydl_api_ng:preview_amd
-            ghcr.io/${{ github.repository }}:preview_amd
+            ghcr.io/totonyus/ydl_api_ng:preview_amd
           build-args: |
             GIT_BRANCH=${{ steps.extract_branch.outputs.BRANCH_NAME }}
             GIT_REVISION=${{ steps.commit.outputs.hash }}
@@ -82,7 +82,7 @@ jobs:
           push: true
           tags: |
             totonyus/ydl_api_ng:preview_arm
-            ghcr.io/${{ github.repository }}:preview_arm
+            ghcr.io/totonyus/ydl_api_ng:preview_arm
           build-args: |
             GIT_BRANCH=${{ steps.extract_branch.outputs.BRANCH_NAME }}
             GIT_REVISION=${{ steps.commit.outputs.hash }}
@@ -101,7 +101,7 @@ jobs:
         name: Create GHCR manifest
         with:
           tags: |
-            ghcr.io/${{ github.repository }}:preview
+            ghcr.io/totonyus/ydl_api_ng:preview
           sources: |
-            ghcr.io/${{ github.repository }}@${{ steps.build_amd.outputs.digest }}
-            ghcr.io/${{ github.repository }}@${{ steps.build_arm.outputs.digest }}
+            ghcr.io/totonyus/ydl_api_ng@${{ steps.build_amd.outputs.digest }}
+            ghcr.io/totonyus/ydl_api_ng@${{ steps.build_arm.outputs.digest }}
