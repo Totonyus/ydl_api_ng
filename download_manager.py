@@ -252,6 +252,9 @@ class DownloadManager:
     # A playlist should not be cheched
     # A video in a playlist should be checked only if noplaylist = True
     def can_url_be_checked(self, preset):
+        if preset.get('_skip_check'):
+            return False
+
         noplaylist_param = preset.get('noplaylist')
         noplaylist_param = noplaylist_param if noplaylist_param is not None else False
 
