@@ -379,7 +379,10 @@ class DownloadManager:
                               '__files_to_merge',
                               '__finaldir',
                               'filepath',
-                              'filesize_approx']
+                              ['filesize_approx','total_bytes']
+                              ]
+
+        fields_to_delete = ['downloaded_bytes', 'ctx_id', '_speed_str', '_total_bytes_str', '_elapsed_str', '_percent_str', '_default_template']
 
         if self.enable_redis is None or self.enable_redis is False:
             return
@@ -388,7 +391,13 @@ class DownloadManager:
             current_download = get_current_job().meta['downloaded_files'][is_in_list]
 
             for field in fields_to_retrieve:
-                current_download[field]=download.get('info_dict', {}).get(field, None)
+                if type(field) == list:
+                    current_download[field[1]]=download.get('info_dict', {}).get(field[0], None)
+                else:
+                    current_download[field]=download.get('info_dict', {}).get(field, None)
+
+            for field in fields_to_delete:
+                del current_download[field]
 
             get_current_job().save_meta()
 
