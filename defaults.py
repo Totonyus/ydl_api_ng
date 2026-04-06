@@ -17,7 +17,8 @@ app_defaults = {
     '_redis_ttl': 3600,
     '_redis_host': 'ydl_api_ng_redis',
     '_redis_port': 6379,
-    '_skip_info_dict' : False
+    '_skip_info_dict': False,
+    '_info_dict_field_retrieve': ['id', 'title', 'original_url']
 }
 
 programmation_object_default = {

@@ -362,10 +362,10 @@ class DownloadManager:
             for file in self.downloaded_files:
                 reduced_file = copy.deepcopy(file)
                 if self.__cm.get_app_params().get('_skip_info_dict'):
-                    saved_info = {
-                        "id": reduced_file.get('info_dict').get('id'),
-                        "original_url": reduced_file.get('info_dict').get('original_url')
-                    }
+                    saved_info = {}
+
+                    for field in self.__cm.get_app_params().get('_info_dict_field_retrieve'):
+                        saved_info[field]=reduced_file.get('info_dict', {}).get(field, None)
 
                     reduced_file['info_dict'] = saved_info
 
