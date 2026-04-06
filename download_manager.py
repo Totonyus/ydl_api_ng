@@ -373,6 +373,38 @@ class DownloadManager:
 
             get_current_job().save_meta()
 
+
+    def postprocessor_hooks_proxy(self, download):
+        is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
+
+        fields_to_retrieve = ['filename',
+                              '_filename',
+                              '__files_to_merge',
+                              '__finaldir',
+                              'filepath',
+                              ['filesize_approx','total_bytes']
+                              ]
+
+        fields_to_delete = ['downloaded_bytes', 'ctx_id', '_speed_str', '_total_bytes_str', '_elapsed_str', '_percent_str', '_default_template']
+
+        if self.enable_redis is None or self.enable_redis is False:
+            return
+
+        if is_in_list is not None and (download.get('status') == 'finished' or download.get('status') == 'error'):
+            current_download = get_current_job().meta['downloaded_files'][is_in_list]
+
+            for field in fields_to_retrieve:
+                if type(field) == list:
+                    current_download[field[1]]=download.get('info_dict', {}).get(field[0], None)
+                else:
+                    current_download[field]=download.get('info_dict', {}).get(field, None)
+
+            for field in fields_to_delete:
+                del current_download[field]
+
+            get_current_job().save_meta()
+
+
     def process_download(self, preset):
         if self.__cm.get_app_params().get('_dev_mode'):
             logging.getLogger('download_manager').critical(
@@ -385,7 +417,8 @@ class DownloadManager:
                         [functools.partial(progress_hooks.handler, ydl_opts, self, self.get_current_config_manager()),
                          functools.partial(self.progress_hooks_proxy)])
         ydl_opts.append('postprocessor_hooks', [
-            functools.partial(postprocessor_hooks.handler, ydl_opts, self, self.get_current_config_manager())])
+            functools.partial(postprocessor_hooks.handler, ydl_opts, self, self.get_current_config_manager()),
+                              functools.partial(self.postprocessor_hooks_proxy)])
         ydl_opts.append('logger', logging.getLogger('youtube-dlp'))
 
         if self.request_id is not None:
