@@ -354,6 +354,7 @@ class DownloadManager:
 
         if is_in_list is None:
             self.downloaded_files.append({
+                'id' : download.get('info_dict').get('id'),
                 'status': download.get('status'),
                 'filename' : download.get('info_dict').get('filename'),
                 '_filename' : download.get('info_dict').get('filename'),
@@ -378,7 +379,7 @@ class DownloadManager:
         try:
             get_current_job().meta['downloaded_files'][is_in_list]
         except IndexError:
-            get_current_job().meta['downloaded_files'].append(self.downloaded_files[is_in_list])
+            get_current_job().meta['downloaded_files'].append(copy.deepcopy(self.downloaded_files[is_in_list]))
 
         reduced_file = copy.deepcopy(download)
         if self.__cm.get_app_params().get('_skip_info_dict'):
