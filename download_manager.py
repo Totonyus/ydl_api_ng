@@ -353,26 +353,32 @@ class DownloadManager:
 
         if is_in_list is None:
             self.downloaded_files.append(download)
+            is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
         else:
             self.downloaded_files[is_in_list] = download
 
-        if self.enable_redis is not None and self.enable_redis is True:
+        if self.enable_redis is None or self.enable_redis is False:
+            return
+
+        if get_current_job().meta.get('downloaded_files') is None:
             get_current_job().meta['downloaded_files'] = []
 
-            for file in self.downloaded_files:
-                reduced_file = copy.deepcopy(file)
-                if self.__cm.get_app_params().get('_skip_info_dict'):
-                    saved_info = {}
+        try:
+            get_current_job().meta['downloaded_files'][is_in_list]
+        except IndexError:
+            get_current_job().meta['downloaded_files'].append(download)
 
-                    for field in self.__cm.get_app_params().get('_info_dict_field_retrieve'):
-                        saved_info[field]=reduced_file.get('info_dict', {}).get(field, None)
+        reduced_file = copy.deepcopy(download)
+        if self.__cm.get_app_params().get('_skip_info_dict'):
+            saved_info = {}
 
-                    reduced_file['info_dict'] = saved_info
+            for field in self.__cm.get_app_params().get('_info_dict_field_retrieve'):
+                saved_info[field]=reduced_file.get('info_dict', {}).get(field, None)
 
-                get_current_job().meta['downloaded_files'].append(reduced_file)
+            reduced_file['info_dict'] = saved_info
 
-            get_current_job().save_meta()
-
+        get_current_job().meta['downloaded_files'][is_in_list] = reduced_file
+        get_current_job().save_meta()
 
     def postprocessor_hooks_proxy(self, download):
         is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
