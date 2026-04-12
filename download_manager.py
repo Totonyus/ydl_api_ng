@@ -345,6 +345,7 @@ class DownloadManager:
 
     def progress_hooks_proxy(self, download):
         is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
+        fields_to_delete = ['downloaded_bytes', 'ctx_id', '_speed_str', '_total_bytes_str', '_elapsed_str', '_percent_str', '_default_template']
 
         # Those attributes makes redis go crazy, dunno why
         download.get('info_dict').pop('http_headers', None)
@@ -352,10 +353,20 @@ class DownloadManager:
             dl_format.pop('http_headers', None)
 
         if is_in_list is None:
-            self.downloaded_files.append(download)
+            self.downloaded_files.append({
+                'status': download.get('status'),
+                'filename' : download.get('info_dict').get('filename'),
+                'total_bytes' : 0,
+                'elapsed' : 0,
+                'info_dict': download.get('info_dict'),
+                'sub_downloads': {
+                    download.get('info_dict').get('format_id'): download
+                }
+            })
             is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
         else:
-            self.downloaded_files[is_in_list] = download
+            self.downloaded_files[is_in_list].get('sub_downloads')[download.get('info_dict').get('format_id')] = download
+            self.downloaded_files[is_in_list]['info_dict'] = download.get('info_dict')
 
         if self.enable_redis is None or self.enable_redis is False:
             return
@@ -366,32 +377,26 @@ class DownloadManager:
         try:
             get_current_job().meta['downloaded_files'][is_in_list]
         except IndexError:
-            get_current_job().meta['downloaded_files'].append(download)
+            get_current_job().meta['downloaded_files'].append(self.downloaded_files[is_in_list])
 
         reduced_file = copy.deepcopy(download)
         if self.__cm.get_app_params().get('_skip_info_dict'):
+            for field in fields_to_delete:
+                del reduced_file[field]
+
             saved_info = {}
 
             for field in self.__cm.get_app_params().get('_info_dict_field_retrieve'):
                 saved_info[field]=reduced_file.get('info_dict', {}).get(field, None)
 
-            reduced_file['info_dict'] = saved_info
+            get_current_job().meta['downloaded_files'][is_in_list]['info_dict'] = saved_info
+            reduced_file.pop('info_dict', None)
 
-        get_current_job().meta['downloaded_files'][is_in_list] = reduced_file
+        get_current_job().meta['downloaded_files'][is_in_list].get('sub_downloads')[download.get('info_dict').get('format_id')] = reduced_file
         get_current_job().save_meta()
 
     def postprocessor_hooks_proxy(self, download):
         is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
-
-        fields_to_retrieve = ['filename',
-                              '_filename',
-                              '__files_to_merge',
-                              '__finaldir',
-                              'filepath',
-                              ['filesize_approx','total_bytes']
-                              ]
-
-        fields_to_delete = ['downloaded_bytes', 'ctx_id', '_speed_str', '_total_bytes_str', '_elapsed_str', '_percent_str', '_default_template']
 
         if self.enable_redis is None or self.enable_redis is False:
             return
@@ -399,14 +404,14 @@ class DownloadManager:
         if is_in_list is not None and (download.get('status') == 'finished' or download.get('status') == 'error'):
             current_download = get_current_job().meta['downloaded_files'][is_in_list]
 
-            for field in fields_to_retrieve:
-                if type(field) == list:
-                    current_download[field[1]]=download.get('info_dict', {}).get(field[0], None)
-                else:
-                    current_download[field]=download.get('info_dict', {}).get(field, None)
+            current_download['status'] = download.get('status')
 
-            for field in fields_to_delete:
-                del current_download[field]
+            current_download['total_bytes'] = 0
+            current_download['elapsed'] = 0
+
+            for format_id, data in current_download.get('sub_downloads').items():
+                current_download['total_bytes'] = current_download.get('total_bytes') + data.get('total_bytes')
+                current_download['elapsed'] = current_download.get('elapsed') + data.get('elapsed')
 
             get_current_job().save_meta()
 
