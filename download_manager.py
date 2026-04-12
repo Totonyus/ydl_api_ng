@@ -356,6 +356,7 @@ class DownloadManager:
             self.downloaded_files.append({
                 'status': download.get('status'),
                 'filename' : download.get('info_dict').get('filename'),
+                '_filename' : download.get('info_dict').get('filename'),
                 'total_bytes' : 0,
                 'elapsed' : 0,
                 'info_dict': download.get('info_dict'),
