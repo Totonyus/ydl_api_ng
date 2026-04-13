@@ -357,11 +357,13 @@ class DownloadManager:
             return download
 
     def delete_fields(self, download):
-        fields_to_delete = ['downloaded_bytes', 'ctx_id', '_speed_str', '_total_bytes_str', '_elapsed_str', '_percent_str', '_default_template', 'info_dict']
+        fields_to_delete = ['_speed_str', '_total_bytes_str', '_elapsed_str', '_percent_str', '_default_template', 'info_dict']
 
+        clone = copy.deepcopy(download)
         if self.__cm.get_app_params().get('_skip_info_dict'):
             for field in fields_to_delete:
-                del download[field]
+                del clone[field]
+        return clone
 
     def progress_hooks_proxy(self, download):
         is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
@@ -403,9 +405,7 @@ class DownloadManager:
         get_current_job().meta['downloaded_files'][is_in_list]['info_dict'] = self.reduce_info_dict(download)
 
         format_id = download.get('info_dict').get('format_id')
-        self.delete_fields(download)
-
-        get_current_job().meta['downloaded_files'][is_in_list].get('sub_downloads')[format_id] = download
+        get_current_job().meta['downloaded_files'][is_in_list].get('sub_downloads')[format_id] = self.delete_fields(download)
         get_current_job().save_meta()
 
     def postprocessor_hooks_proxy(self, download):
@@ -422,11 +422,19 @@ class DownloadManager:
             current_download['total_bytes'] = 0
             current_download['elapsed'] = 0
 
+            sub_downloads = {}
             for format_id, data in current_download.get('sub_downloads').items():
                 current_download['total_bytes'] = current_download.get('total_bytes') + data.get('total_bytes')
-                current_download['elapsed'] = current_download.get('elapsed') + data.get('elapsed')
+
+                if current_download.get('elapsed') is None or data.get('elapsed') is None:
+                    current_download['elapsed'] = None
+                else:
+                    current_download['elapsed'] = current_download.get('elapsed') + data.get('elapsed')
+
+                sub_downloads[format_id] = self.delete_fields(data)
 
             get_current_job().meta['downloaded_files'][is_in_list] = copy.deepcopy(current_download)
+            get_current_job().meta['downloaded_files'][is_in_list]['sub_downloads'] = sub_downloads
             get_current_job().meta['downloaded_files'][is_in_list]['info_dict'] = self.reduce_info_dict(download)
             get_current_job().save_meta()
 
