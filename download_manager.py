@@ -343,9 +343,28 @@ class DownloadManager:
                 return index
         return None
 
+    def reduce_info_dict(self, download):
+        reduced_file = copy.deepcopy(download)
+
+        if self.__cm.get_app_params().get('_skip_info_dict'):
+            saved_info = {}
+
+            for field in self.__cm.get_app_params().get('_info_dict_field_retrieve'):
+                saved_info[field]=reduced_file.get('info_dict', {}).get(field, None)
+
+            return saved_info
+        else:
+            return download
+
+    def delete_fields(self, download):
+        fields_to_delete = ['downloaded_bytes', 'ctx_id', '_speed_str', '_total_bytes_str', '_elapsed_str', '_percent_str', '_default_template', 'info_dict']
+
+        if self.__cm.get_app_params().get('_skip_info_dict'):
+            for field in fields_to_delete:
+                del download[field]
+
     def progress_hooks_proxy(self, download):
         is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
-        fields_to_delete = ['downloaded_bytes', 'ctx_id', '_speed_str', '_total_bytes_str', '_elapsed_str', '_percent_str', '_default_template']
 
         # Those attributes makes redis go crazy, dunno why
         download.get('info_dict').pop('http_headers', None)
@@ -381,20 +400,12 @@ class DownloadManager:
         except IndexError:
             get_current_job().meta['downloaded_files'].append(copy.deepcopy(self.downloaded_files[is_in_list]))
 
-        reduced_file = copy.deepcopy(download)
-        if self.__cm.get_app_params().get('_skip_info_dict'):
-            for field in fields_to_delete:
-                del reduced_file[field]
+        get_current_job().meta['downloaded_files'][is_in_list]['info_dict'] = self.reduce_info_dict(download)
 
-            saved_info = {}
+        format_id = download.get('info_dict').get('format_id')
+        self.delete_fields(download)
 
-            for field in self.__cm.get_app_params().get('_info_dict_field_retrieve'):
-                saved_info[field]=reduced_file.get('info_dict', {}).get(field, None)
-
-            get_current_job().meta['downloaded_files'][is_in_list]['info_dict'] = saved_info
-            reduced_file.pop('info_dict', None)
-
-        get_current_job().meta['downloaded_files'][is_in_list].get('sub_downloads')[download.get('info_dict').get('format_id')] = reduced_file
+        get_current_job().meta['downloaded_files'][is_in_list].get('sub_downloads')[format_id] = download
         get_current_job().save_meta()
 
     def postprocessor_hooks_proxy(self, download):
@@ -404,7 +415,7 @@ class DownloadManager:
             return
 
         if is_in_list is not None and (download.get('status') == 'finished' or download.get('status') == 'error'):
-            current_download = get_current_job().meta['downloaded_files'][is_in_list]
+            current_download = self.downloaded_files[is_in_list]
 
             current_download['status'] = download.get('status')
 
@@ -415,6 +426,8 @@ class DownloadManager:
                 current_download['total_bytes'] = current_download.get('total_bytes') + data.get('total_bytes')
                 current_download['elapsed'] = current_download.get('elapsed') + data.get('elapsed')
 
+            get_current_job().meta['downloaded_files'][is_in_list] = copy.deepcopy(current_download)
+            get_current_job().meta['downloaded_files'][is_in_list]['info_dict'] = self.reduce_info_dict(download)
             get_current_job().save_meta()
 
 
