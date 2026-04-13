@@ -414,8 +414,29 @@ class DownloadManager:
         if self.enable_redis is None or self.enable_redis is False:
             return
 
+        if is_in_list is None:
+            self.downloaded_files.append({
+                'id' : download.get('info_dict').get('id'),
+                'status': download.get('status'),
+                'filename' : download.get('info_dict').get('filename'),
+                '_filename' : download.get('info_dict').get('filename'),
+                'total_bytes' : 0,
+                'elapsed' : 0,
+                'info_dict': download.get('info_dict'),
+                'sub_downloads': {}
+            })
+
+            is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
+
         if is_in_list is not None and (download.get('status') == 'finished' or download.get('status') == 'error'):
             current_download = self.downloaded_files[is_in_list]
+            if get_current_job().meta.get('downloaded_files') is None:
+                get_current_job().meta['downloaded_files'] = []
+
+            try:
+                get_current_job().meta['downloaded_files'][is_in_list]
+            except IndexError:
+                get_current_job().meta['downloaded_files'].append(copy.deepcopy(self.downloaded_files[is_in_list]))
 
             current_download['status'] = download.get('status')
 
