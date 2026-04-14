@@ -469,11 +469,11 @@ class DownloadManager:
         ydl_opts = copy.deepcopy(preset)
 
         ydl_opts.append('progress_hooks',
-                        [functools.partial(progress_hooks.handler, ydl_opts, self, self.get_current_config_manager()),
-                         functools.partial(self.progress_hooks_proxy)])
-        ydl_opts.append('postprocessor_hooks', [
-            functools.partial(postprocessor_hooks.handler, ydl_opts, self, self.get_current_config_manager()),
-                              functools.partial(self.postprocessor_hooks_proxy)])
+                        [functools.partial(self.progress_hooks_proxy),
+                         functools.partial(progress_hooks.handler, ydl_opts, self, self.get_current_config_manager())])
+        ydl_opts.append('postprocessor_hooks',
+                        [functools.partial(self.postprocessor_hooks_proxy),
+                         functools.partial(postprocessor_hooks.handler, ydl_opts, self, self.get_current_config_manager())])
         ydl_opts.append('logger', logging.getLogger('youtube-dlp'))
 
         if self.request_id is not None:
