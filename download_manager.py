@@ -357,12 +357,17 @@ class DownloadManager:
             return download
 
     def delete_fields(self, download):
-        fields_to_delete = ['_speed_str', '_total_bytes_str', '_elapsed_str', '_percent_str', '_default_template', 'info_dict']
+        fields_to_delete = ['ctx_id', '_speed_str', '_total_bytes_str', '_elapsed_str', '_percent_str',
+                            '_default_template', 'info_dict', '_total_bytes_estimate_str', '_downloaded_bytes_str',
+                            '_eta_str']
 
         clone = copy.deepcopy(download)
         if self.__cm.get_app_params().get('_skip_info_dict'):
             for field in fields_to_delete:
-                del clone[field]
+                try:
+                    del clone[field]
+                except KeyError:
+                    pass
         return clone
 
     def progress_hooks_proxy(self, download):
