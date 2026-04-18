@@ -292,6 +292,29 @@ async def active_downloads_request(response: Response, token=None, redis_queue=N
 
         return queue_content
 
+@app.get(f"{__cm.get_app_params().get('_api_route_active_downloads')}/id/{'{pid}'}")
+async def find_download_by_id(response: Response, background_tasks: BackgroundTasks, pid, token=None,
+                                            redis_queue=None):
+    param_token = unquote(token) if token is not None else None
+    user = __cm.is_user_permitted_by_token(param_token)
+
+    if user is False:
+        response.status_code = 401
+        return
+
+    found_job = None
+
+    for __sub_pu in __pu:
+        found_job = __pu.get(__sub_pu).find_job_by_id(unquote(pid))
+
+        if found_job is not None:
+            return __pu.get(__sub_pu).sanitize_job(found_job)
+
+    if found_job is None:
+        response.status_code = 404
+        return
+
+    return found_job
 
 @app.get(f"{__cm.get_app_params().get('_api_route_active_downloads')}/terminate/{'{pid}'}")
 async def terminate_active_download_request(response: Response, background_tasks: BackgroundTasks, pid, token=None,

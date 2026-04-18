@@ -96,6 +96,9 @@ Content-Type: application/json
 ### Active downloads (GET)
 GET {{host}}/active_downloads
 
+### Find by redis_id (GET)
+GET {{host}}/active_downloads/id/{{redis_id}}
+
 ### Terminate all active downloads (GET)
 GET {{host}}/active_downloads/terminate
 
