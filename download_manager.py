@@ -157,13 +157,12 @@ class DownloadManager:
                 preset_object.append('_error', error_message)
                 logging.getLogger('download_manager').error(f'error during _cli expansion : {error_message}')
 
-
+            field_to_remove = ['paths', 'outtmpl', '_when_playlist', '_when_live']
             if not self.__cm.get_app_params().get('_allow_dangerous_post_requests') and not self.ignore_post_security:
-                if cli_preset is not None:
-                    cli_preset.delete('paths')
-                    cli_preset.delete('outtmpl')
-                preset_object.delete('paths')
-                preset_object.delete('outtmpl')
+                for field in field_to_remove:
+                    if cli_preset is not None:
+                        cli_preset.delete(field)
+                    preset_object.delete(field)
 
             for param in preset:
                 if param in config_objects_mapping:
