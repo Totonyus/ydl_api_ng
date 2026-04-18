@@ -315,6 +315,15 @@ class DownloadManager:
 
         try:
             with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
+                info_dict = dl.extract_info(self.url)
+
+                if info_dict.get('is_live', None) is True:
+                    when_live_options = preset.get('_when_live')
+
+                    if when_live_options is not None:
+                        for option in when_live_options:
+                            preset.append(option, when_live_options.get(option))
+
                 simulation_result = dl.download([self.url]) == 0
                 preset.append('__check_exception_message', None)
         except Exception as error:
