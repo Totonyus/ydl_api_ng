@@ -316,6 +316,8 @@ class DownloadManager:
             with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
                 info_dict = dl.extract_info(self.url)
 
+                preset.append('__is_live', info_dict.get('is_live', False))
+
                 if info_dict.get('is_live', None) is True:
                     when_live_options = preset.get('_when_live')
 
