@@ -147,7 +147,7 @@ class ConfigManager:
         self.__expand_section(current_params, temp_config)
 
         # Merge with default to fill remaining parameters
-        if self.__config.has_section(f'{section_name.split(":")[0]}:DEFAULT'):
+        if self.__config.has_section(f'{section_name.split(":")[0]}:DEFAULT') and not current_params.get('_ignore_default_preset'):
             self.__merge_configs(self.__config[f'{section_name.split(":")[0]}:DEFAULT'], current_params, temp_config)
             self.__expand_section(current_params, temp_config)
 
