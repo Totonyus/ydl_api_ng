@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ydl_api_ng
-// @match       http*://*/*
+// @match       http*://www.youtube.com*/*
 // @grant       GM_registerMenuCommand
 // @grant       GM_xmlhttpRequest
 // @grant       GM_notification
@@ -168,9 +168,9 @@
                 }
             }
         }
-    }
+    };
 
-    const programmation_id = new URL(document.URL).pathname.replaceAll('/', '')
+    const programmation_id = new URL(document.URL).pathname.replaceAll('/', '');
     const presets_mapping = {
         'default': {name: 'Default', route: routes.download},
         'best': {name: 'Best', route: routes.download, query_params: {presets: 'BEST'}},
@@ -202,6 +202,7 @@
                             recording_restarts_during_duration: false,
                             recurrence_end_date: recurrence_end_date
                         },
+                        extra_parameters: {},
                         presets: presets
                     }
                 }
@@ -226,7 +227,8 @@
                     return {
                         id: programmation_id,
                         presets: presets,
-                        planning: planning
+                        planning: planning,
+                        extra_parameters: {}
                     }
                 }
             }

@@ -12,6 +12,7 @@ on:
     paths-ignore:
       - '**.md'
       - 'docker-compose*'
+      - 'doc/*'
 
 jobs:
   unit_tests:

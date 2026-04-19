@@ -1,10 +1,5 @@
 import logging
-import sys
-
 import humanize
-
-sys.path.insert(1, 'params/hooks_utils/')
-
 
 ###
 # ydl_opts contains all the informations of the selected preset

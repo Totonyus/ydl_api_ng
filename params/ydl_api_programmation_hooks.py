@@ -1,7 +1,4 @@
 import logging
-import sys
-
-sys.path.insert(1, 'params/hooks_utils/')
 
 # Called when a programmation is automatically deleted
 def purged_programmation_handler(purged_programmations = None, **kwargs):
