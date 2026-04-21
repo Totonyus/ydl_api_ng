@@ -2,7 +2,8 @@
 
 You can define parameters for given websites.
 
-`_playlist_indicators` is used to know if the URL is a playlist : it's useful to avoid long-running download simulation.
+`_playlist_indicators` is used to know if the URL is a playlist : it's useful in case `yt-dlp` fails to detect the url
+is a playlist
 
 ```
 # Every host matching this site

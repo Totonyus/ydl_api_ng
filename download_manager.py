@@ -313,20 +313,46 @@ class DownloadManager:
             ydl_opts.append('cookiefile', f'cookies/{self.request_id}.txt')
 
         try:
-            with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
+            simulation_result = None
+            ydl_opts_info_dicts = copy.deepcopy(ydl_opts)
+            # For automatic playlist detection
+            ydl_opts_info_dicts.append('noplaylist', True)
+            ydl_opts_info_dicts.append('extract_flat', 'in_playlist')
+
+            with ydl.YoutubeDL(ydl_opts_info_dicts.get_all()) as dl:
                 info_dict = dl.extract_info(self.url)
 
-                preset.append('__is_live', info_dict.get('is_live', False))
+                if info_dict is None:
+                    simulation_result = False
+                    preset.append('__check_exception_message', 'info_dict contains no data, url may be wrong')
+                else:
+                    self.is_from_playlist = info_dict.get('_type', None) == 'playlist'
+                    self.is_video = info_dict.get('_type', None) != 'playlist'
 
-                if info_dict.get('is_live', None) is True:
-                    when_live_options = preset.get('_when_live')
+                    preset.append('__is_live', info_dict.get('is_live', False))
 
-                    if when_live_options is not None:
-                        for option in when_live_options:
-                            preset.append(option, when_live_options.get(option))
+                    if info_dict.get('is_live', None) is True:
+                        when_live_options = preset.get('_when_live')
 
-                simulation_result = dl.download([self.url]) == 0
-                preset.append('__check_exception_message', None)
+                        if when_live_options is not None:
+                            for option in when_live_options:
+                                preset.append(option, when_live_options.get(option))
+
+                    if self.is_from_playlist:
+                        when_playlist_options = preset.get('_when_playlist')
+
+                        if when_playlist_options is not None:
+                            for option in when_playlist_options:
+                                preset.append(option, when_playlist_options.get(option))
+
+                        self.downloads_cannot_be_checked = self.downloads_cannot_be_checked + 1
+                        self.all_downloads_checked = False
+
+                        preset.append('__can_be_checked', False)
+                        preset.append('__check_result', None)
+                    else :
+                        simulation_result = dl.download([self.url]) == 0
+                        preset.append('__check_exception_message', None)
         except Exception as error:
             try:
                 os.remove(f'cookies/{self.request_id}.txt')
@@ -336,7 +362,6 @@ class DownloadManager:
             simulation_result = False
             preset.append('__check_exception_message', str(error))
 
-        preset.append('__can_be_checked', True)
         preset.append('__check_result', simulation_result)
 
         if simulation_result is False:

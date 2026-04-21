@@ -91,9 +91,8 @@ writesubtitles = true
 
 ## Site
 
-There is no mandatory options for this one but remember `ydl_api_ng` is not (yet ?) capable of retrieving certain
-informations from `yt-dlp` so you'll probrably want to keep the at least the `_video_indicators` and
-`_playlist_indicators` options.
+There is no mandatory options for this one but you'll probably want to add the `_video_indicators` and
+`_playlist_indicators` in case `yt-dlp` fails to detect the url is a playlist
 
 ```
 [site:YOUTUBE]

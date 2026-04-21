@@ -1,6 +1,3 @@
-![](https://img.shields.io/github/stars/totonyys/ydl_api_ng)
-![](https://img.shields.io/docker/pulls/totonyys/ydl_api_ng)
-
 # What is ydl_api_ng ?
 
 `ydl_api_ng` is a webserver you can interact with via a `REST API` to perform downloads directly on your server

@@ -78,7 +78,7 @@ Content-Type: application/json
 GET {{host}}/download/{{ redis_id }}/failed
 
 ### Extract informations (GET)
-GET {{host}}/extract_info?url=https://www.youtube.com/watch?v=a0sxBO9HZ-M
+GET {{host}}/extract_info?url=ytsearch2:moka_kamishirashi
 
 ### Extract informations (POST)
 POST {{host}}/extract_info?url=https://www.youtube.com/watch?v=a0sxBO9HZ-M
@@ -140,6 +140,21 @@ Content-Type: application/json
   },
   "extra_parameters": {
     "send_notification": false
+  }
+}
+
+> {%
+    client.global.set('programmation_id', response.body.id)
+%}
+
+### Override programmation (POST)
+POST {{host}}/programmation?url=video_url&override=true
+Content-Type: application/json
+
+{
+  "id" : "{{ programmation_id }}",
+  "planning": {
+    "recurrence_cron": "25 11 * * *"
   }
 }
 
