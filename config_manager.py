@@ -301,6 +301,9 @@ class ConfigManager:
     def get_site_params(self, site_name):
         return self.__site_config_object.search_section_by_value('_hosts', site_name)
 
+    def find_site_by_section_name(self, extractor_name):
+        return self.__site_config_object.get(extractor_name)
+
     def get_all_auth_params(self):
         return self.__auth_config_object
 

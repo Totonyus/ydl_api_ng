@@ -101,8 +101,16 @@ writesubtitles = true
 
 ## Site
 
-There is no mandatory options for this one but you'll probably want to add the `_video_indicators` and
-`_playlist_indicators` in case `yt-dlp` fails to detect the url is a playlist
+The site detection will be performed automatically based on extractor name and preset name. Example : `[site:YOUTUBE]`
+will be triggered by all the extractors starting by `youtube`. You can use `_hosts` to bypass auto-detect of site.
+
+To know the extractor associated to an url, you can use the `/extract_info` endpoint. You can also find it in response
+of a `/download` call.
+
+In case the extractor is like `youtube:tab`, only yhe part before the `:` matters.
+
+You may also want to add the `_video_indicators` and
+`_playlist_indicators` in case `yt-dlp` fails to detect automatically the url is a playlist
 
 ```
 [site:YOUTUBE]
@@ -124,7 +132,7 @@ Some options are used directly by `yt-dlp` :
 |------------------------|-------------------------------------------------------------------------------|
 | _ignore_default_preset | Will not extend default preset                                                |
 | _ignore_site_config    | Will not automatically extend site preset                                     |
-| _hosts                 | All hostnames of a website                                                    |
+| _hosts                 | All hostnames of a website (optional)                                         |
 | _video_indicators      | All things that may indicates this is not a playlist                          |
 | _playlist_indicators   | All things that may indicates this is a playlist                              |
 | _redis_queue           | The redis queue to use                                                        |

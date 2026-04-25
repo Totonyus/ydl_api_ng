@@ -278,10 +278,16 @@ class DownloadManager:
 
     # Extends preset with user informations
     def get_preset_for_user(self, preset):
+        logging.getLogger('download_manager').info(f"Added specific configuration for user")
         self.__cm.merge_configs_object(self.user, preset)
-        self.__cm.merge_configs_object(self.site, preset)
+        preset = self.add_site_config_to_preset(preset)
         preset.delete('_token')
 
+        return preset
+
+    def add_site_config_to_preset(self, preset):
+        logging.getLogger('download_manager').info(f"Added specific configuration for site")
+        self.__cm.merge_configs_object(self.site, preset)
         return preset
 
     def simulate_download(self, preset):
@@ -329,6 +335,12 @@ class DownloadManager:
                     preset.append('__check_exception_message',
                                   'info_dict contains no data, url may be wrong or format is unavailable')
                 else:
+                    if self.site is None and info_dict.get('extractor') is not None:
+                        logging.getLogger('download_manager').info(
+                            "Site config applied")
+                        self.site = self.__cm.find_site_by_section_name(info_dict.get('extractor').split(':')[0].upper())
+                        self.add_site_config_to_preset(preset)
+
                     self.is_from_playlist = info_dict.get('_type', None) == 'playlist'
                     self.is_video = info_dict.get('_type', None) != 'playlist'
 
