@@ -74,6 +74,8 @@ class DownloadManager:
         self.site = self.__cm.get_site_params(self.site_hostname)
         self.user = self.__cm.get_user_param_by_token(user_token)
 
+        self.info_dict = None
+
         is_from_playlist = self.check_if_from_playlist()
         self.is_from_playlist = is_from_playlist if is_from_playlist is not None else False
 
@@ -324,7 +326,8 @@ class DownloadManager:
 
                 if info_dict is None:
                     simulation_result = False
-                    preset.append('__check_exception_message', 'info_dict contains no data, url may be wrong')
+                    preset.append('__check_exception_message',
+                                  'info_dict contains no data, url may be wrong or format is unavailable')
                 else:
                     self.is_from_playlist = info_dict.get('_type', None) == 'playlist'
                     self.is_video = info_dict.get('_type', None) != 'playlist'
@@ -348,11 +351,19 @@ class DownloadManager:
                         self.downloads_cannot_be_checked = self.downloads_cannot_be_checked + 1
                         self.all_downloads_checked = False
 
+                        self.info_dict = info_dict  # playlist = complete info_dict
                         preset.append('__can_be_checked', False)
                         preset.append('__check_result', None)
-                    else :
-                        simulation_result = dl.download([self.url]) == 0
+                    else:
+                        field_to_remove = ['formats', 'thumbnails', '_format_sort_fields', 'subtitles',
+                                           'automatic_captions', 'http_headers']
+                        for field in field_to_remove:
+                            info_dict.pop(field, None)
+
+                        self.info_dict = info_dict  # video = reduced info dict
                         preset.append('__check_exception_message', None)
+
+
         except Exception as error:
             try:
                 os.remove(f'cookies/{self.request_id}.txt')
@@ -674,6 +685,7 @@ class DownloadManager:
             'downloads_cannot_be_checked': self.downloads_cannot_be_checked,
             'ignore_post_security': self.ignore_post_security,
             'relaunch_failed_mode': self.relaunch_failed_mode,
+            'info_dict' : self.info_dict,
             'downloads': presets_display,
             'programmation' : self.programmation,
             'programmation_date' : self.programmation_date,

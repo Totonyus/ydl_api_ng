@@ -13,9 +13,17 @@ GET http://localhost:5011/download?url=https://www.youtube.com/watch?v=Kf1XttuuI
 GET http://localhost:5011/download?url=https://www.youtube.com/watch?v=wV4wepiucf4&token=dad_super_password
 ```
 
+### HTTP codes
+
+- `200` : download has been checked and should be OK
+- `202` : download cannot be checked and my not download everything (basically for playlists)
+- `400` : url is wrong or requested format is unavailable
+- `401` : user is not permitted (when user management is enabled)
+
 ## Post request
 
-You can download the video you want by providing the parameters directly in a post request. The order of the expandable attributes is important : each attribute will be expanded in this order.
+You can download the video you want by providing the parameters directly in a post request. The order of the expandable
+attributes is important : each attribute will be expanded in this order.
 
 ```shell
 POST http://localhost:5011/download?url=https://www.youtube.com/watch?v=wV4wepiucf4&token=dad_super_password
@@ -61,6 +69,7 @@ Reminder : if you want to expand a preset : all presets automatically expand the
 preset with `_preset` means `_ignore_default_preset`can't be true.
 
 You can use the `_cli` attribute here :
+
 ```shell
 POST http://localhost:5011/download?url=https://www.youtube.com/watch?v=wV4wepiucf4
 Content-Type: application/json

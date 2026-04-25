@@ -78,7 +78,7 @@ Content-Type: application/json
 GET {{host}}/download/{{ redis_id }}/failed
 
 ### Extract informations (GET)
-GET {{host}}/extract_info?url=ytsearch2:moka_kamishirashi
+GET {{host}}/extract_info?url=https://www.youtube.com/watch?v=a0sxBO9HZ-M
 
 ### Extract informations (POST)
 POST {{host}}/extract_info?url=https://www.youtube.com/watch?v=a0sxBO9HZ-M
