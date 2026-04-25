@@ -170,8 +170,12 @@ class ConfigManager:
                         section['_error'] = ': '.join(e.msg.split(': ')[2:]).removesuffix('\n')
                         logging.getLogger('config_manager').error(f'error during _cli expansion : {section.get("_error")}')
                 else:
-                    if self.__config.has_section(f'{key.removeprefix("_")}:{value}'):
-                        self.__merge_configs(self.__config[f'{key.removeprefix("_")}:{value}'], section, config_set)
+                    splitted_values = value.split(',')
+                    splitted_values.reverse() # to make the last one more important
+
+                    for preset in splitted_values:
+                        if self.__config.has_section(f'{key.removeprefix("_")}:{preset}'):
+                            self.__merge_configs(self.__config[f'{key.removeprefix("_")}:{preset}'], section, config_set)
         if merged:
             self.__expand_section(section, config_set)
 

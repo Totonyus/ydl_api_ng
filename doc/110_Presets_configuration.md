@@ -69,6 +69,16 @@ Will result in:
 subtitleslangs = es
 ```
 
+You can expand multiple presets :
+
+```
+[preset:SUBS]
+;; Precedence : right will override parameters if present
+_preset = FHD,SUBTITLES
+;; Basically useless but it's possible
+_location = AUDIO,VIDEO
+```
+
 ## Specificity of site and users presets
 
 Those two presets types are processed before download and not on app launch
