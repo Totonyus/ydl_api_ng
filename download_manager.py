@@ -338,7 +338,10 @@ class DownloadManager:
                     if self.site is None and info_dict.get('extractor') is not None:
                         logging.getLogger('download_manager').info(
                             "Site config applied")
-                        self.site = self.__cm.find_site_by_section_name(info_dict.get('extractor').split(':')[0].upper())
+                        self.site = self.__cm.find_site_by_section_name(
+                            info_dict.get('extractor').split(':')[0].upper())
+
+                    if not preset.get('_ignore_site_config'):
                         self.add_site_config_to_preset(preset)
 
                     self.is_from_playlist = info_dict.get('_type', None) == 'playlist'
@@ -368,7 +371,7 @@ class DownloadManager:
                         preset.append('__check_result', None)
                     else:
                         field_to_remove = ['formats', 'thumbnails', '_format_sort_fields', 'subtitles',
-                                           'automatic_captions', 'http_headers']
+                                           'automatic_captions', 'http_headers', 'heatmap']
                         for field in field_to_remove:
                             info_dict.pop(field, None)
 
