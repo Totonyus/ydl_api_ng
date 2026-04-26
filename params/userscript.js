@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name        ydl_api_ng
-// @match       http*://www.youtube.com*/*
+// @match       http*://*/*
+// @noframes
 // @grant       GM_registerMenuCommand
 // @grant       GM_xmlhttpRequest
 // @grant       GM_notification

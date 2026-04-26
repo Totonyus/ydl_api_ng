@@ -481,8 +481,6 @@ class DownloadManager:
             self.downloaded_files.append({
                 'id' : download.get('info_dict').get('id'),
                 'status': download.get('status'),
-                'filename' : download.get('info_dict').get('filename'),
-                '_filename' : download.get('info_dict').get('filename'),
                 'total_bytes' : 0,
                 'elapsed' : 0,
                 'info_dict': download.get('info_dict'),
@@ -490,6 +488,10 @@ class DownloadManager:
             })
 
             is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
+
+        # Filepath may change during postprocessing (like mp3 conversion)
+        self.downloaded_files[is_in_list]['filename'] = download.get('info_dict').get('filepath')
+        self.downloaded_files[is_in_list]['_filename'] = download.get('info_dict').get('filepath')
 
         if is_in_list is not None and (download.get('status') == 'finished' or download.get('status') == 'error'):
             current_download = self.downloaded_files[is_in_list]
