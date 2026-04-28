@@ -96,6 +96,9 @@ Content-Type: application/json
 ### Active downloads (GET)
 GET {{host}}/active_downloads
 
+### Find by redis_id (GET)
+GET {{host}}/active_downloads/id/{{redis_id}}
+
 ### Terminate all active downloads (GET)
 GET {{host}}/active_downloads/terminate
 
@@ -137,6 +140,21 @@ Content-Type: application/json
   },
   "extra_parameters": {
     "send_notification": false
+  }
+}
+
+> {%
+    client.global.set('programmation_id', response.body.id)
+%}
+
+### Override programmation (POST)
+POST {{host}}/programmation?url=video_url&override=true
+Content-Type: application/json
+
+{
+  "id" : "{{ programmation_id }}",
+  "planning": {
+    "recurrence_cron": "25 11 * * *"
   }
 }
 

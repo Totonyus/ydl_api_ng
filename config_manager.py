@@ -147,7 +147,7 @@ class ConfigManager:
         self.__expand_section(current_params, temp_config)
 
         # Merge with default to fill remaining parameters
-        if self.__config.has_section(f'{section_name.split(":")[0]}:DEFAULT'):
+        if self.__config.has_section(f'{section_name.split(":")[0]}:DEFAULT') and not current_params.get('_ignore_default_preset'):
             self.__merge_configs(self.__config[f'{section_name.split(":")[0]}:DEFAULT'], current_params, temp_config)
             self.__expand_section(current_params, temp_config)
 
@@ -170,8 +170,12 @@ class ConfigManager:
                         section['_error'] = ': '.join(e.msg.split(': ')[2:]).removesuffix('\n')
                         logging.getLogger('config_manager').error(f'error during _cli expansion : {section.get("_error")}')
                 else:
-                    if self.__config.has_section(f'{key.removeprefix("_")}:{value}'):
-                        self.__merge_configs(self.__config[f'{key.removeprefix("_")}:{value}'], section, config_set)
+                    splitted_values = value.split(',')
+                    splitted_values.reverse() # to make the last one more important
+
+                    for preset in splitted_values:
+                        if self.__config.has_section(f'{key.removeprefix("_")}:{preset}'):
+                            self.__merge_configs(self.__config[f'{key.removeprefix("_")}:{preset}'], section, config_set)
         if merged:
             self.__expand_section(section, config_set)
 
@@ -296,6 +300,9 @@ class ConfigManager:
 
     def get_site_params(self, site_name):
         return self.__site_config_object.search_section_by_value('_hosts', site_name)
+
+    def find_site_by_section_name(self, extractor_name):
+        return self.__site_config_object.get(extractor_name)
 
     def get_all_auth_params(self):
         return self.__auth_config_object

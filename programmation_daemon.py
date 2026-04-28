@@ -10,6 +10,12 @@ from programmation_class import Programmation
 
 import logging
 
+try:
+    from params import ydl_api_programmation_hooks
+except ImportError as e:
+    logging.warning(e)
+    from setup import ydl_api_programmation_hooks
+
 __cm = config_manager.ConfigManager()
 
 __pu = {}
@@ -41,6 +47,10 @@ def run():
 
     if len(purged_programmations) > 0:
         logging.getLogger('programmation').info(f'{len(purged_programmations)} deleted outdated entries')
+        try:
+            ydl_api_programmation_hooks.purged_programmation_handler(purged_programmations = purged_programmations)
+        except Exception as e:
+            logging.getLogger('programmation').error(f'Error during ydl_api_programmation_hooks.purged_programmation_handler execution : {e}')
 
     all_programmations = __pm.get_all_enabled_programmations()
 
@@ -53,7 +63,12 @@ def run():
             if is_job_to_terminate(job=job):
                 logging.getLogger('programmation').info(f"Programmation {job.get('job').meta.get('programmation_id')} stopped by daemon")
                 for __sub_pu in __pu:
-                    __pu.get(__sub_pu).terminate_redis_active_download(job.get('id'))
+                    terminated_job = __pu.get(__sub_pu).terminate_redis_active_download(job.get('id'))
+                    try:
+                        if terminated_job is not None:
+                            ydl_api_programmation_hooks.post_termination_handler(terminated_job = terminated_job)
+                    except Exception as e:
+                        logging.getLogger('programmation').error(f'Error during ydl_api_programmation_hooks.post_termination_handler execution : {e}')
 
     for programmation in all_programmations:
         prog = Programmation(programmation=programmation, id=programmation.get('id'))
@@ -101,6 +116,11 @@ def run():
 
                 if dm.get_api_status_code() != 400:
                     dm.process_downloads()
+                    try:
+                        ydl_api_programmation_hooks.post_launch_handler(download_manager = dm)
+                    except Exception as e:
+                        logging.getLogger('programmation').error(f'Error during ydl_api_programmation_hooks.post_launch_handler execution : {e}')
+
 
 
 if __name__ == '__main__':

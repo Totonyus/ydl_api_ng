@@ -9,18 +9,23 @@ services:
     ports:
       - 5011:80
     volumes:
+      - ./downloads:/app/downloads
       - ./params:/app/params
       - ./logs:/app/logs
-      - ./downloads:/app/downloads
-      - ./data:/app/data
+      - ./cookies/:/app/persistant_cookies
+      - ./data:/app/data # For the programmations database
       - /etc/localtime:/etc/localtime:ro
-    environment:
-      - UID=1000
-      - GID=1000
-      - NB_WORKERS=5
-      - LOG_LEVEL=error
-      # Redis will be disable is this value is not false, remember to also change the setting in params.ini file
-      - DISABLE_REDIS=false
+    # environment:
+    #   # Host user and group ID
+    #   - UID=1000
+    #   - GID=1000
+    #   # Number of parallel downloads you want, you can also skip this parameter and use the worker.ini file instead
+    #   - NB_WORKERS=5
+    #   - LOG_LEVEL=error
+    #   # Redis will be disabled if this value is not false, remember to also change the setting in params.ini file
+    #   - DISABLE_REDIS=false
+    #   # HIGHLY DISCOURAGED but may be useful when there is a blocking bug in new yt-dlp release
+    #   - FORCE_YTDLP_VERSION=2022.11.11
     networks:
       - ydl_api_ng
 

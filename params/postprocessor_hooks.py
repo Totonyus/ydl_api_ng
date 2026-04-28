@@ -1,8 +1,3 @@
-import sys
-
-sys.path.insert(1, 'params/hooks_utils/')
-
-
 ###
 # ydl_opts contains all the informations of the selected preset
 # download_manager contains all the processed informations about the download

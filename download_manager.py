@@ -74,6 +74,8 @@ class DownloadManager:
         self.site = self.__cm.get_site_params(self.site_hostname)
         self.user = self.__cm.get_user_param_by_token(user_token)
 
+        self.info_dict = None
+
         is_from_playlist = self.check_if_from_playlist()
         self.is_from_playlist = is_from_playlist if is_from_playlist is not None else False
 
@@ -157,13 +159,12 @@ class DownloadManager:
                 preset_object.append('_error', error_message)
                 logging.getLogger('download_manager').error(f'error during _cli expansion : {error_message}')
 
-
+            field_to_remove = ['paths', 'outtmpl', '_when_playlist', '_when_live']
             if not self.__cm.get_app_params().get('_allow_dangerous_post_requests') and not self.ignore_post_security:
-                if cli_preset is not None:
-                    cli_preset.delete('paths')
-                    cli_preset.delete('outtmpl')
-                preset_object.delete('paths')
-                preset_object.delete('outtmpl')
+                for field in field_to_remove:
+                    if cli_preset is not None:
+                        cli_preset.delete(field)
+                    preset_object.delete(field)
 
             for param in preset:
                 if param in config_objects_mapping:
@@ -277,10 +278,16 @@ class DownloadManager:
 
     # Extends preset with user informations
     def get_preset_for_user(self, preset):
+        logging.getLogger('download_manager').info(f"Added specific configuration for user")
         self.__cm.merge_configs_object(self.user, preset)
-        self.__cm.merge_configs_object(self.site, preset)
+        preset = self.add_site_config_to_preset(preset)
         preset.delete('_token')
 
+        return preset
+
+    def add_site_config_to_preset(self, preset):
+        logging.getLogger('download_manager').info(f"Added specific configuration for site")
+        self.__cm.merge_configs_object(self.site, preset)
         return preset
 
     def simulate_download(self, preset):
@@ -314,9 +321,64 @@ class DownloadManager:
             ydl_opts.append('cookiefile', f'cookies/{self.request_id}.txt')
 
         try:
-            with ydl.YoutubeDL(ydl_opts.get_all()) as dl:
-                simulation_result = dl.download([self.url]) == 0
-                preset.append('__check_exception_message', None)
+            simulation_result = None
+            ydl_opts_info_dicts = copy.deepcopy(ydl_opts)
+            # For automatic playlist detection
+            ydl_opts_info_dicts.append('noplaylist', True)
+            ydl_opts_info_dicts.append('extract_flat', 'in_playlist')
+
+            with ydl.YoutubeDL(ydl_opts_info_dicts.get_all()) as dl:
+                info_dict = dl.extract_info(self.url)
+
+                if info_dict is None:
+                    simulation_result = False
+                    preset.append('__check_exception_message',
+                                  'info_dict contains no data, url may be wrong or format is unavailable')
+                else:
+                    if self.site is None and info_dict.get('extractor') is not None:
+                        logging.getLogger('download_manager').info(
+                            "Site config applied")
+                        self.site = self.__cm.find_site_by_section_name(
+                            info_dict.get('extractor').split(':')[0].upper())
+
+                    if not preset.get('_ignore_site_config'):
+                        self.add_site_config_to_preset(preset)
+
+                    self.is_from_playlist = info_dict.get('_type', None) == 'playlist'
+                    self.is_video = info_dict.get('_type', None) != 'playlist'
+
+                    preset.append('__is_live', info_dict.get('is_live', False))
+
+                    if info_dict.get('is_live', None) is True:
+                        when_live_options = preset.get('_when_live')
+
+                        if when_live_options is not None:
+                            for option in when_live_options:
+                                preset.append(option, when_live_options.get(option))
+
+                    if self.is_from_playlist:
+                        when_playlist_options = preset.get('_when_playlist')
+
+                        if when_playlist_options is not None:
+                            for option in when_playlist_options:
+                                preset.append(option, when_playlist_options.get(option))
+
+                        self.downloads_cannot_be_checked = self.downloads_cannot_be_checked + 1
+                        self.all_downloads_checked = False
+
+                        self.info_dict = info_dict  # playlist = complete info_dict
+                        preset.append('__can_be_checked', False)
+                        preset.append('__check_result', None)
+                    else:
+                        field_to_remove = ['formats', 'thumbnails', '_format_sort_fields', 'subtitles',
+                                           'automatic_captions', 'http_headers', 'heatmap']
+                        for field in field_to_remove:
+                            info_dict.pop(field, None)
+
+                        self.info_dict = info_dict  # video = reduced info dict
+                        preset.append('__check_exception_message', None)
+
+
         except Exception as error:
             try:
                 os.remove(f'cookies/{self.request_id}.txt')
@@ -326,7 +388,6 @@ class DownloadManager:
             simulation_result = False
             preset.append('__check_exception_message', str(error))
 
-        preset.append('__can_be_checked', True)
         preset.append('__check_result', simulation_result)
 
         if simulation_result is False:
@@ -343,6 +404,33 @@ class DownloadManager:
                 return index
         return None
 
+    def reduce_info_dict(self, download):
+        reduced_file = copy.deepcopy(download)
+
+        if self.__cm.get_app_params().get('_skip_info_dict'):
+            saved_info = {}
+
+            for field in self.__cm.get_app_params().get('_info_dict_field_retrieve'):
+                saved_info[field]=reduced_file.get('info_dict', {}).get(field, None)
+
+            return saved_info
+        else:
+            return download
+
+    def delete_fields(self, download):
+        fields_to_delete = ['ctx_id', '_speed_str', '_total_bytes_str', '_elapsed_str', '_percent_str',
+                            '_default_template', 'info_dict', '_total_bytes_estimate_str', '_downloaded_bytes_str',
+                            '_eta_str']
+
+        clone = copy.deepcopy(download)
+        if self.__cm.get_app_params().get('_skip_info_dict'):
+            for field in fields_to_delete:
+                try:
+                    del clone[field]
+                except KeyError:
+                    pass
+        return clone
+
     def progress_hooks_proxy(self, download):
         is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
 
@@ -352,56 +440,91 @@ class DownloadManager:
             dl_format.pop('http_headers', None)
 
         if is_in_list is None:
-            self.downloaded_files.append(download)
+            self.downloaded_files.append({
+                'id' : download.get('info_dict').get('id'),
+                'status': download.get('status'),
+                'filename' : download.get('info_dict').get('filename'),
+                '_filename' : download.get('info_dict').get('filename'),
+                'total_bytes' : 0,
+                'elapsed' : 0,
+                'info_dict': download.get('info_dict'),
+                'sub_downloads': {
+                    download.get('info_dict').get('format_id'): download
+                }
+            })
+            is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
         else:
-            self.downloaded_files[is_in_list] = download
-
-        if self.enable_redis is not None and self.enable_redis is True:
-            get_current_job().meta['downloaded_files'] = []
-
-            for file in self.downloaded_files:
-                reduced_file = copy.deepcopy(file)
-                if self.__cm.get_app_params().get('_skip_info_dict'):
-                    saved_info = {}
-
-                    for field in self.__cm.get_app_params().get('_info_dict_field_retrieve'):
-                        saved_info[field]=reduced_file.get('info_dict', {}).get(field, None)
-
-                    reduced_file['info_dict'] = saved_info
-
-                get_current_job().meta['downloaded_files'].append(reduced_file)
-
-            get_current_job().save_meta()
-
-
-    def postprocessor_hooks_proxy(self, download):
-        is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
-
-        fields_to_retrieve = ['filename',
-                              '_filename',
-                              '__files_to_merge',
-                              '__finaldir',
-                              'filepath',
-                              ['filesize_approx','total_bytes']
-                              ]
-
-        fields_to_delete = ['downloaded_bytes', 'ctx_id', '_speed_str', '_total_bytes_str', '_elapsed_str', '_percent_str', '_default_template']
+            self.downloaded_files[is_in_list].get('sub_downloads')[download.get('info_dict').get('format_id')] = download
+            self.downloaded_files[is_in_list]['info_dict'] = download.get('info_dict')
 
         if self.enable_redis is None or self.enable_redis is False:
             return
 
+        if get_current_job().meta.get('downloaded_files') is None:
+            get_current_job().meta['downloaded_files'] = []
+
+        try:
+            get_current_job().meta['downloaded_files'][is_in_list]
+        except IndexError:
+            get_current_job().meta['downloaded_files'].append(copy.deepcopy(self.downloaded_files[is_in_list]))
+
+        get_current_job().meta['downloaded_files'][is_in_list]['info_dict'] = self.reduce_info_dict(download)
+
+        format_id = download.get('info_dict').get('format_id')
+        get_current_job().meta['downloaded_files'][is_in_list].get('sub_downloads')[format_id] = self.delete_fields(download)
+        get_current_job().save_meta()
+
+    def postprocessor_hooks_proxy(self, download):
+        is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
+
+        if self.enable_redis is None or self.enable_redis is False:
+            return
+
+        if is_in_list is None:
+            self.downloaded_files.append({
+                'id' : download.get('info_dict').get('id'),
+                'status': download.get('status'),
+                'total_bytes' : 0,
+                'elapsed' : 0,
+                'info_dict': download.get('info_dict'),
+                'sub_downloads': {}
+            })
+
+            is_in_list = self.find_downloads_in_downloaded_files_list(download.get('info_dict').get('id'))
+
+        # Filepath may change during postprocessing (like mp3 conversion)
+        self.downloaded_files[is_in_list]['filename'] = download.get('info_dict').get('filepath')
+        self.downloaded_files[is_in_list]['_filename'] = download.get('info_dict').get('filepath')
+
         if is_in_list is not None and (download.get('status') == 'finished' or download.get('status') == 'error'):
-            current_download = get_current_job().meta['downloaded_files'][is_in_list]
+            current_download = self.downloaded_files[is_in_list]
+            if get_current_job().meta.get('downloaded_files') is None:
+                get_current_job().meta['downloaded_files'] = []
 
-            for field in fields_to_retrieve:
-                if type(field) == list:
-                    current_download[field[1]]=download.get('info_dict', {}).get(field[0], None)
+            try:
+                get_current_job().meta['downloaded_files'][is_in_list]
+            except IndexError:
+                get_current_job().meta['downloaded_files'].append(copy.deepcopy(self.downloaded_files[is_in_list]))
+
+            current_download['status'] = download.get('status')
+
+            current_download['total_bytes'] = 0
+            current_download['elapsed'] = 0
+
+            sub_downloads = {}
+            for format_id, data in current_download.get('sub_downloads').items():
+                current_download['total_bytes'] = current_download.get('total_bytes') + data.get('total_bytes')
+
+                if current_download.get('elapsed') is None or data.get('elapsed') is None:
+                    current_download['elapsed'] = None
                 else:
-                    current_download[field]=download.get('info_dict', {}).get(field, None)
+                    current_download['elapsed'] = current_download.get('elapsed') + data.get('elapsed')
 
-            for field in fields_to_delete:
-                del current_download[field]
+                sub_downloads[format_id] = self.delete_fields(data)
 
+            get_current_job().meta['downloaded_files'][is_in_list] = copy.deepcopy(current_download)
+            get_current_job().meta['downloaded_files'][is_in_list]['sub_downloads'] = sub_downloads
+            get_current_job().meta['downloaded_files'][is_in_list]['info_dict'] = self.reduce_info_dict(download)
             get_current_job().save_meta()
 
 
@@ -414,11 +537,11 @@ class DownloadManager:
         ydl_opts = copy.deepcopy(preset)
 
         ydl_opts.append('progress_hooks',
-                        [functools.partial(progress_hooks.handler, ydl_opts, self, self.get_current_config_manager()),
-                         functools.partial(self.progress_hooks_proxy)])
-        ydl_opts.append('postprocessor_hooks', [
-            functools.partial(postprocessor_hooks.handler, ydl_opts, self, self.get_current_config_manager()),
-                              functools.partial(self.postprocessor_hooks_proxy)])
+                        [functools.partial(self.progress_hooks_proxy),
+                         functools.partial(progress_hooks.handler, ydl_opts, self, self.get_current_config_manager())])
+        ydl_opts.append('postprocessor_hooks',
+                        [functools.partial(self.postprocessor_hooks_proxy),
+                         functools.partial(postprocessor_hooks.handler, ydl_opts, self, self.get_current_config_manager())])
         ydl_opts.append('logger', logging.getLogger('youtube-dlp'))
 
         if self.request_id is not None:
@@ -579,6 +702,7 @@ class DownloadManager:
             'downloads_cannot_be_checked': self.downloads_cannot_be_checked,
             'ignore_post_security': self.ignore_post_security,
             'relaunch_failed_mode': self.relaunch_failed_mode,
+            'info_dict' : self.info_dict,
             'downloads': presets_display,
             'programmation' : self.programmation,
             'programmation_date' : self.programmation_date,
