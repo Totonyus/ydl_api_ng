@@ -84,6 +84,27 @@ Content-Type: application/json
 }
 ```
 
+### Download batch
+
+You can download multiple URL at once. Videos will not be checked and will be put in queue individually
+
+```shell
+POST http://localhost:5011/download_batch
+Content-Type: application/json
+
+{
+  "urls" : [
+    "https://www.youtube.com/watch?v=jjOrh7rs_jE",
+    "https://www.youtube.com/playlist?list=PL8Zccvo5Xlj6LnmfpOligIqnUjfnM0X2R"
+  ],
+  "presets": [
+    {
+      "_preset": "BEST"
+    }
+  ]
+}
+```
+
 ### Important notice
 
 As the post request can be dangerous by allowing to write anywhere on your system

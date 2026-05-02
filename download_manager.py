@@ -675,7 +675,7 @@ class DownloadManager:
             return 206
 
         # Some downloads can't be checked (playlists)
-        if self.downloads_cannot_be_checked > 0:
+        if self.downloads_cannot_be_checked > 0 or self.relaunch_failed_mode:
             return 202
 
         # No video can be downloaded
