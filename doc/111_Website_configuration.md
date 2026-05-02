@@ -15,3 +15,34 @@ _playlist_indicators = ?list=,&list=,/user/,/playlists
 ```
 
 You can also add parameters tied to the site like login information
+
+## Multi site management
+You can set up a multiple sites at once like this :
+
+```
+[site:BBC,DAILYMOTION]
+_preset = VPN
+```
+
+It will still be possible to use the same sites as single entry so :
+
+```
+[preset:VPN]
+proxy=http://ydl_api_ng_gluetun:8888
+
+[site:BBC,DAILYMOTION]
+_preset = VPN
+
+[site:BBC]
+format = best
+```
+
+will result in :
+```
+[site:BBC]
+format = best
+proxy=http://ydl_api_ng_gluetun:8888
+
+[site:DAILYMOTION]
+proxy=http://ydl_api_ng_gluetun:8888
+```
