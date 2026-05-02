@@ -4,6 +4,7 @@ import http.cookiejar
 import logging
 import optparse
 from urllib.parse import urlparse
+import tldextract
 import os
 
 import yt_dlp as ydl
@@ -72,6 +73,10 @@ class DownloadManager:
         self.url = url
         self.site_hostname = urlparse(url).hostname
         self.site = self.__cm.get_site_params(self.site_hostname)
+
+        if self.site is None:
+            self.site = self.__cm.find_site_by_section_name(tldextract.extract(self.url).domain.upper())
+
         self.user = self.__cm.get_user_param_by_token(user_token)
 
         self.info_dict = None

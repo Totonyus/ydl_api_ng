@@ -38,6 +38,23 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
 
+#  ydl_api_ng_gluetun:
+#    image: qmcgaw/gluetun
+#    container_name: ydl_api_ng_gluetun
+#    cap_add:
+#      - NET_ADMIN
+#    devices:
+#      - /dev/net/tun:/dev/net/tun
+#    volumes:
+#      - ./data_gluetun:/gluetun
+#    networks:
+#      - ydl_api_ng
+#    environment:
+#      - HTTPPROXY=on # Important
+#      - HTTPPROXY_LISTENING_ADDRESS=:8888 # the proxy to provide to yt-dlp is http://ydl_api_ng_gluetun:8888
+#      # Add here all the information for your provider
+#      # https://github.com/qdm12/gluetun-wiki/tree/main/setup/providers
+
 networks:
   ydl_api_ng:
 
