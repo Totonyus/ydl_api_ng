@@ -212,3 +212,12 @@ Example of api return :
   }
 }
 ```
+
+### Trigger programmation
+You can trigger directly a programmation like this :
+
+```shell
+GET {{host}}/programmation/<ID>/trigger
+```
+
+The api return will be the same as `/download`

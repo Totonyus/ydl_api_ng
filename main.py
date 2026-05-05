@@ -679,6 +679,48 @@ async def update_programmation_by_id(response: Response, id, body=Body(...), tok
 
     return updated_programmation.get()
 
+@app.get(f"{__cm.get_app_params().get('_api_route_programmation')}/{'{id}'}/trigger")
+async def trigger_programmation(response: Response, id, token=None):
+    if not enable_redis:
+        response.status_code = 409
+        return "Redis management is disabled"
+
+    param_token = unquote(token) if token is not None else None
+    user = __cm.is_user_permitted_by_token(param_token)
+
+    if user is False \
+            or (user is not None and user.get('_allow_programmation') is None) \
+            or (user is not None and user.get('_allow_programmation') is not None and user.get(
+        '_allow_programmation') is False):
+        response.status_code = 401
+        return
+
+    programmation = __pm.get_programmation_by_id(id)
+
+    if programmation is None:
+        response.status_code = 404
+
+    effective_duration = programmation.recording_duration
+
+    if effective_duration is not None and programmation.recording_stops_at_end:
+        programmation_end_date = datetime.now().replace(second=0, microsecond=0) + timedelta(
+            minutes=effective_duration)
+    else:
+        programmation_end_date = None
+
+    dm = download_manager.DownloadManager(__cm,
+                                          programmation.url,
+                                          programmation.presets,
+                                          programmation.user_token,
+                                          programmation_id=programmation.id,
+                                          programmation_end_date=programmation_end_date,
+                                          programmation_date=datetime.now(),
+                                          programmation=programmation.get()
+                                          )
+    if dm.get_api_status_code() != 400:
+        dm.process_downloads()
+
+    return dm.get_api_return_object()
 
 if __name__ == '__main__':
     uvicorn.run(app, host=__cm.get_app_params().get('_listen_ip'), port=__cm.get_app_params().get('_listen_port'),

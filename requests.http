@@ -193,3 +193,6 @@ Content-Type: application/json
     "recurrence_cron": "00 20 * * *"
   }
 }
+
+### Trigger a programmation (GET)
+GET {{host}}/programmation/{{ programmation_id }}/trigger
