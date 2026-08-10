@@ -52,9 +52,16 @@ if [ "$DISABLE_REDIS" == "false" ]; then
   fi
 fi
 
-if [ "$DEBUG" == "DEBUG" ]; then
-  echo ~~~ Launching DEBUG mode ~~~
-  su "$(id -un $UID)" -c "uvicorn main:app --reload --port 80 --host 0.0.0.0"
+if [ "$DISABLE_API" == "false" ]; then
+  if [ "$DEBUG" == "DEBUG" ]; then
+    echo ~~~ Launching DEBUG mode ~~~
+    su "$(id -un $UID)" -c "uvicorn main:app --reload --port 80 --host 0.0.0.0"
+  else
+    su "$(id -un $UID)" -c "python3 main.py"
+  fi
 else
-  su "$(id -un $UID)" -c "python3 main.py"
+  # To keep the container alive
+  echo "~~~ workers only mode ~~~"
+  /bin/bash -c "trap : TERM INT; sleep infinity & wait"
 fi
+

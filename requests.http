@@ -36,6 +36,22 @@ Content-Type: application/json
   ]
 }
 
+### Batch video download (POST)
+POST {{host}}/download_batch
+Content-Type: application/json
+
+{
+  "urls" : [
+    "https://www.youtube.com/watch?v=jjOrh7rs_jE",
+    "https://www.youtube.com/playlist?list=PL8Zccvo5Xlj6LnmfpOligIqnUjfnM0X2R"
+  ],
+  "presets": [
+    {
+      "_preset": "HD"
+    }
+  ]
+}
+
 ### Video download with a programmation (POST)
 POST {{host}}/download?url=https://www.youtube.com/watch?v=W6OOnrx8g58
 Content-Type: application/json
@@ -177,3 +193,6 @@ Content-Type: application/json
     "recurrence_cron": "00 20 * * *"
   }
 }
+
+### Trigger a programmation (GET)
+GET {{host}}/programmation/{{ programmation_id }}/trigger

@@ -8,6 +8,7 @@ redis==7.4.0
 requests==2.33.1
 rq==2.7.0
 supervisor==4.3.0
+tldextract==5.3.1
 tinydb==4.8.2
 uvicorn==0.44.0
 yt-dlp[default,curl-cffi]

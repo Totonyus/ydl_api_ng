@@ -4,6 +4,7 @@ import http.cookiejar
 import logging
 import optparse
 from urllib.parse import urlparse
+import tldextract
 import os
 
 import yt_dlp as ydl
@@ -72,6 +73,10 @@ class DownloadManager:
         self.url = url
         self.site_hostname = urlparse(url).hostname
         self.site = self.__cm.get_site_params(self.site_hostname)
+
+        if self.site is None:
+            self.site = self.__cm.find_site_by_section_name(tldextract.extract(self.url).domain.upper())
+
         self.user = self.__cm.get_user_param_by_token(user_token)
 
         self.info_dict = None
@@ -420,7 +425,7 @@ class DownloadManager:
     def delete_fields(self, download):
         fields_to_delete = ['ctx_id', '_speed_str', '_total_bytes_str', '_elapsed_str', '_percent_str',
                             '_default_template', 'info_dict', '_total_bytes_estimate_str', '_downloaded_bytes_str',
-                            '_eta_str']
+                            '_eta_str', 'cookies']
 
         clone = copy.deepcopy(download)
         if self.__cm.get_app_params().get('_skip_info_dict'):
@@ -670,7 +675,7 @@ class DownloadManager:
             return 206
 
         # Some downloads can't be checked (playlists)
-        if self.downloads_cannot_be_checked > 0:
+        if self.downloads_cannot_be_checked > 0 or self.relaunch_failed_mode:
             return 202
 
         # No video can be downloaded

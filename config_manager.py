@@ -127,7 +127,15 @@ class ConfigManager:
             elif section.startswith('user:'):
                 self.__user_config[section] = self.__expand_config(section)
             elif section.startswith('site:'):
-                self.__site_config[section] = self.__expand_config(section)
+                sites = section.split(':')[-1]
+
+                for site in sites.split(','):
+                    try:
+                        for key, value in self.__expand_config(section).items():
+                            self.__site_config['site:' + site][key] = value
+                    except KeyError:
+                        self.__site_config['site:' + site] = self.__expand_config(section)
+
             elif section.startswith('auth:'):
                 self.__auth_config[section] = self.__expand_config(section)
             elif section.startswith('location:'):
@@ -188,6 +196,12 @@ class ConfigManager:
                     dest[key] = json.dumps(value)
                 else:
                     dest[key] = value
+            elif config_set.has_option(dest.name, key) and key in ['_when_live', '_when_playlist']:
+                dest_json = json.loads(value)
+                for subkey, subvalue in json.loads(dest[key]).items():
+                    dest_json[subkey] = subvalue
+
+                dest[key] = json.dumps(dest_json)
 
     # Done on premise directly with objects, override values
     @staticmethod

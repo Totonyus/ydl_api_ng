@@ -2,6 +2,7 @@ app_defaults = {
     '_allow_dangerous_post_requests': False,
     '_api_route_active_downloads': '/active_downloads',
     '_api_route_download': '/download',
+    '_api_route_download_batch': '/download_batch',
     '_api_route_queue': '/queue',
     '_api_route_extract_info': '/extract_info',
     '_api_route_info': '/info',

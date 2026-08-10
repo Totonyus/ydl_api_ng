@@ -164,6 +164,46 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
     return dm.get_api_return_object()
 
 
+@app.post(__cm.get_app_params().get('_api_route_download_batch'))
+async def download_request(response: Response, background_tasks: BackgroundTasks, body=Body(...), token=None):
+    request_id = None
+    body_urls = body.get('urls') if body.get('urls') is not None and type(body.get('urls')) == list and len(
+        body.get('urls')) != 0 else []
+
+    param_token = unquote(token) if token is not None else None
+
+    user = __cm.is_user_permitted_by_token(param_token)
+
+    if user is False:
+        response.status_code = 401
+        return
+
+    if body_urls == []:
+        response.status_code = 400
+        return {'status_code': response.status_code, 'status_message': "No url provided"}
+
+    if body.get('cookies') is not None:
+        request_id = uuid.uuid4()
+        cookies_files = open(f'cookies/{request_id}.txt', 'w')
+        cookies_files.write(unquote(body.get('cookies')))
+        cookies_files.close()
+
+    return_object = []
+    for url in body_urls:
+        dm = download_manager.DownloadManager(__cm, url, None,
+                                              param_token,
+                                              body,
+                                              request_id=request_id,
+                                              relaunch_failed_mode=True)
+        if enable_redis:
+            dm.process_downloads()
+        else:
+            background_tasks.add_task(dm.process_downloads)
+
+        return_object.append(dm.get_api_return_object())
+    return return_object
+
+
 @app.get(f"{__cm.get_app_params().get('_api_route_download')}/{'{redis_id}'}/failed")
 async def relaunch_failed_download(response: Response, redis_id, token=None):
     if not enable_redis:
@@ -292,9 +332,10 @@ async def active_downloads_request(response: Response, token=None, redis_queue=N
 
         return queue_content
 
+
 @app.get(f"{__cm.get_app_params().get('_api_route_active_downloads')}/id/{'{pid}'}")
 async def find_download_by_id(response: Response, background_tasks: BackgroundTasks, pid, token=None,
-                                            redis_queue=None):
+                              redis_queue=None):
     param_token = unquote(token) if token is not None else None
     user = __cm.is_user_permitted_by_token(param_token)
 
@@ -315,6 +356,7 @@ async def find_download_by_id(response: Response, background_tasks: BackgroundTa
         return
 
     return found_job
+
 
 @app.get(f"{__cm.get_app_params().get('_api_route_active_downloads')}/terminate/{'{pid}'}")
 async def terminate_active_download_request(response: Response, background_tasks: BackgroundTasks, pid, token=None,
@@ -514,7 +556,8 @@ async def get_all_active_programmations(response: Response, token=None):
 
 
 @app.post(f"{__cm.get_app_params().get('_api_route_programmation')}")
-async def add_programmation(response: Response, background_tasks: BackgroundTasks, url, override=None, body=Body(...), token=None):
+async def add_programmation(response: Response, background_tasks: BackgroundTasks, url, override=None, body=Body(...),
+                            token=None):
     if not enable_redis:
         response.status_code = 409
         return "Redis management is disabled"
@@ -540,7 +583,7 @@ async def add_programmation(response: Response, background_tasks: BackgroundTask
 
     prog = Programmation(programmation=programmation_object, id=programmation_object.get('id'))
 
-    added = __pm.add_programmation(programmation=prog, override=override=='true')
+    added = __pm.add_programmation(programmation=prog, override=override == 'true')
 
     if len(prog.errors) != 0:
         response.status_code = 400
@@ -635,6 +678,49 @@ async def update_programmation_by_id(response: Response, id, body=Body(...), tok
         return updated_programmation.errors
 
     return updated_programmation.get()
+
+@app.get(f"{__cm.get_app_params().get('_api_route_programmation')}/{'{id}'}/trigger")
+async def trigger_programmation(response: Response, id, token=None):
+    if not enable_redis:
+        response.status_code = 409
+        return "Redis management is disabled"
+
+    param_token = unquote(token) if token is not None else None
+    user = __cm.is_user_permitted_by_token(param_token)
+
+    if user is False \
+            or (user is not None and user.get('_allow_programmation') is None) \
+            or (user is not None and user.get('_allow_programmation') is not None and user.get(
+        '_allow_programmation') is False):
+        response.status_code = 401
+        return
+
+    programmation = __pm.get_programmation_by_id(id)
+
+    if programmation is None:
+        response.status_code = 404
+
+    effective_duration = programmation.recording_duration
+
+    if effective_duration is not None and programmation.recording_stops_at_end:
+        programmation_end_date = datetime.now().replace(second=0, microsecond=0) + timedelta(
+            minutes=effective_duration)
+    else:
+        programmation_end_date = None
+
+    dm = download_manager.DownloadManager(__cm,
+                                          programmation.url,
+                                          programmation.presets,
+                                          programmation.user_token,
+                                          programmation_id=programmation.id,
+                                          programmation_end_date=programmation_end_date,
+                                          programmation_date=datetime.now(),
+                                          programmation=programmation.get()
+                                          )
+    if dm.get_api_status_code() != 400:
+        dm.process_downloads()
+
+    return dm.get_api_return_object()
 
 if __name__ == '__main__':
     uvicorn.run(app, host=__cm.get_app_params().get('_listen_ip'), port=__cm.get_app_params().get('_listen_port'),
