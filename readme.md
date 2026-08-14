@@ -31,7 +31,7 @@ The application is meant to cover a large variety of use cases.
 
 # Documentation
 
-All documentation can be found in the [doc](docs/) folder
+All documentation can be found in the [doc](doc/) folder
 
 Quick start :
 
