@@ -97,11 +97,12 @@ GET {{host}}/download/{{ redis_id }}/failed
 GET {{host}}/extract_info?url=https://www.youtube.com/watch?v=a0sxBO9HZ-M
 
 ### Extract informations (POST)
-POST {{host}}/extract_info?url=https://www.youtube.com/watch?v=a0sxBO9HZ-M
+POST {{host}}/extract_info?url=https://www.youtube.com/playlist?list=PL8Zccvo5Xlj53ESRIn2Q4lg2DvKIB92sj
 Content-Type: application/json
 
 {
-  "cookies": "URL encoded (RFC3986 format) netscape cookies format"
+  "cookies": "URL encoded (RFC3986 format) netscape cookies format",
+  "extract_flat": true
 }
 ###
 
