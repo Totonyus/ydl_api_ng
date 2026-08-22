@@ -642,14 +642,21 @@ class DownloadManager:
     @staticmethod
     def extract_info(url, **kwargs):
         request_id = None if kwargs.get('request_id') is None else kwargs.get('request_id')
+        extract_flat = kwargs.get('extract_flat', False)
 
         ydl_opts = {
             'ignoreerrors': True,
             'quiet': True,
-            'cookiefile' : f'cookies/{request_id}.txt' if request_id is not None else None
+            'cookiefile' : f'cookies/{request_id}.txt' if request_id is not None else None,
+            'extract_flat': extract_flat,
         }
 
         failed = False
+
+        if extract_flat not in (None, True, False, 'in_playlist'):
+            failed = True
+            info = "extract_flat must be true, false, or 'in_playlist'"
+            return info, failed
 
         try:
             with ydl.YoutubeDL(ydl_opts) as dl:

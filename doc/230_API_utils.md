@@ -472,6 +472,7 @@ Content-Type: application/json
 
 {
   "cookies" : "URL encoded (RFC3986 format) netscape cookies format"
+  "extract_flat": "true, false (default), or 'in_playlist'"
 }
 ```
 
