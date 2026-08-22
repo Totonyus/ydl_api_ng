@@ -568,3 +568,16 @@ Example for youtube :
   "audio_channels": 2
 }
 ```
+
+### Flat extraction
+
+`POST /extract_info` optionally accepts `extract_flat` to enable yt-dlp flat extraction.
+
+```json
+{
+  "cookies": "URL encoded (RFC3986 format) netscape cookies format",
+  "extract_flat": "in_playlist"
+}
+```
+
+`extract_flat` accepts `true`, `false`, or `"in_playlist"`.

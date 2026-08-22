@@ -642,12 +642,16 @@ class DownloadManager:
     @staticmethod
     def extract_info(url, **kwargs):
         request_id = None if kwargs.get('request_id') is None else kwargs.get('request_id')
+        extract_flat = kwargs.get('extract_flat')
 
         ydl_opts = {
             'ignoreerrors': True,
             'quiet': True,
             'cookiefile' : f'cookies/{request_id}.txt' if request_id is not None else None
         }
+
+        if extract_flat is not None:
+            ydl_opts['extract_flat'] = extract_flat
 
         failed = False
 

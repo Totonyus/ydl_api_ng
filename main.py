@@ -299,7 +299,19 @@ async def download_request(response: Response, background_tasks: BackgroundTasks
         cookies_files.write(unquote(body.get('cookies')))
         cookies_files.close()
 
-    info, is_error = download_manager.DownloadManager.extract_info(param_url, request_id=request_id)
+    extract_flat = body.get('extract_flat')
+
+    if extract_flat not in (None, True, False, 'in_playlist'):
+        response.status_code = 400
+        return {
+            'detail': "extract_flat must be true, false, or 'in_playlist'"
+        }
+
+    info, is_error = download_manager.DownloadManager.extract_info(
+        param_url,
+        request_id=request_id,
+        extract_flat=extract_flat
+    )
 
     if is_error:
         response.status_code = 400
