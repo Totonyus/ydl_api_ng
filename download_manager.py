@@ -6,6 +6,7 @@ import optparse
 from urllib.parse import urlparse
 import tldextract
 import os
+import uuid
 
 import yt_dlp as ydl
 from redis import Redis
@@ -45,6 +46,7 @@ class DownloadManager:
             f'Init download - user_token: {user_token} - presets: {presets_string} - url :{url} ')
 
         self.request_id = None if kwargs.get('request_id') is None else kwargs.get('request_id')
+        self.id = uuid.uuid4() if self.request_id is None else self.request_id
 
         self.programmation = None if kwargs.get('programmation') is None else kwargs.get('programmation')
         self.programmation_id = None if kwargs.get('programmation_id') is None else kwargs.get('programmation_id')
@@ -701,6 +703,7 @@ class DownloadManager:
             self.programmation['user_token'] = 'censored'
 
         return {
+            'id' : self.id,
             'status_code': self.get_api_status_code(),
             'url': self.url,
             'url_hostname': self.site_hostname,
